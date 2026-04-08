@@ -646,16 +646,50 @@ class Exploration {
         // Add predicted species (not yet confirmed)
         if (predictedSpecies) {
           const knownGenera = new Set(knownSpecies.map(s => s.genus?.toLowerCase()))
+
+          // When DSS genera are confirmed, recalculate probabilities per genus:
+          // - Genus with 1 predicted species → 100%
+          // - Genus with N predicted species → proportional by hitCount within that genus
+          const hasDssGenera = (confirmedGenuses?.length > 0)
+          let genusProbabilities = null
+          if (hasDssGenera) {
+            // Group predictions by genus and compute intra-genus probabilities
+            const genusGroups = new Map()
+            for (const pred of predictedSpecies) {
+              const gk = pred.genus?.toLowerCase()
+              if (knownGenera.has(gk)) continue
+              if (!genusGroups.has(gk)) genusGroups.set(gk, [])
+              genusGroups.get(gk).push(pred)
+            }
+            genusProbabilities = new Map()
+            for (const [gk, members] of genusGroups) {
+              if (members.length === 1) {
+                genusProbabilities.set(`${members[0].genus}|${members[0].species}`, 100)
+              } else {
+                const genusTotal = members.reduce((s, m) => s + (m.hitCount || 1), 0)
+                for (const m of members) {
+                  const pct = genusTotal > 0
+                    ? Math.round(((m.hitCount || 1) / genusTotal) * 1000) / 10
+                    : Math.round(1000 / members.length) / 10
+                  genusProbabilities.set(`${m.genus}|${m.species}`, pct)
+                }
+              }
+            }
+          }
+
           for (const pred of predictedSpecies) {
             if (knownGenera.has(pred.genus?.toLowerCase())) continue
             const fullName = `${pred.genus} ${pred.species}`
             const reward = SPECIES_REWARDS[fullName] ?? SPECIES_REWARDS[pred.species] ?? 0
+            const probability = genusProbabilities
+              ? (genusProbabilities.get(`${pred.genus}|${pred.species}`) ?? Math.round(pred.probability * 10) / 10)
+              : Math.round(pred.probability * 10) / 10
             speciesDetail.push({
               genus: pred.genus,
               species: pred.species,
               reward,
               isConfirmed: false,
-              probability: Math.round(pred.probability * 10) / 10
+              probability
             })
           }
         }
