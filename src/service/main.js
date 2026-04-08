@@ -1,5 +1,7 @@
 require('dotenv').config()
 
+process.title = 'daedalus-service'
+
 const os = require('os')
 const fs = require('fs')
 const path = require('path')

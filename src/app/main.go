@@ -15,10 +15,35 @@ import (
 	"path/filepath"
 	"syscall"
 	"time"
+	"unsafe"
 )
 
 var dirname = ""
 var defaultPort = 3300 // Set to 0 to be assigned a free high numbered port
+
+// Win32 monitor APIs (not exposed by nvsoft/win)
+var (
+	user32                = syscall.NewLazyDLL("user32.dll")
+	procMonitorFromWindow = user32.NewProc("MonitorFromWindow")
+	procGetMonitorInfoW   = user32.NewProc("GetMonitorInfoW")
+)
+
+const MONITOR_DEFAULTTONEAREST = 2
+
+type MONITORINFO struct {
+	CbSize    uint32
+	RcMonitor win.RECT
+	RcWork    win.RECT
+	DwFlags   uint32
+}
+
+func getMonitorRect(hwnd win.HWND) win.RECT {
+	hMonitor, _, _ := procMonitorFromWindow.Call(uintptr(hwnd), MONITOR_DEFAULTTONEAREST)
+	var mi MONITORINFO
+	mi.CbSize = uint32(unsafe.Sizeof(mi))
+	procGetMonitorInfoW.Call(hMonitor, uintptr(unsafe.Pointer(&mi)))
+	return mi.RcMonitor
+}
 var port int           // Actual port we are running on
 var webViewInstance webview.WebView
 
@@ -129,6 +154,9 @@ func main() {
 
 	// Use Windows API to get Save Game dir
 	saveGameDirPath, err := windows.KnownFolderPath(windows.FOLDERID_SavedGames, 0)
+
+	// Kill any orphaned service processes from a previous unclean exit
+	killExistingServiceProcesses()
 
 	// Run service
 	cmdArg0 := fmt.Sprintf("%s%d", "--port=", *portPtr)
@@ -252,6 +280,7 @@ func bindFunctionsToWebView(w webview.WebView) {
 
 	var isFullScreen = false
 	var isPinned = false
+	var preFullScreenRect win.RECT
 	defaultWindowStyle := win.GetWindowLong(hwnd, win.GWL_STYLE)
 
 	w.Bind("daedalusTerminal_version", func() string {
@@ -314,38 +343,32 @@ func bindFunctionsToWebView(w webview.WebView) {
 	})
 
 	w.Bind("daedalusTerminal_toggleFullScreen", func() bool {
-		// FIXME Always go fullscreen on main monitor.
-		// If the window is on a second monitor, it should go fullscreen on that
-		// display instead. See the following URL for example of how to handle
-		// https://docs.microsoft.com/en-us/windows/win32/gdi/positioning-objects-on-a-multiple-display-setup
-		screenWidth := int32(win.GetSystemMetrics(win.SM_CXSCREEN))
-		screenHeight := int32(win.GetSystemMetrics(win.SM_CYSCREEN))
-		windowX := int32((screenWidth / 2) - (windowWidth / 2))
-		windowY := int32((screenHeight / 2) - (windowHeight / 2))
-
 		if isFullScreen {
-			// Restore default window style and position
-			// TODO Should restore to window size and location before window was set
-			// to full screen (currently just resets to what it thinks is best)
+			// Restore to pre-fullscreen window position and size
 			win.SetWindowLong(hwnd, win.GWL_STYLE, defaultWindowStyle)
-			win.MoveWindow(hwnd, windowX, windowY, windowWidth, windowHeight, true)
+			win.MoveWindow(hwnd,
+				preFullScreenRect.Left,
+				preFullScreenRect.Top,
+				preFullScreenRect.Right-preFullScreenRect.Left,
+				preFullScreenRect.Bottom-preFullScreenRect.Top,
+				true)
 			isFullScreen = false
 		} else {
-			// Set to fullscreen and remove window border
+			// Save current window position before going fullscreen
+			win.GetWindowRect(hwnd, &preFullScreenRect)
+
+			// Get the bounds of the monitor the window is currently on
+			monitorRect := getMonitorRect(hwnd)
+
+			// Remove window chrome and fill the current monitor
 			newWindowStyle := defaultWindowStyle &^ (win.WS_CAPTION | win.WS_THICKFRAME | win.WS_MINIMIZEBOX | win.WS_MAXIMIZEBOX | win.WS_SYSMENU)
 			win.SetWindowLong(hwnd, win.GWL_STYLE, newWindowStyle)
-
-			win.SetWindowPos(hwnd, 0, 0, 0, screenWidth, screenHeight, win.SWP_FRAMECHANGED)
-
-			// TODO Implement full screen mode that respects multi monitor setups
-			// const MONITOR_CENTER = 0x0001 // center rect to monitor
-			// const MONITOR_CLIP = 0x0000 // clip rect to monitor
-			// const MONITOR_WORKAREA = 0x0002 // use monitor work area
-			// const MONITOR_AREA = 0x0000 // use monitor entire area
-			// var rc win.RECT;
-			// win.GetWindowRect(hwnd, &rc);
-			// ClipOrCenterRectToMonitor(&rc, MONITOR_AREA);
-			// win.SetWindowPos(hwnd, 0, rc.Left, rc.Top, 0, 0, win.SWP_NOSIZE | win.SWP_NOZORDER | win.SWP_NOACTIVATE | win.SWP_FRAMECHANGED);
+			win.SetWindowPos(hwnd, 0,
+				monitorRect.Left,
+				monitorRect.Top,
+				monitorRect.Right-monitorRect.Left,
+				monitorRect.Bottom-monitorRect.Top,
+				win.SWP_FRAMECHANGED)
 
 			isPinned = false
 			isFullScreen = true
@@ -413,4 +436,37 @@ func checkProcessAlreadyExists(windowTitle string) bool {
 	}
 
 	return false
+}
+
+func killExistingServiceProcesses() {
+	snapshot, err := windows.CreateToolhelp32Snapshot(windows.TH32CS_SNAPPROCESS, 0)
+	if err != nil {
+		return
+	}
+	defer windows.CloseHandle(snapshot)
+
+	var entry windows.ProcessEntry32
+	entry.Size = uint32(unsafe.Sizeof(entry))
+
+	err = windows.Process32First(snapshot, &entry)
+	if err != nil {
+		return
+	}
+
+	for {
+		name := syscall.UTF16ToString(entry.ExeFile[:])
+		if name == SERVICE_EXECUTABLE {
+			handle, err := windows.OpenProcess(windows.PROCESS_TERMINATE, false, entry.ProcessID)
+			if err == nil {
+				windows.TerminateProcess(handle, 1)
+				windows.CloseHandle(handle)
+				fmt.Printf("Killed orphaned service process (PID %d)\n", entry.ProcessID)
+			}
+		}
+
+		err = windows.Process32Next(snapshot, &entry)
+		if err != nil {
+			break
+		}
+	}
 }

@@ -4,10 +4,24 @@ import SystemMap from 'components/panels/nav/system-map/system-map'
 import CopyOnClick from 'components/copy-on-click'
 import factionStates from '../../../../shared/faction-states'
 
-export default function NavigationSystemMapPanel ({ system, systemObject, setSystemObject, getSystem, cmdrStatus, rescanSystem = () => {}, rescanInProgress = false }) {
+export default function NavigationSystemMapPanel ({ system, systemObject, setSystemObject, getSystem, cmdrStatus, rescanSystem = () => {}, rescanInProgress = false, systemLoading = false }) {
   const [showSystemDetails, setShowSystemDetails] = useState(true)
 
-  if (!system) return null
+  if (!system) {
+    if (systemLoading) {
+      return (
+        <div className='navigation-panel__map'>
+          <div className='text-center-both' style={{ zIndex: '30', pointerEvents: 'none' }}>
+            <h2>
+              <span className='text-primary text-blink-slow'>Connecting to EDSM…</span><br />
+              <span className='text-info text-muted' style={{ fontSize: '1.5rem' }}>Fetching System Data</span>
+            </h2>
+          </div>
+        </div>
+      )
+    }
+    return null
+  }
 
   let factionStateDescription = system?.state?.replace(/([a-z])([A-Z])/g, '$1 $2')
 

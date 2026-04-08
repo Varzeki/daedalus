@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 // Station types that use the dodecagonal starport layout (45 pads)
 const STARPORT_TYPES = new Set([
@@ -384,10 +384,25 @@ function drawSettlement (ctx, cx, cy, size, padNumber, economy, colors) {
 
 // ---- Main overlay component ----
 
+const FADE_DURATION = 600   // ms for background fade-in
+const SWEEP_DURATION = 1200 // ms for circular reveal of canvas content
+
 export default function LandingPadOverlay ({ data, onDismiss }) {
   const canvasRef = useRef(null)
+  const animRef = useRef(null)
+  const [fadedIn, setFadedIn] = useState(false)
 
   const isVisible = data != null
+
+  // Reset fade state when overlay appears
+  useEffect(() => {
+    if (isVisible) {
+      // Trigger fade-in on next frame so the initial opacity:0 is painted first
+      requestAnimationFrame(() => setFadedIn(true))
+    } else {
+      setFadedIn(false)
+    }
+  }, [isVisible])
 
   useEffect(() => {
     if (!isVisible || !canvasRef.current) return
@@ -396,16 +411,15 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
     const ctx = canvas.getContext('2d')
     const dpr = window.devicePixelRatio || 1
 
-    // Size the canvas to fill its CSS container
     const rect = canvas.getBoundingClientRect()
     canvas.width = rect.width * dpr
     canvas.height = rect.height * dpr
     ctx.scale(dpr, dpr)
-    ctx.clearRect(0, 0, rect.width, rect.height)
 
     const cx = rect.width / 2
     const cy = rect.height / 2
     const drawSize = Math.min(rect.width, rect.height) * 0.7
+    const maxRadius = Math.sqrt(rect.width * rect.width + rect.height * rect.height)
 
     const colors = {
       station: 'rgba(255, 147, 0, 0.6)',
@@ -417,14 +431,58 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
 
     const stationType = (data.stationType || '').toLowerCase()
 
-    if (STARPORT_TYPES.has(stationType)) {
-      drawStarport(ctx, cx, cy, drawSize / 2, data.pad, colors)
-    } else if (CARRIER_TYPES.has(stationType)) {
-      drawFleetCarrier(ctx, cx, cy, drawSize, data.pad, colors)
-    } else if (SETTLEMENT_TYPES.has(stationType)) {
-      drawSettlement(ctx, cx, cy, drawSize, data.pad, data.economy, colors)
-    } else {
-      drawOutpost(ctx, cx, cy, drawSize, data.pad, colors)
+    function drawStation () {
+      if (STARPORT_TYPES.has(stationType)) {
+        drawStarport(ctx, cx, cy, drawSize / 2, data.pad, colors)
+      } else if (CARRIER_TYPES.has(stationType)) {
+        drawFleetCarrier(ctx, cx, cy, drawSize, data.pad, colors)
+      } else if (SETTLEMENT_TYPES.has(stationType)) {
+        drawSettlement(ctx, cx, cy, drawSize, data.pad, data.economy, colors)
+      } else {
+        drawOutpost(ctx, cx, cy, drawSize, data.pad, colors)
+      }
+    }
+
+    // Wait for the background to fade in before starting the sweep
+    const sweepDelay = FADE_DURATION
+    const startTime = performance.now()
+
+    function animate (now) {
+      const elapsed = now - startTime - sweepDelay
+      ctx.clearRect(0, 0, rect.width, rect.height)
+
+      if (elapsed < 0) {
+        // Still waiting for background fade — draw nothing yet
+        animRef.current = requestAnimationFrame(animate)
+        return
+      }
+
+      const progress = Math.min(elapsed / SWEEP_DURATION, 1)
+      // Ease-out for smooth deceleration
+      const eased = 1 - Math.pow(1 - progress, 2)
+      const sweepAngle = eased * Math.PI * 2
+
+      if (progress < 1) {
+        // Clip to a circular sweep starting from 12 o'clock
+        ctx.save()
+        ctx.beginPath()
+        ctx.moveTo(cx, cy)
+        ctx.arc(cx, cy, maxRadius, -Math.PI / 2, -Math.PI / 2 + sweepAngle)
+        ctx.closePath()
+        ctx.clip()
+        drawStation()
+        ctx.restore()
+        animRef.current = requestAnimationFrame(animate)
+      } else {
+        // Final frame — draw without clipping
+        drawStation()
+      }
+    }
+
+    animRef.current = requestAnimationFrame(animate)
+
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current)
     }
   }, [data, isVisible])
 
@@ -446,7 +504,9 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        cursor: 'pointer'
+        cursor: 'pointer',
+        opacity: fadedIn ? 1 : 0,
+        transition: `opacity ${FADE_DURATION}ms ease-in`
       }}
     >
       <div style={{ textAlign: 'center', marginBottom: '1rem' }}>

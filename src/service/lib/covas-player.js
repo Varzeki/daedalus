@@ -24,26 +24,22 @@ let _cargoFullAnnounced = false // tracks whether cargo full was already announc
 
 /**
  * Get or create the persistent PowerShell audio worker process.
- * Reads file paths from stdin, prints "DONE" to stdout when playback finishes.
+ * Reads file paths from stdin, plays them synchronously, prints "DONE" when finished.
  */
 function getPsProcess () {
   if (_psProcess && !_psProcess.killed) return _psProcess
 
   const script = `
-Add-Type -AssemblyName PresentationCore
-$player = New-Object System.Windows.Media.MediaPlayer
 while ($true) {
   $line = [Console]::In.ReadLine()
   if ($line -eq $null) { break }
   $line = $line.Trim()
   if ($line -eq '') { continue }
-  if ($line -eq 'STOP') { $player.Stop(); $player.Close(); Write-Output 'DONE'; continue }
+  if ($line -eq 'STOP') { Write-Output 'DONE'; continue }
   try {
-    $player.Open([Uri]$line)
-    $player.Play()
-    Start-Sleep -Milliseconds 500
-    while ($player.Position -lt $player.NaturalDuration.TimeSpan) { Start-Sleep -Milliseconds 100 }
-    $player.Close()
+    $player = New-Object System.Media.SoundPlayer($line)
+    $player.PlaySync()
+    $player.Dispose()
   } catch {}
   Write-Output 'DONE'
 }

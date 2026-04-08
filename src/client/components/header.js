@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import { sendEvent, eventListener, socketOptions } from 'lib/socket'
-import { isWindowFullScreen, isWindowPinned, toggleFullScreen, togglePinWindow } from 'lib/window'
+import { isWindowFullScreen, toggleFullScreen } from 'lib/window'
 import { eliteDateTime } from 'lib/format'
 import { Settings } from 'components/settings'
 import LandingPadOverlay from 'components/landing-pad-overlay'
@@ -41,7 +41,6 @@ export default function Header ({ connected, active }) {
   const router = useRouter()
   const [dateTime, setDateTime] = useState(eliteDateTime())
   const [isFullScreen, setIsFullScreen] = useState(false)
-  const [isPinned, setIsPinned] = useState(false)
   const [notificationsVisible, setNotificationsVisible] = useState(socketOptions.notifications)
   const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(socketOptions.explorationAutoSwitch)
   const [settingsVisible, setSettingsVisible] = useState(false)
@@ -54,13 +53,6 @@ export default function Header ({ connected, active }) {
   async function fullScreen () {
     const newFullScreenState = await toggleFullScreen()
     setIsFullScreen(newFullScreenState)
-    if (newFullScreenState === true) setIsPinned(false)
-    document.activeElement.blur()
-  }
-
-  async function pinWindow () {
-    const newPinState = await togglePinWindow()
-    setIsPinned(newPinState)
     document.activeElement.blur()
   }
 
@@ -138,10 +130,8 @@ export default function Header ({ connected, active }) {
     }
     ;(async () => {
       const fs = await isWindowFullScreen()
-      const pin = await isWindowPinned()
       if (mounted) {
         setIsFullScreen(fs)
-        setIsPinned(pin)
       }
     })()
     return () => { mounted = false }
@@ -236,11 +226,6 @@ export default function Header ({ connected, active }) {
           <button disabled className='button--icon button--transparent' style={{ marginRight: '.5rem', opacity: active ? 1 : .25, transition: 'all .25s ease-out' }}>
             <i className={signalClassName} style={{ position: 'relative', transition: 'all .25s ease', fontSize: '3rem', lineHeight: '1.8rem', top: '.5rem', right: '.25rem' }} />
           </button>
-
-          {IS_WINDOWS_APP &&
-            <button tabIndex='1' onClick={pinWindow} className={`button--icon ${isPinned ? 'button--transparent' : ''}`} style={{ marginRight: '.5rem' }} disabled={isFullScreen} data-tooltip='Pin window'>
-              <i className='icon daedalus-terminal-pin-window' style={{ fontSize: '2rem' }} />
-            </button>}
 
           <button tabIndex='1' onClick={toggleNotifications} className='button--icon' style={{ marginRight: '.5rem' }} data-tooltip='Notifications'>
             <i className={`icon ${notificationsVisible ? 'daedalus-terminal-notifications' : 'daedalus-terminal-notifications-disabled text-muted'}`} style={{ fontSize: '2rem' }} />

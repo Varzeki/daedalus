@@ -16,16 +16,21 @@ export default function NavMapPage () {
   const [systemObject, setSystemObject] = useState()
   const [cmdrStatus, setCmdrStatus] = useState()
   const [rescanInProgress, setRescanInProgress] = useState(false)
+  const [systemLoading, setSystemLoading] = useState(false)
 
   const search = async (searchInput) => {
+    setSystemLoading(true)
     const newSystem = await sendEvent('getSystem', { name: searchInput })
+    setSystemLoading(false)
     if (!newSystem) return
     setSystemObject(null)
     setSystem(newSystem)
   }
 
   const getSystem = async (systemName, useCache = true) => {
+    setSystemLoading(true)
     const newSystem = await sendEvent('getSystem', { name: systemName, useCache })
+    setSystemLoading(false)
     if (!newSystem) return
     setSystemObject(null)
     setSystem(newSystem)
@@ -54,7 +59,9 @@ export default function NavMapPage () {
 
     setCmdrStatus(await sendEvent('getCmdrStatus'))
 
+    setSystemLoading(true)
     const newSystem = await sendEvent('getSystem', query.system ? { name: query.system, useCache: true } : { useCache: true })
+    setSystemLoading(false)
 
     if (newSystem) {
       setSystem(newSystem)
@@ -118,7 +125,7 @@ export default function NavMapPage () {
   return (
     <Layout connected={connected} active={active} ready={ready} loader={!componentReady}>
       <Panel layout='full-width' navigation={NavPanelNavItems('Map', query)} search={search} exit={system?.isCurrentLocation === false ? () => getSystem() : null}>
-        <NavigationSystemMapPanel system={system} systemObject={systemObject} setSystemObject={setSystemObject} getSystem={getSystem} cmdrStatus={cmdrStatus} rescanSystem={rescanSystem} rescanInProgress={rescanInProgress}/>
+        <NavigationSystemMapPanel system={system} systemObject={systemObject} setSystemObject={setSystemObject} getSystem={getSystem} cmdrStatus={cmdrStatus} rescanSystem={rescanSystem} rescanInProgress={rescanInProgress} systemLoading={systemLoading} />
         <NavigationInspectorPanel systemObject={systemObject} setSystemObjectByName={setSystemObjectByName} />
       </Panel>
     </Layout>
