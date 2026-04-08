@@ -91,7 +91,7 @@ function BodyRow ({ body, cmdrName, systemName }) {
   const isValuableBody = body.mappedValue >= MIN_BODY_VALUE
   const isValuableBio = body.bioValue >= MIN_BIO_VALUE
   const isDim = !isValuableBody && !isValuableBio
-  const isScanned = body.wasMapped || body.wasScanned || body.isStar
+  const isScanned = body.wasMapped || body.isStar
 
   let rowClass = 'exploration-system__body-row table__row--highlight-primary-hover'
   if (isDim) rowClass += ' exploration-system__body-row--dim'
@@ -226,7 +226,7 @@ export default function ExplorationSystemPage () {
   const valuableBodiesList = bodies.filter(body =>
     body.mappedValue >= MIN_BODY_VALUE || body.bioValue >= MIN_BIO_VALUE
   )
-  const scannedValuableBodies = valuableBodiesList.filter(b => b.wasMapped || b.wasScanned || b.isStar).length
+  const scannedValuableBodies = valuableBodiesList.filter(b => b.wasMapped || b.isStar).length
   const totalValuableBio = []
   bodies.forEach(body => {
     if (body.speciesDetail) {
