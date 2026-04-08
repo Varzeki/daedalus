@@ -15,8 +15,8 @@ import (
 	"time"
 )
 
-// TODO Update to DAEDALUS fork URL when available
-const LATEST_RELEASE_URL = ""
+// GitHub releases API endpoint for auto-update checks
+const LATEST_RELEASE_URL = "https://api.github.com/repos/Varzeki/daedalus/releases/latest"
 
 type Release struct {
 	InstalledVersion string `json:"installedVersion"`
@@ -27,11 +27,6 @@ type Release struct {
 }
 
 func CheckForUpdate() (bool, error) {
-	// Auto-update disabled until DAEDALUS release URL is configured
-	if LATEST_RELEASE_URL == "" {
-		return false, nil
-	}
-
 	latestUpdate, err := GetLatestRelease()
 	if err != nil {
 		return false, err
