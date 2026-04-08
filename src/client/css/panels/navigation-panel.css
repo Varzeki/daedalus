@@ -32,6 +32,7 @@
   transition: none;
   padding: 0;
   animation-delay: 0;
+  overflow: hidden;
 }
 
 .navigation-panel__inspector .navigation-panel__inspector-heading .icon {
@@ -85,9 +86,23 @@
   overflow: hidden;
 }
 
-.navigation-panel__list--inspector,
-.navigation-panel__map--inspector {
+.navigation-panel__list--inspector {
   right: 22rem;
+}
+
+.navigation-panel__map--inspector .navigation-panel__map-foreground,
+.navigation-panel__map--inspector .system-map__toolbar,
+.navigation-panel__map--inspector .system-map__toolbar-background {
+  right: 22rem;
+}
+
+.navigation-panel__map--inspector .system-map__system-position,
+.navigation-panel__map--inspector .system-map__system-telemetry--progress {
+  right: 23rem;
+}
+
+.navigation-panel__map--inspector .system-map__system-telemetry--text {
+  right: 22.75rem;
 }
 
 /* List view: animate normally (text rows are cheap to relayout) */
@@ -133,6 +148,11 @@
   right: 0rem;
   bottom: 0rem;
   overflow-y: scroll;
+  scrollbar-width: none;
+}
+
+.navigation-panel__map-foreground.scrollable::-webkit-scrollbar {
+  display: none;
 }
 
 .navigation-panel__map-foreground,
@@ -293,6 +313,18 @@
     top: 0;
     bottom: 50%;
     right: 0;
+  }
+
+  .navigation-panel__map--inspector .navigation-panel__map-foreground,
+  .navigation-panel__map--inspector .system-map__toolbar,
+  .navigation-panel__map--inspector .system-map__toolbar-background {
+    right: 0;
+  }
+
+  .navigation-panel__map--inspector .system-map__system-position,
+  .navigation-panel__map--inspector .system-map__system-telemetry--progress,
+  .navigation-panel__map--inspector .system-map__system-telemetry--text {
+    right: 1.5rem;
   }
 
   .navigation-panel__inspector {

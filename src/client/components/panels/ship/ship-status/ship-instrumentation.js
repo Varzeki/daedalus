@@ -38,7 +38,7 @@ export default function ShipInstrumentation ({ ship, cmdrStatus, toggleSwitches,
   },[scaledWrapper.current,scaledContent.current])
 
   return (
-    <div ref={scaledWrapper} style={{position: 'fixed', pointerEvents: 'none', top: '14.25rem', bottom: '2rem', right: '1rem', left: '5rem', xoverflow: 'hidden'}}>
+    <div ref={scaledWrapper} style={{position: 'fixed', pointerEvents: 'none', top: '4.75rem', bottom: '1.5rem', right: '0.5rem', left: '4.5rem', xoverflow: 'hidden'}}>
       <div
         ref={scaledContent}
         className='ship-panel__instrumentation fx-fade-in'

@@ -5,7 +5,20 @@
 }
 
 .exploration-route__table thead tr {
-  border-top: .2rem solid var(--color-primary);
+  border-top: none;
+}
+
+.exploration-route__table thead tr th:before {
+  position: absolute;
+  content: '';
+  display: block;
+  width: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-top: .1rem solid var(--color-primary);
+  box-shadow: none;
+  opacity: 0.5;
 }
 
 .exploration-route__table thead tr th:after {

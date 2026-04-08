@@ -33,10 +33,11 @@
 
 .layout__main {
   position: absolute;
-  top: 9.5rem;
+  top: 9rem;
   bottom: .5rem;
   left: .5rem;
   right: .5rem;
+  padding-top: .5rem;
   transition: opacity .25s ease-in-out;
   opacity: 0;
   overflow: hidden;
