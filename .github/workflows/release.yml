@@ -15,16 +15,26 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: 'npm'
 
       - uses: actions/setup-go@v5
         with:
           go-version: '1.22'
+          cache: true
 
-      - name: Install NSIS
-        run: choco install nsis -y
+      - name: Cache NSIS and UPX
+        id: cache-tools
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:\Program Files (x86)\NSIS
+            C:\ProgramData\chocolatey\lib\upx
+            C:\ProgramData\chocolatey\bin\upx.exe
+          key: nsis-upx-v1
 
-      - name: Install UPX
-        run: choco install upx -y
+      - name: Install NSIS and UPX
+        if: steps.cache-tools.outputs.cache-hit != 'true'
+        run: choco install nsis upx -y
 
       - name: Install dependencies
         run: npm ci
@@ -34,14 +44,15 @@ jobs:
         shell: bash
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
-      - name: Build client
-        run: npm run build:client
-
-      - name: Build app
-        run: npm run build:app
-
-      - name: Build service
-        run: npm run build:service
+      - name: Build client, app, and service
+        run: |
+          $clientJob = Start-Job { Set-Location $using:PWD; npm run build:client }
+          $appJob = Start-Job { Set-Location $using:PWD; npm run build:app }
+          $serviceJob = Start-Job { Set-Location $using:PWD; npm run build:service }
+          $clientJob, $appJob, $serviceJob | Wait-Job | Receive-Job
+          if ($clientJob.State -eq 'Failed' -or $appJob.State -eq 'Failed' -or $serviceJob.State -eq 'Failed') {
+            throw "One or more build jobs failed"
+          }
 
       - name: Smoke test binaries
         run: npm run build:verify

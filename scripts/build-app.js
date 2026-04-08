@@ -2,7 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const { execSync } = require('child_process')
 const ResEdit = require('resedit')
-const UPX = require('upx')({ brute: true })
+const UPX = require('upx')({ best: true })
 const yargs = require('yargs')
 const commandLineArgs = yargs.argv
 
