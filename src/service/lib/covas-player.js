@@ -13,13 +13,69 @@ const BUNDLED_VOICELINES_DIR = path.join(__dirname, '..', '..', '..', '..', 'gam
 const QUEUE_GAP_MS = 500
 
 let _preferencesCache = null
-let _currentProcess = null
+let _psProcess = null // Persistent PowerShell audio worker
+let _psResolve = null // Resolve callback for current playback
 let _queue = []
 let _playing = false
 let _debounceTimers = {}
 let _hullThresholdState = null // tracks which hull threshold was last announced
 let _oxygenThresholdState = null // tracks which oxygen threshold was last announced
 let _cargoFullAnnounced = false // tracks whether cargo full was already announced
+
+/**
+ * Get or create the persistent PowerShell audio worker process.
+ * Reads file paths from stdin, prints "DONE" to stdout when playback finishes.
+ */
+function getPsProcess () {
+  if (_psProcess && !_psProcess.killed) return _psProcess
+
+  const script = `
+Add-Type -AssemblyName PresentationCore
+$player = New-Object System.Windows.Media.MediaPlayer
+while ($true) {
+  $line = [Console]::In.ReadLine()
+  if ($line -eq $null) { break }
+  $line = $line.Trim()
+  if ($line -eq '') { continue }
+  if ($line -eq 'STOP') { $player.Stop(); $player.Close(); Write-Output 'DONE'; continue }
+  try {
+    $player.Open([Uri]$line)
+    $player.Play()
+    Start-Sleep -Milliseconds 500
+    while ($player.Position -lt $player.NaturalDuration.TimeSpan) { Start-Sleep -Milliseconds 100 }
+    $player.Close()
+  } catch {}
+  Write-Output 'DONE'
+}
+`
+
+  _psProcess = childProcess.spawn('powershell', ['-NoProfile', '-Command', '-'], {
+    windowsHide: true,
+    stdio: ['pipe', 'pipe', 'ignore']
+  })
+
+  _psProcess.stdout.setEncoding('utf8')
+  _psProcess.stdout.on('data', (data) => {
+    if (data.includes('DONE') && _psResolve) {
+      const resolve = _psResolve
+      _psResolve = null
+      resolve()
+    }
+  })
+
+  _psProcess.on('close', () => {
+    _psProcess = null
+    // If something was waiting, resolve it so the queue doesn't hang
+    if (_psResolve) {
+      const resolve = _psResolve
+      _psResolve = null
+      resolve()
+    }
+  })
+
+  _psProcess.stdin.write(script + '\n')
+  return _psProcess
+}
 
 function getPreferencesCached () {
   if (_preferencesCache) return _preferencesCache
@@ -47,39 +103,32 @@ function sleep (ms) {
 }
 
 /**
- * Play a WAV file using PowerShell's System.Media.SoundPlayer (Windows built-in).
+ * Play a WAV file using a persistent PowerShell worker process.
  * Returns a Promise that resolves when playback finishes.
  */
 function playWav (filePath) {
-  return new Promise((resolve, reject) => {
+  return new Promise((resolve) => {
     if (!fs.existsSync(filePath)) {
       return resolve() // Skip silently if file missing
     }
 
-    // Kill any currently playing audio
-    if (_currentProcess) {
-      try { _currentProcess.kill() } catch (_) {}
-      _currentProcess = null
+    try {
+      const proc = getPsProcess()
+      _psResolve = resolve
+
+      // Send file path to the persistent worker
+      proc.stdin.write(filePath.replace(/\\/g, '\\\\') + '\n')
+    } catch (e) {
+      resolve() // Don't hang on error
     }
 
-    const psCommand = `Add-Type -AssemblyName PresentationCore; $p = New-Object System.Windows.Media.MediaPlayer; $p.Open([Uri]"${filePath.replace(/\\/g, '\\\\')}"); $p.Play(); Start-Sleep -Milliseconds 500; while ($p.Position -lt $p.NaturalDuration.TimeSpan) { Start-Sleep -Milliseconds 100 }; $p.Close()`
-
-    const proc = childProcess.spawn('powershell', ['-NoProfile', '-Command', psCommand], {
-      windowsHide: true,
-      stdio: 'ignore'
-    })
-
-    _currentProcess = proc
-
-    proc.on('close', () => {
-      if (_currentProcess === proc) _currentProcess = null
-      resolve()
-    })
-
-    proc.on('error', () => {
-      if (_currentProcess === proc) _currentProcess = null
-      resolve() // Don't reject — just skip on error
-    })
+    // Safety timeout — if playback doesn't finish in 30s, move on
+    setTimeout(() => {
+      if (_psResolve === resolve) {
+        _psResolve = null
+        resolve()
+      }
+    }, 30000)
   })
 }
 
@@ -306,9 +355,13 @@ function handleCargoCapacity (cargoCount, cargoCapacity) {
 
 function stop () {
   _queue = []
-  if (_currentProcess) {
-    try { _currentProcess.kill() } catch (_) {}
-    _currentProcess = null
+  if (_psProcess && !_psProcess.killed) {
+    try { _psProcess.stdin.write('STOP\n') } catch (_) {}
+  }
+  if (_psResolve) {
+    const resolve = _psResolve
+    _psResolve = null
+    resolve()
   }
   _playing = false
 }
