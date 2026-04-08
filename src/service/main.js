@@ -83,8 +83,43 @@ global.LOG_DIR = LOG_DIR
 global.BROADCAST_EVENT = broadcastEvent
 
 // Initalise simple in-memory object cache (reset when program restarted)
+// LRU cache for systems to prevent unbounded memory growth in long sessions.
+// Uses a Proxy so consumers can use normal object syntax: CACHE.SYSTEMS[key]
+const LRU_MAX_ENTRIES = 500
+
+function createLRUCache (maxEntries) {
+  const cache = new Map()
+  return new Proxy({}, {
+    get (_, key) {
+      if (key === Symbol.iterator || key === 'length') return undefined
+      if (!cache.has(key)) return undefined
+      // Move to end (most recently used)
+      const value = cache.get(key)
+      cache.delete(key)
+      cache.set(key, value)
+      return value
+    },
+    set (_, key, value) {
+      if (cache.has(key)) cache.delete(key)
+      cache.set(key, value)
+      // Evict oldest entry if over limit
+      if (cache.size > maxEntries) {
+        const oldest = cache.keys().next().value
+        cache.delete(oldest)
+      }
+      return true
+    },
+    has (_, key) {
+      return cache.has(key)
+    },
+    deleteProperty (_, key) {
+      return cache.delete(key)
+    }
+  })
+}
+
 global.CACHE = {
-  SYSTEMS: {}
+  SYSTEMS: createLRUCache(LRU_MAX_ENTRIES)
 }
 
 // Don't load events till globals are set
