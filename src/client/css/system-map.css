@@ -54,7 +54,7 @@ on slow devices (e.g. Amazon Fire) to be the default */
 }
 
 .system-map__toolbar-background {
-  backdrop-filter: blur(.5rem) brightness(.25);
+  background: rgba(0, 0, 0, .85);
 }
 
 .map__info {
@@ -143,8 +143,7 @@ on slow devices (e.g. Amazon Fire) to be the default */
 }
 
 .system-map__system-information--open {
-  background: rgba(0,0,0,.75);
-  backdrop-filter: blur(.5rem) brightness(.25);
+  background: rgba(0,0,0,.85);
   clip-path: polygon(0 2.00rem,2.00rem 0,100% 0,100% calc(100% - 2.00rem),calc(100% - 2.00rem) 100%,0 100%);
   border-radius: .2rem;
   padding: .5rem 2.5rem .6rem .75rem;
@@ -209,6 +208,7 @@ on slow devices (e.g. Amazon Fire) to be the default */
   height: auto;
   padding-top: 1rem;
   padding-left: var(--system-map-left-margin);
+  contain: layout style;
 }
 
 .system-map__planetary-system:last-child {
@@ -220,24 +220,24 @@ on slow devices (e.g. Amazon Fire) to be the default */
   /* Don't display map SVG on page load for performance reasons */
   opacity: 0;
   visibility: hidden;
-  animation: svg-fade-in-animation 1s ease-in-out;
+  animation: svg-fade-in-animation .3s ease-out;
   animation-fill-mode: forwards;
   /* Wait until after other animations on page are done for best performance on slow devices */
-  animation-delay: 1s; 
+  animation-delay: .3s;
 }
 
 .system-map__planetary-system-star-icon svg {
   opacity: 0;
   visibility: hidden;
-  animation: fx-fade-in-animation 1s ease-in-out;
+  animation: svg-fade-in-animation .3s ease-out;
   animation-fill-mode: forwards;
   /* Wait until after other animations on page are done for best performance on slow devices */
-  animation-delay: .5s; 
+  animation-delay: .15s; 
 }
 
 @keyframes svg-fade-in-animation {
-  from { filter: contrast(2) blur(2rem); visibility: visible; opacity : 0; }
-  to { filter: contrast(1) blur(0); visibility: visible; opacity: 1; }
+  from { visibility: visible; opacity: 0; }
+  to { visibility: visible; opacity: 1; }
 }
 
 
@@ -281,6 +281,27 @@ on slow devices (e.g. Amazon Fire) to be the default */
   top: .25rem;
 }
 
+/* Hover highlight - reduced opacity version of focus effect */
+.system-map__planetary-system-map .system-map__system-object:hover:not(:focus) .system-map__planet {
+  stroke-width: 100 !important;
+  stroke: var(--color-system-map-focus) !important;
+  stroke-opacity: 0.4;
+  vector-effect: non-scaling-stroke;
+}
+
+.system-map__system-object:hover:not(:focus) .system-map__planetary-facility-icon,
+.system-map__system-object:hover:not(:focus) .system-map__planetary-port-icon,
+.system-map__system-object:hover:not(:focus) .system-map__planetary-lander-icon {
+  filter: drop-shadow(0 0 3rem var(--color-primary)) !important;
+  opacity: 0.7;
+}
+
+.system-map__system-object:hover:not(:focus) .system-map__station {
+  fill: var(--color-primary-dark);
+  stroke: var(--color-system-map-focus);
+  opacity: 0.7;
+}
+
 .system-map__system-object {
   outline: 0;
 }
@@ -294,7 +315,7 @@ on slow devices (e.g. Amazon Fire) to be the default */
   outline: none;
   stroke-width: 100 !important;
   stroke: var(--color-system-map-focus) !important;
-  transition: all .1s ease;
+  transition: stroke-width .1s ease, stroke .1s ease;
   vector-effect: non-scaling-stroke;
 }
 
@@ -303,19 +324,19 @@ on slow devices (e.g. Amazon Fire) to be the default */
 }
 
 .system-map__system-object[data-system-object-type="Planet"]:focus .system-map__planet {
-  filter: url(#svg-filter__planet-shadow) drop-shadow(0 0 8rem var(--color-primary-dark)) var(--filter-system-map-planet-not-landable) !important;
+  filter: url(#svg-filter__planet-shadow) drop-shadow(0 0 3rem var(--color-primary-dark)) var(--filter-system-map-planet-not-landable) !important;
 }
 
 .system-map__system-object[data-system-object-type="Planet"][data-system-object-small="true"]:focus .system-map__planet {
-  filter: url(#svg-filter__planet-shadow--small) drop-shadow(0 0 4rem var(--color-primary-dark)) var(--filter-system-map-planet-not-landable) !important;
+  filter: url(#svg-filter__planet-shadow--small) drop-shadow(0 0 2rem var(--color-primary-dark)) var(--filter-system-map-planet-not-landable) !important;
 }
 
 .system-map__system-object[data-system-object-type="Planet"][data-system-object-landable="true"]:focus .system-map__planet {
-  filter: url(#svg-filter__planet-shadow) drop-shadow(0 0 8rem var(--color-primary-dark)) var(--filter-system-map-planet-landable) !important;
+  filter: url(#svg-filter__planet-shadow) drop-shadow(0 0 3rem var(--color-primary-dark)) var(--filter-system-map-planet-landable) !important;
 }
 
 .system-map__system-object[data-system-object-type="Planet"][data-system-object-small="true"][data-system-object-landable="true"]:focus .system-map__planet {
-  filter: url(#svg-filter__planet-shadow--small) drop-shadow(0 0 4rem var(--color-primary-dark)) var(--filter-system-map-planet-landable) !important;
+  filter: url(#svg-filter__planet-shadow--small) drop-shadow(0 0 2rem var(--color-primary-dark)) var(--filter-system-map-planet-landable) !important;
 }
 
 /* .system-map__system-object[data-system-object-type="Planet"]:focus + .system-map__planet-ring {
@@ -384,7 +405,7 @@ on slow devices (e.g. Amazon Fire) to be the default */
 
 .system-map__system-object[data-system-object-type="Star"] .system-map__planet-surface {
   fill: white;
-  filter: grayscale(100%) contrast(0.2) brightness(1.5) drop-shadow(0 0 15rem white);
+  filter: grayscale(100%) contrast(0.2) brightness(1.5) drop-shadow(0 0 5rem white);
   opacity: 1;
   stroke: none;
 }
@@ -392,14 +413,14 @@ on slow devices (e.g. Amazon Fire) to be the default */
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type="Supermassive Black Hole" i] .system-map__planet-surface,
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type="Black Hole" i] .system-map__planet-surface {
   fill: black !important;
-  filter: drop-shadow(0 0 15rem white) !important;
+  filter: drop-shadow(0 0 5rem white) !important;
   stroke-width: 100;
   stroke: white !important;
 }
 
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type*="White Dwarf" i] .system-map__planet-surface,
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type="Neutron Star" i] .system-map__planet-surface {
-  filter: grayscale(100%) contrast(0.1) brightness(2) drop-shadow(0 0 7rem rgb(118, 173, 245)) drop-shadow(0 0 5rem rgb(53, 114, 255));
+  filter: grayscale(100%) contrast(0.1) brightness(2) drop-shadow(0 0 7rem rgb(118, 173, 245));
 }
 
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="O "] .system-map__planet-surface,
@@ -411,15 +432,15 @@ on slow devices (e.g. Amazon Fire) to be the default */
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="WC "] .system-map__planet-surface,
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="WN "] .system-map__planet-surface,
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="WO "] .system-map__planet-surface {
-  filter: grayscale(100%) contrast(0.2) brightness(1.8) drop-shadow(0 0 5rem rgb(222, 247, 255)) drop-shadow(0 0 10rem white) drop-shadow(0 0 10rem rgb(108, 196, 255));
+  filter: grayscale(100%) contrast(0.2) brightness(1.8) drop-shadow(0 0 5rem rgb(222, 247, 255));
 }
 
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="G "] .system-map__planet-surface {
-  filter: contrast(0.2) sepia(100%) hue-rotate(350deg) saturate(2) brightness(1.1) contrast(2) drop-shadow(0 0 5rem rgb(255, 236, 129)) drop-shadow(0 0 10rem rgb(255, 236, 129)) drop-shadow(0 0 10rem rgb(255, 166, 0));
+  filter: contrast(0.2) sepia(100%) hue-rotate(350deg) saturate(2) brightness(1.1) contrast(2) drop-shadow(0 0 5rem rgb(255, 236, 129));
 }
 
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="F "] .system-map__planet-surface {
-  filter: contrast(0.2) sepia(100%) hue-rotate(350deg) saturate(1) brightness(1.3) contrast(1.5) drop-shadow(0 0 5rem rgb(255, 244, 181)) drop-shadow(0 0 10rem rgb(255, 242, 168)) drop-shadow(0 0 10rem rgb(255, 220, 154));
+  filter: contrast(0.2) sepia(100%) hue-rotate(350deg) saturate(1) brightness(1.3) contrast(1.5) drop-shadow(0 0 5rem rgb(255, 244, 181));
 }
 
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="Ae "] .system-map__planet-surface,
@@ -434,18 +455,18 @@ on slow devices (e.g. Amazon Fire) to be the default */
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="MS "] .system-map__planet-surface,
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="WNC "] .system-map__planet-surface,
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="S "] .system-map__planet-surface {
-  filter: contrast(0.25) sepia(100%) hue-rotate(330deg) saturate(4) brightness(1.15) contrast(2) drop-shadow(0 0 5rem rgb(255, 236, 129)) drop-shadow(0 0 10rem rgb(255, 194, 81)) drop-shadow(0 0 10rem rgb(255, 187, 61));
+  filter: contrast(0.25) sepia(100%) hue-rotate(330deg) saturate(4) brightness(1.15) contrast(2) drop-shadow(0 0 5rem rgb(255, 194, 81));
 }
 
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="M "] .system-map__planet-surface {
-  filter: contrast(0.25) sepia(100%) hue-rotate(360deg) saturate(4) brightness(.9) contrast(1.5)  drop-shadow(0 0 5rem #ff8c00) drop-shadow(0 0 10rem #ff8c00) drop-shadow(0 0 10rem #ff8c00);
+  filter: contrast(0.25) sepia(100%) hue-rotate(360deg) saturate(4) brightness(.9) contrast(1.5) drop-shadow(0 0 5rem #ff8c00);
 }
 
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="L "] .system-map__planet-surface,
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="Y "] .system-map__planet-surface,
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type^="T "] .system-map__planet-surface,
 .system-map__system-object[data-system-object-type="Star"][data-system-object-sub-type*="Brown dwarf" i] .system-map__planet-surface {
-  filter: contrast(0.2) sepia(100%) hue-rotate(300deg) saturate(1.4) brightness(.4)  contrast(2) drop-shadow(0 0 15rem rgb(200,20,20));
+  filter: contrast(0.2) sepia(100%) hue-rotate(300deg) saturate(1.4) brightness(.4) contrast(2) drop-shadow(0 0 15rem rgb(200,20,20));
 }
 
 /* 
@@ -456,9 +477,9 @@ on slow devices (e.g. Amazon Fire) to be the default */
 
 .system-map__planetary-system-map {
   position: relative;
-  animation: fade-in-animation ease 1s;
+  animation: svg-fade-in-animation .3s ease-out;
   animation-fill-mode: forwards;
-  animation-delay: .5s;
+  animation-delay: .15s;
   opacity: 0;
   margin: 1rem auto auto auto;
   z-index: 2;
@@ -530,8 +551,8 @@ on slow devices (e.g. Amazon Fire) to be the default */
   fill: url(#system-map-svg-gradient__planet--atmosphere);
   stroke: var(--color-system-map-planet-atmosphere);
   stroke-width: 50;
-  filter: blur(5rem);
-  opacity: .75;
+  filter: blur(2rem);
+  opacity: .6;
 }
 
 .system-map__planet-ring {
@@ -562,20 +583,20 @@ on slow devices (e.g. Amazon Fire) to be the default */
   z-index: 5;
   display: block;
   fill: var(--color-info);
-  filter: drop-shadow(0 0 5rem var(--color-secondary)) drop-shadow(0 0 10rem var(--color-secondary)) drop-shadow(0 0 10rem var(--color-secondary-dark)) !important;
+  filter: drop-shadow(0 0 5rem var(--color-secondary)) !important;
  }
 
  .system-map__system-object:focus .system-map__planetary-facility-icon,
  .system-map__system-object:focus .system-map__planetary-port-icon,
  .system-map__system-object:focus .system-map__planetary-lander-icon {
-  filter: drop-shadow(0 0 5rem var(--color-primary)) drop-shadow(0 0 10rem var(--color-primary)) !important;
+  filter: drop-shadow(0 0 5rem var(--color-primary)) !important;
  }
 
  .system-map__system-object .system-map__station {
   stroke: var(--color-secondary);
   fill: var(--color-secondary-dark);
   stroke-width: 100;
-  transition: all .1s ease;
+  transition: stroke .1s ease, fill .1s ease;
   outline: none;
 }
 

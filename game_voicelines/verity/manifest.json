@@ -1,0 +1,1482 @@
+{
+  "3": {
+    "file": "3.wav",
+    "text": "3",
+    "duration": 0.58
+  },
+  "accelerated_shield_regeneration": {
+    "file": "accelerated_shield_regeneration.wav",
+    "text": "Accelerated Shield Regeneration",
+    "duration": 2.21
+  },
+  "access_denied": {
+    "file": "access_denied.wav",
+    "text": "Access denied.",
+    "duration": 1.37
+  },
+  "access_granted": {
+    "file": "access_granted.wav",
+    "text": "Access granted.",
+    "duration": 1.51
+  },
+  "affirmative": {
+    "file": "affirmative.wav",
+    "text": "Affirmative.",
+    "duration": 0.81
+  },
+  "alien_civilization_discovery": {
+    "file": "alien_civilization_discovery.wav",
+    "text": "Alien Civilization Discovery",
+    "duration": 2.59
+  },
+  "all_stellar_bodies_found": {
+    "file": "all_stellar_bodies_found.wav",
+    "text": "All stellar bodies found.",
+    "duration": 1.9
+  },
+  "all_system_bodies_located": {
+    "file": "all_system_bodies_located.wav",
+    "text": "All system bodies located.",
+    "duration": 2.12
+  },
+  "alliance_bounty_incurred": {
+    "file": "alliance_bounty_incurred.wav",
+    "text": "Alliance bounty, incurred.",
+    "duration": 1.97
+  },
+  "assembly_complete": {
+    "file": "assembly_complete.wav",
+    "text": "Assembly complete.",
+    "duration": 1.67
+  },
+  "assembly_initiated": {
+    "file": "assembly_initiated.wav",
+    "text": "Assembly initiated.",
+    "duration": 2
+  },
+  "asteroid_depleted": {
+    "file": "asteroid_depleted.wav",
+    "text": "Asteroid depleted.",
+    "duration": 1.38
+  },
+  "asteroid_scan_complete": {
+    "file": "asteroid_scan_complete.wav",
+    "text": "Asteroid scan complete.",
+    "duration": 2.14
+  },
+  "atmospheric_failure": {
+    "file": "atmospheric_failure.wav",
+    "text": "Atmospheric failure.",
+    "duration": 1.47
+  },
+  "boarding_permission_denied": {
+    "file": "boarding_permission_denied.wav",
+    "text": "Boarding permission denied.",
+    "duration": 1.54
+  },
+  "boarding_permission_granted": {
+    "file": "boarding_permission_granted.wav",
+    "text": "Boarding permission granted.",
+    "duration": 1.9
+  },
+  "boarding_successful": {
+    "file": "boarding_successful.wav",
+    "text": "Boarding successful.",
+    "duration": 1.22
+  },
+  "bounty_incurred": {
+    "file": "bounty_incurred.wav",
+    "text": "Bounty incurred.",
+    "duration": 1.13
+  },
+  "cabin_pressure_alert": {
+    "file": "cabin_pressure_alert.wav",
+    "text": "Cabin pressure alert.",
+    "duration": 1.51
+  },
+  "call_unsuccessful": {
+    "file": "call_unsuccessful.wav",
+    "text": "Call unsuccessful.",
+    "duration": 1.32
+  },
+  "caller_disconnected": {
+    "file": "caller_disconnected.wav",
+    "text": "Caller disconnected.",
+    "duration": 1.28
+  },
+  "cannot_comply": {
+    "file": "cannot_comply.wav",
+    "text": "Cannot comply.",
+    "duration": 1.22
+  },
+  "canopy_compromised": {
+    "file": "canopy_compromised.wav",
+    "text": "Canopy compromised.",
+    "duration": 1.51
+  },
+  "canopy_critical": {
+    "file": "canopy_critical.wav",
+    "text": "Canopy Critical",
+    "duration": 1.18
+  },
+  "canopy_integrity_at_50": {
+    "file": "canopy_integrity_at_50.wav",
+    "text": "Canopy integrity at 50%.",
+    "duration": 2.38
+  },
+  "capacity_exceeded": {
+    "file": "capacity_exceeded.wav",
+    "text": "Capacity exceeded.",
+    "duration": 1.9
+  },
+  "cargo_hold_at_maximum_capacity": {
+    "file": "cargo_hold_at_maximum_capacity.wav",
+    "text": "Cargo hold at maximum capacity.",
+    "duration": 2.72
+  },
+  "cargo_scoop_deployed": {
+    "file": "cargo_scoop_deployed.wav",
+    "text": "Cargo scoop deployed.",
+    "duration": 1.5
+  },
+  "cargo_scoop_retracted": {
+    "file": "cargo_scoop_retracted.wav",
+    "text": "Cargo scoop retracted.",
+    "duration": 1.82
+  },
+  "cargo_theft_in_progress": {
+    "file": "cargo_theft_in_progress.wav",
+    "text": "Cargo theft in progress.",
+    "duration": 1.61
+  },
+  "caustic_damage_detected": {
+    "file": "caustic_damage_detected.wav",
+    "text": "Caustic damage detected.",
+    "duration": 2.68
+  },
+  "caustic_substance_dissipated": {
+    "file": "caustic_substance_dissipated.wav",
+    "text": "Caustic substance dissipated.",
+    "duration": 2.1
+  },
+  "caustic_substance_neutralized": {
+    "file": "caustic_substance_neutralized.wav",
+    "text": "Caustic substance neutralized.",
+    "duration": 2.45
+  },
+  "chassis_integrity_compromised": {
+    "file": "chassis_integrity_compromised.wav",
+    "text": "Chassis integrity compromised.",
+    "duration": 1.97
+  },
+  "chassis_integrity_critical": {
+    "file": "chassis_integrity_critical.wav",
+    "text": "Chassis integrity critical.",
+    "duration": 1.69
+  },
+  "chassis_repaired": {
+    "file": "chassis_repaired.wav",
+    "text": "Chassis repaired",
+    "duration": 1.21
+  },
+  "collector_limpet_expired": {
+    "file": "collector_limpet_expired.wav",
+    "text": "Collector limpet expired.",
+    "duration": 1.91
+  },
+  "confirmed": {
+    "file": "confirmed.wav",
+    "text": "Confirmed.",
+    "duration": 1.04
+  },
+  "corrosion_damage_resistance_weakened": {
+    "file": "corrosion_damage_resistance_weakened.wav",
+    "text": "Corrosion. Damage resistance weakened.",
+    "duration": 3.49
+  },
+  "corrosive_damage_detected": {
+    "file": "corrosive_damage_detected.wav",
+    "text": "Corrosive damage detected.",
+    "duration": 2.67
+  },
+  "critical_alert": {
+    "file": "critical_alert.wav",
+    "text": "Critical alert.",
+    "duration": 1.8
+  },
+  "damage_detected": {
+    "file": "damage_detected.wav",
+    "text": "Damage detected",
+    "duration": 2.08
+  },
+  "decontamination_limpet_engaged": {
+    "file": "decontamination_limpet_engaged.wav",
+    "text": "Decontamination limpet engaged.",
+    "duration": 2.89
+  },
+  "decontamination_limpet_failed": {
+    "file": "decontamination_limpet_failed.wav",
+    "text": "Decontamination limpet failed.",
+    "duration": 2.56
+  },
+  "decontamination_limpet_successful": {
+    "file": "decontamination_limpet_successful.wav",
+    "text": "Decontamination limpet successful.",
+    "duration": 2.62
+  },
+  "deployment_sequence_complete": {
+    "file": "deployment_sequence_complete.wav",
+    "text": "Deployment sequence complete.",
+    "duration": 2.51
+  },
+  "detonation_failed": {
+    "file": "detonation_failed.wav",
+    "text": "Detonation failed.",
+    "duration": 1.81
+  },
+  "detonation_in_10_seconds": {
+    "file": "detonation_in_10_seconds.wav",
+    "text": "Detonation in 10 seconds.",
+    "duration": 2.75
+  },
+  "detonation_sequence_initiated": {
+    "file": "detonation_sequence_initiated.wav",
+    "text": "Detonation sequence initiated.",
+    "duration": 2.59
+  },
+  "diagnostic_repair_sequence_initiated": {
+    "file": "diagnostic_repair_sequence_initiated.wav",
+    "text": "Diagnostic repair sequence initiated.",
+    "duration": 2.73
+  },
+  "docking_computer_remote_connection_failure": {
+    "file": "docking_computer_remote_connection_failure.wav",
+    "text": "Docking computer, remote connection failure.",
+    "duration": 2.78
+  },
+  "docking_request_denied": {
+    "file": "docking_request_denied.wav",
+    "text": "Docking request denied.",
+    "duration": 1.68
+  },
+  "docking_request_granted": {
+    "file": "docking_request_granted.wav",
+    "text": "Docking request granted.",
+    "duration": 1.78
+  },
+  "docking_request_received": {
+    "file": "docking_request_received.wav",
+    "text": "Docking request received.",
+    "duration": 2.07
+  },
+  "docking_successful_engines_disengaged": {
+    "file": "docking_successful_engines_disengaged.wav",
+    "text": "Docking successful. Engines disengaged.",
+    "duration": 3.1
+  },
+  "drive_assist_off": {
+    "file": "drive_assist_off.wav",
+    "text": "Drive assist off.",
+    "duration": 1.27
+  },
+  "drive_assist_on": {
+    "file": "drive_assist_on.wav",
+    "text": "Drive assist on.",
+    "duration": 1.23
+  },
+  "early_detonation_detected": {
+    "file": "early_detonation_detected.wav",
+    "text": "Early detonation detected.",
+    "duration": 1.82
+  },
+  "eject": {
+    "file": "eject.wav",
+    "text": "Eject.",
+    "duration": 0.62
+  },
+  "energy_surge_detected": {
+    "file": "energy_surge_detected.wav",
+    "text": "Energy surge detected.",
+    "duration": 1.86
+  },
+  "engage": {
+    "file": "engage.wav",
+    "text": "Engage.",
+    "duration": 0.83
+  },
+  "engine_disruption_drives_locked_at_minimum_level": {
+    "file": "engine_disruption_drives_locked_at_minimum_level.wav",
+    "text": "Engine disruption. Drives locked at minimum level.",
+    "duration": 3.93
+  },
+  "engine_reboot": {
+    "file": "engine_reboot.wav",
+    "text": "Engine reboot.",
+    "duration": 1.83
+  },
+  "excess_cargo_detected": {
+    "file": "excess_cargo_detected.wav",
+    "text": "Excess cargo detected.",
+    "duration": 2.16
+  },
+  "explosive_damage_detected": {
+    "file": "explosive_damage_detected.wav",
+    "text": "Explosive damage detected.",
+    "duration": 2.81
+  },
+  "federal_bounty_incurred": {
+    "file": "federal_bounty_incurred.wav",
+    "text": "Federal bounty incurred.",
+    "duration": 2.06
+  },
+  "fighter_assembly_complete": {
+    "file": "fighter_assembly_complete.wav",
+    "text": "Fighter assembly complete.",
+    "duration": 1.6
+  },
+  "fighter_assembly_initiated": {
+    "file": "fighter_assembly_initiated.wav",
+    "text": "Fighter assembly initiated.",
+    "duration": 2.04
+  },
+  "fighter_deployed": {
+    "file": "fighter_deployed.wav",
+    "text": "Fighter deployed.",
+    "duration": 1.16
+  },
+  "fighter_deployment_sequence_initiated": {
+    "file": "fighter_deployment_sequence_initiated.wav",
+    "text": "Fighter deployment sequence initiated.",
+    "duration": 2.48
+  },
+  "fighter_destroyed": {
+    "file": "fighter_destroyed.wav",
+    "text": "Fighter destroyed.",
+    "duration": 1.18
+  },
+  "fighter_docking_sequence_initiated": {
+    "file": "fighter_docking_sequence_initiated.wav",
+    "text": "Fighter docking sequence initiated.",
+    "duration": 2.23
+  },
+  "fighter_holding_position": {
+    "file": "fighter_holding_position.wav",
+    "text": "Fighter holding position.",
+    "duration": 1.7
+  },
+  "fighter_recalled": {
+    "file": "fighter_recalled.wav",
+    "text": "Fighter recalled.",
+    "duration": 1.28
+  },
+  "fighter_requesting_to_dock": {
+    "file": "fighter_requesting_to_dock.wav",
+    "text": "Fighter, requesting to dock.",
+    "duration": 2.04
+  },
+  "fighter_resuming_formation": {
+    "file": "fighter_resuming_formation.wav",
+    "text": "Fighter resuming formation",
+    "duration": 1.94
+  },
+  "fighter_retrieval_sequence_initiated": {
+    "file": "fighter_retrieval_sequence_initiated.wav",
+    "text": "Fighter retrieval sequence initiated.",
+    "duration": 2.58
+  },
+  "fighter_shields_offline": {
+    "file": "fighter_shields_offline.wav",
+    "text": "Fighter Shields Offline",
+    "duration": 1.81
+  },
+  "fighter_unable_to_dock": {
+    "file": "fighter_unable_to_dock.wav",
+    "text": "Fighter unable to dock.",
+    "duration": 1.42
+  },
+  "fighter_under_attack": {
+    "file": "fighter_under_attack.wav",
+    "text": "Fighter, under attack.",
+    "duration": 1.61
+  },
+  "firmal_signature_restored": {
+    "file": "firmal_signature_restored.wav",
+    "text": "Firmal signature restored.",
+    "duration": 1.71
+  },
+  "five": {
+    "file": "five.wav",
+    "text": "Five.",
+    "duration": 0.62
+  },
+  "flak_damage_detected": {
+    "file": "flak_damage_detected.wav",
+    "text": "Flak damage detected.",
+    "duration": 2.56
+  },
+  "flight_assist_off": {
+    "file": "flight_assist_off.wav",
+    "text": "Flight assist off.",
+    "duration": 1.54
+  },
+  "flight_assist_on": {
+    "file": "flight_assist_on.wav",
+    "text": "Flight assist on.",
+    "duration": 1.58
+  },
+  "four": {
+    "file": "four.wav",
+    "text": "Four.",
+    "duration": 0.6
+  },
+  "frameshift_anomaly_detected": {
+    "file": "frameshift_anomaly_detected.wav",
+    "text": "Frameshift anomaly detected.",
+    "duration": 1.96
+  },
+  "frameshift_charge_detected": {
+    "file": "frameshift_charge_detected.wav",
+    "text": "Frameshift charge detected.",
+    "duration": 1.98
+  },
+  "frameshift_drive_charging": {
+    "file": "frameshift_drive_charging.wav",
+    "text": "Frameshift drive charging.",
+    "duration": 1.88
+  },
+  "frameshift_drive_reboot": {
+    "file": "frameshift_drive_reboot.wav",
+    "text": "Frameshift Drive Reboot",
+    "duration": 2.35
+  },
+  "frameshift_drive_supercharged": {
+    "file": "frameshift_drive_supercharged.wav",
+    "text": "Frameshift drive supercharged.",
+    "duration": 1.94
+  },
+  "fuel_replenished": {
+    "file": "fuel_replenished.wav",
+    "text": "Fuel Replenished",
+    "duration": 1.25
+  },
+  "fuel_scoop_disengaged": {
+    "file": "fuel_scoop_disengaged.wav",
+    "text": "Fuel scoop disengaged.",
+    "duration": 1.64
+  },
+  "fuel_scooping": {
+    "file": "fuel_scooping.wav",
+    "text": "Fuel scooping.",
+    "duration": 0.98
+  },
+  "fuel_scooping_complete": {
+    "file": "fuel_scooping_complete.wav",
+    "text": "Fuel scooping complete.",
+    "duration": 1.63
+  },
+  "fuel_transfer_limpet_failed": {
+    "file": "fuel_transfer_limpet_failed.wav",
+    "text": "Fuel transfer limpet failed.",
+    "duration": 2.07
+  },
+  "handbrake_is_on": {
+    "file": "handbrake_is_on.wav",
+    "text": "Handbrake is on.",
+    "duration": 1.19
+  },
+  "hatchbreaker_limpet_avoided": {
+    "file": "hatchbreaker_limpet_avoided.wav",
+    "text": "Hatchbreaker limpet avoided.",
+    "duration": 1.86
+  },
+  "hatchbreaker_limpet_engaged": {
+    "file": "hatchbreaker_limpet_engaged.wav",
+    "text": "Hatchbreaker limpet engaged.",
+    "duration": 1.71
+  },
+  "hatchbreaker_limpet_expired": {
+    "file": "hatchbreaker_limpet_expired.wav",
+    "text": "Hatchbreaker limpet expired.",
+    "duration": 1.84
+  },
+  "heatsink_deployed": {
+    "file": "heatsink_deployed.wav",
+    "text": "Heatsink deployed.",
+    "duration": 1.32
+  },
+  "high_gravity_warning": {
+    "file": "high_gravity_warning.wav",
+    "text": "High gravity warning.",
+    "duration": 1.35
+  },
+  "hull_integrity_compromised": {
+    "file": "hull_integrity_compromised.wav",
+    "text": "Hull Integrity Compromised",
+    "duration": 2
+  },
+  "hull_integrity_critical": {
+    "file": "hull_integrity_critical.wav",
+    "text": "Hull Integrity Critical",
+    "duration": 1.49
+  },
+  "hull_repaired": {
+    "file": "hull_repaired.wav",
+    "text": "Hull repaired.",
+    "duration": 1.01
+  },
+  "imperial_bounty_incurred": {
+    "file": "imperial_bounty_incurred.wav",
+    "text": "Imperial bounty incurred.",
+    "duration": 2.1
+  },
+  "incoming_audio_message": {
+    "file": "incoming_audio_message.wav",
+    "text": "Incoming audio message.",
+    "duration": 2
+  },
+  "incoming_decontamination_limpet": {
+    "file": "incoming_decontamination_limpet.wav",
+    "text": "Incoming decontamination limpet.",
+    "duration": 2.25
+  },
+  "incoming_fuel": {
+    "file": "incoming_fuel.wav",
+    "text": "Incoming fuel.",
+    "duration": 1.2
+  },
+  "incoming_galnet_transmission": {
+    "file": "incoming_galnet_transmission.wav",
+    "text": "Incoming Galnet transmission.",
+    "duration": 2.07
+  },
+  "incoming_hail": {
+    "file": "incoming_hail.wav",
+    "text": "Incoming hail.",
+    "duration": 1.08
+  },
+  "incoming_message": {
+    "file": "incoming_message.wav",
+    "text": "Incoming message.",
+    "duration": 1.23
+  },
+  "incoming_mission_critical_message": {
+    "file": "incoming_mission_critical_message.wav",
+    "text": "Incoming mission critical message.",
+    "duration": 2.17
+  },
+  "incoming_notification": {
+    "file": "incoming_notification.wav",
+    "text": "Incoming Notification",
+    "duration": 1.93
+  },
+  "incoming_repair_limpet": {
+    "file": "incoming_repair_limpet.wav",
+    "text": "Incoming Repair Limpet",
+    "duration": 1.71
+  },
+  "incoming_signal": {
+    "file": "incoming_signal.wav",
+    "text": "Incoming signal.",
+    "duration": 1.51
+  },
+  "incoming_telepresence_request": {
+    "file": "incoming_telepresence_request.wav",
+    "text": "Incoming telepresence request.",
+    "duration": 2.27
+  },
+  "incoming_transmission": {
+    "file": "incoming_transmission.wav",
+    "text": "Incoming transmission.",
+    "duration": 1.55
+  },
+  "interstellar_bounty_incurred": {
+    "file": "interstellar_bounty_incurred.wav",
+    "text": "Interstellar bounty incurred.",
+    "duration": 2.22
+  },
+  "landing_gear_deployed": {
+    "file": "landing_gear_deployed.wav",
+    "text": "landing gear deployed",
+    "duration": 1.39
+  },
+  "limp_it_avoided": {
+    "file": "limp_it_avoided.wav",
+    "text": "Limp it, avoided.",
+    "duration": 1.37
+  },
+  "limpet_drone_error": {
+    "file": "limpet_drone_error.wav",
+    "text": "Limpet Drone Error",
+    "duration": 1.41
+  },
+  "limpet_drone_error_deploy_cargo_hatch": {
+    "file": "limpet_drone_error_deploy_cargo_hatch.wav",
+    "text": "Limpet drone error. Deploy cargo hatch.",
+    "duration": 2.92
+  },
+  "limpet_engaged": {
+    "file": "limpet_engaged.wav",
+    "text": "Limpet engaged.",
+    "duration": 1.54
+  },
+  "limpet_error": {
+    "file": "limpet_error.wav",
+    "text": "Limpet error.",
+    "duration": 1.47
+  },
+  "limpet_failed": {
+    "file": "limpet_failed.wav",
+    "text": "Limpet failed.",
+    "duration": 1.59
+  },
+  "limpet_incoming": {
+    "file": "limpet_incoming.wav",
+    "text": "Limpet incoming",
+    "duration": 1.76
+  },
+  "limpet_link_established": {
+    "file": "limpet_link_established.wav",
+    "text": "Limpet link established.",
+    "duration": 2.18
+  },
+  "limpet_successful": {
+    "file": "limpet_successful.wav",
+    "text": "Limpet successful.",
+    "duration": 1.66
+  },
+  "limpit_expired": {
+    "file": "limpit_expired.wav",
+    "text": "Limpit expired.",
+    "duration": 1.46
+  },
+  "london_gear_retracted": {
+    "file": "london_gear_retracted.wav",
+    "text": "London Gear Retracted",
+    "duration": 1.63
+  },
+  "low_gravity_warning": {
+    "file": "low_gravity_warning.wav",
+    "text": "Low gravity warning.",
+    "duration": 1.4
+  },
+  "main_fuel_tank_drained": {
+    "file": "main_fuel_tank_drained.wav",
+    "text": "Main fuel tank drained.",
+    "duration": 1.51
+  },
+  "main_fuel_tank_low": {
+    "file": "main_fuel_tank_low.wav",
+    "text": "Main fuel tank low.",
+    "duration": 1.51
+  },
+  "malfunction_detected": {
+    "file": "malfunction_detected.wav",
+    "text": "malfunction detected",
+    "duration": 1.71
+  },
+  "massive_frameshift_surge_detected": {
+    "file": "massive_frameshift_surge_detected.wav",
+    "text": "Massive frameshift surge detected.",
+    "duration": 2.59
+  },
+  "mission_failed": {
+    "file": "mission_failed.wav",
+    "text": "Mission failed.",
+    "duration": 1.05
+  },
+  "mission_objective_complete": {
+    "file": "mission_objective_complete.wav",
+    "text": "Mission objective complete.",
+    "duration": 1.6
+  },
+  "mission_objective_detected": {
+    "file": "mission_objective_detected.wav",
+    "text": "Mission objective detected.",
+    "duration": 1.61
+  },
+  "module_delivery_complete": {
+    "file": "module_delivery_complete.wav",
+    "text": "Module delivery complete.",
+    "duration": 1.86
+  },
+  "module_malfunction": {
+    "file": "module_malfunction.wav",
+    "text": "Module malfunction.",
+    "duration": 1.3
+  },
+  "module_repaired": {
+    "file": "module_repaired.wav",
+    "text": "Module repaired",
+    "duration": 1.08
+  },
+  "module_transfer_complete": {
+    "file": "module_transfer_complete.wav",
+    "text": "Module transfer complete.",
+    "duration": 1.92
+  },
+  "mothership_fsd_charging": {
+    "file": "mothership_fsd_charging.wav",
+    "text": "Mothership FSD charging.",
+    "duration": 2.98
+  },
+  "mothership_holding_position": {
+    "file": "mothership_holding_position.wav",
+    "text": "Mothership holding position.",
+    "duration": 1.79
+  },
+  "mothership_hull_critical": {
+    "file": "mothership_hull_critical.wav",
+    "text": "Mothership Hull, critical.",
+    "duration": 1.69
+  },
+  "mothership_resuming_formation": {
+    "file": "mothership_resuming_formation.wav",
+    "text": "Mothership resuming formation.",
+    "duration": 2.07
+  },
+  "mothership_shields_offline": {
+    "file": "mothership_shields_offline.wav",
+    "text": "Mothership Shields, offline.",
+    "duration": 2.07
+  },
+  "mothership_under_attack": {
+    "file": "mothership_under_attack.wav",
+    "text": "Mothership under attack.",
+    "duration": 1.66
+  },
+  "new_codex_entry": {
+    "file": "new_codex_entry.wav",
+    "text": "New codex entry.",
+    "duration": 1.55
+  },
+  "new_discovery": {
+    "file": "new_discovery.wav",
+    "text": "New discovery.",
+    "duration": 1.26
+  },
+  "new_galnet_content": {
+    "file": "new_galnet_content.wav",
+    "text": "New Galnet content.",
+    "duration": 1.62
+  },
+  "new_gas_giant_discovered": {
+    "file": "new_gas_giant_discovered.wav",
+    "text": "New gas giant discovered.",
+    "duration": 2.02
+  },
+  "new_geology_discovered": {
+    "file": "new_geology_discovered.wav",
+    "text": "New geology discovered.",
+    "duration": 1.97
+  },
+  "new_life_form_discovered": {
+    "file": "new_life_form_discovered.wav",
+    "text": "New life form discovered.",
+    "duration": 1.78
+  },
+  "new_signal_detected": {
+    "file": "new_signal_detected.wav",
+    "text": "New signal detected",
+    "duration": 1.94
+  },
+  "new_star_discovered": {
+    "file": "new_star_discovered.wav",
+    "text": "New star discovered.",
+    "duration": 1.79
+  },
+  "new_terrestrial_discovered": {
+    "file": "new_terrestrial_discovered.wav",
+    "text": "New Terrestrial Discovered",
+    "duration": 2.01
+  },
+  "no_cargo_detected": {
+    "file": "no_cargo_detected.wav",
+    "text": "No cargo detected.",
+    "duration": 1.51
+  },
+  "no_probes_remaining": {
+    "file": "no_probes_remaining.wav",
+    "text": "No probes remaining.",
+    "duration": 1.82
+  },
+  "one": {
+    "file": "one.wav",
+    "text": "One.",
+    "duration": 0.52
+  },
+  "orbital_flight_engaged": {
+    "file": "orbital_flight_engaged.wav",
+    "text": "Orbital flight engaged.",
+    "duration": 1.62
+  },
+  "order_received": {
+    "file": "order_received.wav",
+    "text": "Order received.",
+    "duration": 1.21
+  },
+  "out_of_bounds_warning": {
+    "file": "out_of_bounds_warning.wav",
+    "text": "Out of bounds warning.",
+    "duration": 1.38
+  },
+  "oxygen_depleted": {
+    "file": "oxygen_depleted.wav",
+    "text": "Oxygen depleted.",
+    "duration": 1.52
+  },
+  "passenger_escape_pod_launched": {
+    "file": "passenger_escape_pod_launched.wav",
+    "text": "Passenger escape pod launched.",
+    "duration": 1.75
+  },
+  "pilots_federation_bounty_incurred": {
+    "file": "pilots_federation_bounty_incurred.wav",
+    "text": "Pilots' Federation bounty incurred.",
+    "duration": 3.46
+  },
+  "plotting_route": {
+    "file": "plotting_route.wav",
+    "text": "Plotting route.",
+    "duration": 0.96
+  },
+  "power_plant_capacity_exceeded": {
+    "file": "power_plant_capacity_exceeded.wav",
+    "text": "Power plant capacity exceeded.",
+    "duration": 2.18
+  },
+  "probe_launched": {
+    "file": "probe_launched.wav",
+    "text": "Probe launched.",
+    "duration": 1.65
+  },
+  "process_complete": {
+    "file": "process_complete.wav",
+    "text": "Process complete.",
+    "duration": 1.47
+  },
+  "process_failed": {
+    "file": "process_failed.wav",
+    "text": "Process failed.",
+    "duration": 1.93
+  },
+  "process_initiated": {
+    "file": "process_initiated.wav",
+    "text": "Process initiated.",
+    "duration": 1.84
+  },
+  "processing": {
+    "file": "processing.wav",
+    "text": "Processing",
+    "duration": 1.64
+  },
+  "programming_limpet_drone": {
+    "file": "programming_limpet_drone.wav",
+    "text": "Programming Limpet Drone",
+    "duration": 1.5
+  },
+  "prospect_olympit_engaged": {
+    "file": "prospect_olympit_engaged.wav",
+    "text": "Prospect Olympit engaged.",
+    "duration": 1.89
+  },
+  "prospect_olympit_expired": {
+    "file": "prospect_olympit_expired.wav",
+    "text": "Prospect Olympit, expired.",
+    "duration": 1.99
+  },
+  "prospect_olympit_failed": {
+    "file": "prospect_olympit_failed.wav",
+    "text": "Prospect Olympit failed.",
+    "duration": 1.86
+  },
+  "ready_to_engage": {
+    "file": "ready_to_engage.wav",
+    "text": "Ready to engage.",
+    "duration": 1.09
+  },
+  "receiving_fuel": {
+    "file": "receiving_fuel.wav",
+    "text": "Receiving fuel.",
+    "duration": 1.05
+  },
+  "receiving_shield_generation_boost": {
+    "file": "receiving_shield_generation_boost.wav",
+    "text": "Receiving shield generation boost",
+    "duration": 2.08
+  },
+  "recon_limpet_engaged": {
+    "file": "recon_limpet_engaged.wav",
+    "text": "Recon limpet engaged.",
+    "duration": 2.24
+  },
+  "recon_limpet_error": {
+    "file": "recon_limpet_error.wav",
+    "text": "Recon limpet error",
+    "duration": 2.03
+  },
+  "recon_limpet_expired": {
+    "file": "recon_limpet_expired.wav",
+    "text": "Recon limpet expired.",
+    "duration": 2.21
+  },
+  "recon_limpet_failed": {
+    "file": "recon_limpet_failed.wav",
+    "text": "Recon limpet failed",
+    "duration": 1.96
+  },
+  "recon_limpet_link_established": {
+    "file": "recon_limpet_link_established.wav",
+    "text": "Recon limpet link established.",
+    "duration": 2.32
+  },
+  "recon_limpet_successful": {
+    "file": "recon_limpet_successful.wav",
+    "text": "Recon limpet successful.",
+    "duration": 2.13
+  },
+  "repair_complete": {
+    "file": "repair_complete.wav",
+    "text": "Repair complete.",
+    "duration": 1.64
+  },
+  "repair_limpet_engaged": {
+    "file": "repair_limpet_engaged.wav",
+    "text": "Repair limpet, engaged.",
+    "duration": 2.03
+  },
+  "repair_limpet_failed": {
+    "file": "repair_limpet_failed.wav",
+    "text": "Repair limpet failed.",
+    "duration": 1.91
+  },
+  "repair_limpet_successful": {
+    "file": "repair_limpet_successful.wav",
+    "text": "Repair limpet successful.",
+    "duration": 1.94
+  },
+  "repair_sequence_failed_unable_to_process": {
+    "file": "repair_sequence_failed_unable_to_process.wav",
+    "text": "Repair sequence failed. Unable to process.",
+    "duration": 3.24
+  },
+  "repair_sequence_successful": {
+    "file": "repair_sequence_successful.wav",
+    "text": "Repair sequence successful.",
+    "duration": 1.86
+  },
+  "request_denied": {
+    "file": "request_denied.wav",
+    "text": "Request denied.",
+    "duration": 1.71
+  },
+  "request_granted": {
+    "file": "request_granted.wav",
+    "text": "Request granted.",
+    "duration": 1.79
+  },
+  "research_limpet_engaged": {
+    "file": "research_limpet_engaged.wav",
+    "text": "Research limpet engaged.",
+    "duration": 2.24
+  },
+  "research_limpet_failed": {
+    "file": "research_limpet_failed.wav",
+    "text": "Research limpet failed",
+    "duration": 2.06
+  },
+  "research_limpet_successful": {
+    "file": "research_limpet_successful.wav",
+    "text": "Research limpet successful",
+    "duration": 2.2
+  },
+  "resource_depleted": {
+    "file": "resource_depleted.wav",
+    "text": "Resource depleted.",
+    "duration": 1.64
+  },
+  "resource_expired": {
+    "file": "resource_expired.wav",
+    "text": "Resource expired.",
+    "duration": 1.74
+  },
+  "root_plotted": {
+    "file": "root_plotted.wav",
+    "text": "Root plotted.",
+    "duration": 1.15
+  },
+  "rotational_correction_disabled": {
+    "file": "rotational_correction_disabled.wav",
+    "text": "Rotational correction disabled.",
+    "duration": 2.04
+  },
+  "rotational_correction_enabled": {
+    "file": "rotational_correction_enabled.wav",
+    "text": "Rotational correction enabled.",
+    "duration": 2.15
+  },
+  "scan_detected": {
+    "file": "scan_detected.wav",
+    "text": "Scan detected.",
+    "duration": 1.23
+  },
+  "security_forces_detected": {
+    "file": "security_forces_detected.wav",
+    "text": "Security forces detected.",
+    "duration": 2.08
+  },
+  "security_forces_inbound": {
+    "file": "security_forces_inbound.wav",
+    "text": "Security forces inbound.",
+    "duration": 2.18
+  },
+  "seismic_charge_disarmed": {
+    "file": "seismic_charge_disarmed.wav",
+    "text": "Seismic charge disarmed.",
+    "duration": 2.16
+  },
+  "selfdestruct_in_10_seconds": {
+    "file": "selfdestruct_in_10_seconds.wav",
+    "text": "Self-destruct in 10 seconds.",
+    "duration": 2.73
+  },
+  "selfdestruct_in_20_seconds": {
+    "file": "selfdestruct_in_20_seconds.wav",
+    "text": "Self-destruct in 20 seconds.",
+    "duration": 2.58
+  },
+  "selfdestruct_in_five": {
+    "file": "selfdestruct_in_five.wav",
+    "text": "self-destruct in five.",
+    "duration": 2.01
+  },
+  "selfdestruct_sequence_disengaged": {
+    "file": "selfdestruct_sequence_disengaged.wav",
+    "text": "Self-destruct sequence disengaged.",
+    "duration": 2.52
+  },
+  "selfdestruct_sequence_initiated": {
+    "file": "selfdestruct_sequence_initiated.wav",
+    "text": "Self-destruct sequence initiated.",
+    "duration": 2.42
+  },
+  "selfinflicted_damage_detected": {
+    "file": "selfinflicted_damage_detected.wav",
+    "text": "self-inflicted damage detected.",
+    "duration": 2.91
+  },
+  "shield_boost": {
+    "file": "shield_boost.wav",
+    "text": "Shield boost",
+    "duration": 0.97
+  },
+  "shield_breach_attack": {
+    "file": "shield_breach_attack.wav",
+    "text": "Shield breach attack",
+    "duration": 2
+  },
+  "shield_generator_attack": {
+    "file": "shield_generator_attack.wav",
+    "text": "Shield generator attack",
+    "duration": 2.48
+  },
+  "shields_offline": {
+    "file": "shields_offline.wav",
+    "text": "Shields offline.",
+    "duration": 1.27
+  },
+  "shields_online": {
+    "file": "shields_online.wav",
+    "text": "Shields Online",
+    "duration": 1.26
+  },
+  "ship_delivery_complete": {
+    "file": "ship_delivery_complete.wav",
+    "text": "Ship delivery complete.",
+    "duration": 1.84
+  },
+  "ship_dismissed": {
+    "file": "ship_dismissed.wav",
+    "text": "Ship dismissed.",
+    "duration": 1.07
+  },
+  "ship_ready_for_boarding": {
+    "file": "ship_ready_for_boarding.wav",
+    "text": "Ship ready for boarding.",
+    "duration": 1.3
+  },
+  "ship_recalled": {
+    "file": "ship_recalled.wav",
+    "text": "Ship recalled.",
+    "duration": 1.13
+  },
+  "ship_released_engines_engaged": {
+    "file": "ship_released_engines_engaged.wav",
+    "text": "Ship released. Engines engaged.",
+    "duration": 2.51
+  },
+  "ship_transfer_complete": {
+    "file": "ship_transfer_complete.wav",
+    "text": "Ship transfer complete.",
+    "duration": 2.14
+  },
+  "signal_clarified": {
+    "file": "signal_clarified.wav",
+    "text": "Signal clarified.",
+    "duration": 1.74
+  },
+  "silent_running": {
+    "file": "silent_running.wav",
+    "text": "Silent running",
+    "duration": 1.04
+  },
+  "speed_surge": {
+    "file": "speed_surge.wav",
+    "text": "Speed Surge",
+    "duration": 1.15
+  },
+  "stealth_mode": {
+    "file": "stealth_mode.wav",
+    "text": "Stealth Mode",
+    "duration": 0.87
+  },
+  "stow_sequence_complete": {
+    "file": "stow_sequence_complete.wav",
+    "text": "Stow sequence complete.",
+    "duration": 2.27
+  },
+  "surface_scan_complete": {
+    "file": "surface_scan_complete.wav",
+    "text": "Surface scan complete.",
+    "duration": 2.15
+  },
+  "surface_scanned_by_50": {
+    "file": "surface_scanned_by_50.wav",
+    "text": "Surface scanned by 50%.",
+    "duration": 3.32
+  },
+  "system_compromised": {
+    "file": "system_compromised.wav",
+    "text": "System compromised.",
+    "duration": 1.73
+  },
+  "system_reboot_sequence_initiated": {
+    "file": "system_reboot_sequence_initiated.wav",
+    "text": "System reboot sequence initiated.",
+    "duration": 2.56
+  },
+  "system_scan_complete": {
+    "file": "system_scan_complete.wav",
+    "text": "System scan complete.",
+    "duration": 2.21
+  },
+  "systems_compromised": {
+    "file": "systems_compromised.wav",
+    "text": "Systems compromised.",
+    "duration": 1.74
+  },
+  "taking_damage": {
+    "file": "taking_damage.wav",
+    "text": "Taking damage",
+    "duration": 1.13
+  },
+  "target_cargo_destroyed": {
+    "file": "target_cargo_destroyed.wav",
+    "text": "Target cargo destroyed.",
+    "duration": 2
+  },
+  "target_cargo_dropped": {
+    "file": "target_cargo_dropped.wav",
+    "text": "Target cargo dropped.",
+    "duration": 1.46
+  },
+  "target_destroyed": {
+    "file": "target_destroyed.wav",
+    "text": "Target destroyed.",
+    "duration": 1.32
+  },
+  "target_material_destroyed": {
+    "file": "target_material_destroyed.wav",
+    "text": "Target material destroyed.",
+    "duration": 2.3
+  },
+  "target_shields_offline": {
+    "file": "target_shields_offline.wav",
+    "text": "Target shields offline.",
+    "duration": 1.71
+  },
+  "target_shields_online": {
+    "file": "target_shields_online.wav",
+    "text": "Target shields online.",
+    "duration": 1.81
+  },
+  "target_structure_destroyed_thermal_cascade_event_detected": {
+    "file": "target_structure_destroyed_thermal_cascade_event_detected.wav",
+    "text": "Target structure destroyed. Thermal cascade event detected.",
+    "duration": 4.2
+  },
+  "target_structure_destroyed_thermal_spike_detected": {
+    "file": "target_structure_destroyed_thermal_spike_detected.wav",
+    "text": "Target structure destroyed, thermal spike detected.",
+    "duration": 3.59
+  },
+  "targeting_overload_attack_automatic_weapon_scrambled": {
+    "file": "targeting_overload_attack_automatic_weapon_scrambled.wav",
+    "text": "Targeting overload attack. Automatic weapon scrambled.",
+    "duration": 4.42
+  },
+  "telepresence_crew_member_connected": {
+    "file": "telepresence_crew_member_connected.wav",
+    "text": "Telepresence crew member connected.",
+    "duration": 2.26
+  },
+  "telepresence_crew_member_disconnected": {
+    "file": "telepresence_crew_member_disconnected.wav",
+    "text": "Telepresence crew member disconnected.",
+    "duration": 2.58
+  },
+  "telepresence_disruption_detected": {
+    "file": "telepresence_disruption_detected.wav",
+    "text": "Telepresence disruption detected.",
+    "duration": 2.5
+  },
+  "temperature_stabilising": {
+    "file": "temperature_stabilising.wav",
+    "text": "Temperature stabilising.",
+    "duration": 1.73
+  },
+  "thermic_damage_detected": {
+    "file": "thermic_damage_detected.wav",
+    "text": "Thermic damage detected.",
+    "duration": 2.6
+  },
+  "thrusters_offline": {
+    "file": "thrusters_offline.wav",
+    "text": "Thrusters Offline.",
+    "duration": 1.56
+  },
+  "thrusters_online": {
+    "file": "thrusters_online.wav",
+    "text": "Thrusters online.",
+    "duration": 1.64
+  },
+  "transferring_fuel": {
+    "file": "transferring_fuel.wav",
+    "text": "Transferring fuel.",
+    "duration": 1.28
+  },
+  "trespass_zone_cleared": {
+    "file": "trespass_zone_cleared.wav",
+    "text": "Trespass zone cleared.",
+    "duration": 1.62
+  },
+  "two": {
+    "file": "two.wav",
+    "text": "Two.",
+    "duration": 0.51
+  },
+  "unable": {
+    "file": "unable.wav",
+    "text": "Unable",
+    "duration": 0.79
+  },
+  "unable_to_dock_fighter_still_deployed": {
+    "file": "unable_to_dock_fighter_still_deployed.wav",
+    "text": "Unable to dock. Fighter still deployed.",
+    "duration": 2.74
+  },
+  "under_attack": {
+    "file": "under_attack.wav",
+    "text": "Under attack.",
+    "duration": 1.01
+  },
+  "undoor_attack": {
+    "file": "undoor_attack.wav",
+    "text": "Undoor attack.",
+    "duration": 1.08
+  },
+  "unknown_anomaly_detected": {
+    "file": "unknown_anomaly_detected.wav",
+    "text": "Unknown anomaly detected.",
+    "duration": 2.06
+  },
+  "unknown_system_disruption": {
+    "file": "unknown_system_disruption.wav",
+    "text": "Unknown system disruption.",
+    "duration": 1.98
+  },
+  "unknown_system_malfunction": {
+    "file": "unknown_system_malfunction.wav",
+    "text": "Unknown system malfunction.",
+    "duration": 1.82
+  },
+  "warning": {
+    "file": "warning.wav",
+    "text": "WARNING!",
+    "duration": 0.64
+  },
+  "warning_approaching_telepresence_range_limit": {
+    "file": "warning_approaching_telepresence_range_limit.wav",
+    "text": "Warning, approaching telepresence range limit.",
+    "duration": 3.07
+  },
+  "warning_capital_class_signature_detected": {
+    "file": "warning_capital_class_signature_detected.wav",
+    "text": "Warning, capital class signature detected.",
+    "duration": 2.96
+  },
+  "warning_chemical_damage_detected": {
+    "file": "warning_chemical_damage_detected.wav",
+    "text": "Warning, chemical damage detected.",
+    "duration": 2.59
+  },
+  "warning_cooling_vent_malfunction": {
+    "file": "warning_cooling_vent_malfunction.wav",
+    "text": "Warning, cooling vent malfunction.",
+    "duration": 2.64
+  },
+  "warning_frameshift_drive_operating_beyond_safety_limits": {
+    "file": "warning_frameshift_drive_operating_beyond_safety_limits.wav",
+    "text": "Warning, frameshift drive operating beyond safety limits.",
+    "duration": 4.24
+  },
+  "warning_hazardous_environment": {
+    "file": "warning_hazardous_environment.wav",
+    "text": "Warning, hazardous environment.",
+    "duration": 2.31
+  },
+  "warning_hull_breach_attack_taking_internal_damage": {
+    "file": "warning_hull_breach_attack_taking_internal_damage.wav",
+    "text": "Warning, hull breach attack, taking internal damage.",
+    "duration": 3.34
+  },
+  "warning_hyperspace_conduit_unstable": {
+    "file": "warning_hyperspace_conduit_unstable.wav",
+    "text": "Warning, hyperspace conduit unstable.",
+    "duration": 2.85
+  },
+  "warning_impulse_attack_trajectory_disruption": {
+    "file": "warning_impulse_attack_trajectory_disruption.wav",
+    "text": "Warning. Impulse attack. Trajectory disruption.",
+    "duration": 3.39
+  },
+  "warning_incoming_hatch_breaker_limpet": {
+    "file": "warning_incoming_hatch_breaker_limpet.wav",
+    "text": "Warning, incoming hatch breaker limpet.",
+    "duration": 2.37
+  },
+  "warning_kinetic_damage_detected": {
+    "file": "warning_kinetic_damage_detected.wav",
+    "text": "Warning, kinetic damage detected.",
+    "duration": 2.72
+  },
+  "warning_landing_gear_not_deployed": {
+    "file": "warning_landing_gear_not_deployed.wav",
+    "text": "Warning, landing gear not deployed.",
+    "duration": 2.69
+  },
+  "warning_last_chance_to_refuel_on_current_route": {
+    "file": "warning_last_chance_to_refuel_on_current_route.wav",
+    "text": "Warning, last chance to refuel on current route.",
+    "duration": 3.32
+  },
+  "warning_malfunction": {
+    "file": "warning_malfunction.wav",
+    "text": "Warning. Malfunction.",
+    "duration": 2.16
+  },
+  "warning_malfunction_attack": {
+    "file": "warning_malfunction_attack.wav",
+    "text": "Warning, malfunction attack.",
+    "duration": 2.17
+  },
+  "warning_mass_lock_attack": {
+    "file": "warning_mass_lock_attack.wav",
+    "text": "Warning, mass lock attack.",
+    "duration": 2.02
+  },
+  "warning_module_malfunction": {
+    "file": "warning_module_malfunction.wav",
+    "text": "Warning, module malfunction.",
+    "duration": 2.07
+  },
+  "warning_oxygen_critical": {
+    "file": "warning_oxygen_critical.wav",
+    "text": "Warning, oxygen critical.",
+    "duration": 2.08
+  },
+  "warning_oxygen_low": {
+    "file": "warning_oxygen_low.wav",
+    "text": "Warning, oxygen low.",
+    "duration": 2.04
+  },
+  "warning_radiation_damage_detected": {
+    "file": "warning_radiation_damage_detected.wav",
+    "text": "Warning, radiation damage detected.",
+    "duration": 2.9
+  },
+  "warning_safety_alert": {
+    "file": "warning_safety_alert.wav",
+    "text": "Warning safety alert",
+    "duration": 2.12
+  },
+  "warning_sensor_disruption": {
+    "file": "warning_sensor_disruption.wav",
+    "text": "Warning, sensor disruption.",
+    "duration": 1.99
+  },
+  "warning_shield_cell_attack": {
+    "file": "warning_shield_cell_attack.wav",
+    "text": "Warning shield cell attack",
+    "duration": 2.12
+  },
+  "warning_system_disruption": {
+    "file": "warning_system_disruption.wav",
+    "text": "Warning system disruption",
+    "duration": 2.17
+  },
+  "warning_taking_heat_damage": {
+    "file": "warning_taking_heat_damage.wav",
+    "text": "Warning, taking heat damage.",
+    "duration": 2.14
+  },
+  "warning_target_system_safety_risk": {
+    "file": "warning_target_system_safety_risk.wav",
+    "text": "Warning, target system safety risk.",
+    "duration": 2.76
+  },
+  "warning_targeting_disrupted": {
+    "file": "warning_targeting_disrupted.wav",
+    "text": "Warning, targeting disrupted.",
+    "duration": 2.1
+  },
+  "warning_temperature_critical": {
+    "file": "warning_temperature_critical.wav",
+    "text": "Warning, temperature critical.",
+    "duration": 2.29
+  },
+  "warning_thermal_attack_gaining_heat": {
+    "file": "warning_thermal_attack_gaining_heat.wav",
+    "text": "Warning, thermal attack. Gaining heat.",
+    "duration": 2.89
+  },
+  "warning_thermal_signature_amplified": {
+    "file": "warning_thermal_signature_amplified.wav",
+    "text": "Warning, thermal signature amplified.",
+    "duration": 2.47
+  },
+  "warning_you_have_entered_a_trespass_zone": {
+    "file": "warning_you_have_entered_a_trespass_zone.wav",
+    "text": "Warning, you have entered a trespass zone.",
+    "duration": 2.58
+  },
+  "weapon_enhance": {
+    "file": "weapon_enhance.wav",
+    "text": "Weapon enhance",
+    "duration": 1.15
+  },
+  "weapons_realmed": {
+    "file": "weapons_realmed.wav",
+    "text": "Weapons Realmed",
+    "duration": 1.26
+  }
+}

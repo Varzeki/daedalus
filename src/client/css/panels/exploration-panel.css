@@ -1,0 +1,266 @@
+/* Exploration Panel Styles */
+
+.exploration-route__table {
+  table-layout: auto;
+}
+
+.exploration-route__table thead tr {
+  border-top: .2rem solid var(--color-primary);
+}
+
+.exploration-route__table thead tr th:after {
+  border-bottom-width: .1rem !important;
+  box-shadow: none !important;
+}
+
+
+
+.exploration-route__row--past {
+  opacity: 0.45;
+}
+
+.exploration-route__star-class {
+  display: inline-flex;
+  align-items: center;
+  gap: .15rem;
+}
+
+.exploration-route__body-status {
+  display: inline-flex;
+  align-items: center;
+  white-space: nowrap;
+}
+
+/* Hover color overrides so text stays readable on the orange highlight */
+.exploration-route__table .table__row--highlighted:hover td .text-info,
+.exploration-route__table .table__row--highlighted:hover td .text-primary,
+.exploration-route__table .table__row--highlighted:hover td .text-secondary,
+.exploration-route__table .table__row--highlighted:hover td .text-danger,
+.exploration-route__table .table__row--highlighted:hover td .text-success,
+.exploration-route__table .table__row--highlighted:hover td .text-muted {
+  color: var(--color-secondary-dark) !important;
+}
+
+.exploration-route__table .table__row--highlight-primary-hover:hover td .text-info,
+.exploration-route__table .table__row--highlight-primary-hover:hover td .text-primary,
+.exploration-route__table .table__row--highlight-primary-hover:hover td .text-secondary,
+.exploration-route__table .table__row--highlight-primary-hover:hover td .text-danger,
+.exploration-route__table .table__row--highlight-primary-hover:hover td .text-success,
+.exploration-route__table .table__row--highlight-primary-hover:hover td .text-muted,
+.exploration-route__table .table__row--highlight-primary-hover:hover td .icon {
+  color: var(--color-primary-dark) !important;
+}
+
+/* Exploration System Pane */
+
+.exploration-system__table {
+  table-layout: auto;
+  font-size: var(--base-font-size);
+}
+
+.exploration-system__table thead tr {
+  border-top: .2rem solid var(--color-primary);
+}
+
+.exploration-system__table thead tr th:after {
+  border-bottom-width: .1rem !important;
+  box-shadow: none !important;
+}
+
+
+
+.exploration-system__body-name {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+.exploration-system__status-icons {
+  display: inline-flex;
+  gap: .15rem;
+  margin-left: .25rem;
+  font-size: 1.2rem;
+}
+
+.exploration-system__status-icons .icon {
+  opacity: 0.7;
+}
+
+/* Species breakdown rows — visually attached to parent body row */
+.exploration-system__species-row td {
+  padding-top: .1rem !important;
+  padding-bottom: .1rem !important;
+  border: none !important;
+  font-size: .9em;
+  line-height: 1.6;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+
+
+.exploration-system__species-indent {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 1rem;
+}
+
+.exploration-system__species-branch {
+  font-family: monospace;
+  color: #555;
+  margin-right: .5rem;
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+.exploration-system__header-stats {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  padding: .5rem 0;
+}
+
+.exploration-system__kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .15rem;
+}
+
+.exploration-system__kpi-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  line-height: 1.1;
+}
+
+.exploration-system__kpi-label {
+  font-size: 1rem;
+  text-transform: uppercase;
+  letter-spacing: .1rem;
+  opacity: 0.8;
+}
+
+.exploration-system__kpi-icon {
+  font-size: 1.6rem;
+  margin-right: .5rem;
+}
+
+.exploration-system__progress-bar {
+  width: 12rem;
+  height: .4rem;
+  background: rgba(255, 255, 255, 0.1);
+  border-radius: .2rem;
+  overflow: hidden;
+  margin-top: .25rem;
+}
+
+.exploration-system__progress-bar-fill {
+  height: 100%;
+  background: var(--color-success);
+  transition: width 0.5s ease;
+  border-radius: .2rem;
+}
+
+.exploration-system__survey-complete {
+  font-size: 2rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: .15rem;
+  animation: surveyCompleteAppear 1s ease forwards;
+}
+
+@keyframes surveyCompleteAppear {
+  0% { opacity: 0; transform: scale(0.8); }
+  50% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
+}
+
+.exploration-system__body-row--dim td {
+  color: #666 !important;
+}
+
+.exploration-system__body-row--dim td .text-info,
+.exploration-system__body-row--dim td .text-primary,
+.exploration-system__body-row--dim td .text-secondary,
+.exploration-system__body-row--dim td .text-success,
+.exploration-system__body-row--dim td .text-muted,
+.exploration-system__body-row--dim td .icon {
+  color: #666 !important;
+}
+
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row--dim.table__row--highlight-primary-hover:hover td {
+  background: var(--color-primary-dark) !important;
+  color: #666 !important;
+  text-shadow: none;
+}
+
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row--dim.table__row--highlight-primary-hover:hover td .text-info,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row--dim.table__row--highlight-primary-hover:hover td .text-primary,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row--dim.table__row--highlight-primary-hover:hover td .text-secondary,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row--dim.table__row--highlight-primary-hover:hover td .text-success,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row--dim.table__row--highlight-primary-hover:hover td .text-muted,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row--dim.table__row--highlight-primary-hover:hover td .icon {
+  color: #666 !important;
+}
+
+.exploration-system__species-row--dim td {
+  color: #666 !important;
+}
+
+.exploration-system__species-row--dim td .text-info,
+.exploration-system__species-row--dim td .text-primary,
+.exploration-system__species-row--dim td .text-secondary,
+.exploration-system__species-row--dim td .text-success,
+.exploration-system__species-row--dim td .text-muted,
+.exploration-system__species-row--dim td .icon {
+  color: #666 !important;
+}
+
+/* Scanned body rows — DSS'd bodies turn blue */
+.exploration-system__body-row--scanned td {
+  color: var(--color-secondary) !important;
+}
+
+.exploration-system__body-row--scanned td .text-info,
+.exploration-system__body-row--scanned td .text-primary,
+.exploration-system__body-row--scanned td .text-success,
+.exploration-system__body-row--scanned td .text-muted,
+.exploration-system__body-row--scanned td .icon {
+  color: var(--color-secondary) !important;
+}
+
+.exploration-system__body-row--scanned td .text-secondary {
+  color: var(--color-secondary) !important;
+}
+
+/* Dim + scanned — stays grey but with muted blue tint */
+.exploration-system__body-row--dim.exploration-system__body-row--scanned td {
+  color: rgba(var(--color-secondary-r), var(--color-secondary-g), var(--color-secondary-b), 0.35) !important;
+}
+
+.exploration-system__body-row--dim.exploration-system__body-row--scanned td .text-info,
+.exploration-system__body-row--dim.exploration-system__body-row--scanned td .text-primary,
+.exploration-system__body-row--dim.exploration-system__body-row--scanned td .text-secondary,
+.exploration-system__body-row--dim.exploration-system__body-row--scanned td .text-success,
+.exploration-system__body-row--dim.exploration-system__body-row--scanned td .text-muted,
+.exploration-system__body-row--dim.exploration-system__body-row--scanned td .icon {
+  color: rgba(var(--color-secondary-r), var(--color-secondary-g), var(--color-secondary-b), 0.35) !important;
+}
+
+/* Scanned species rows — confirmed biologicals turn blue */
+.exploration-system__species-row--scanned td {
+  color: var(--color-secondary) !important;
+}
+
+.exploration-system__species-row--scanned td .icon {
+  color: var(--color-secondary) !important;
+}
+
+/* Dim + scanned species — muted blue */
+.exploration-system__species-row--dim.exploration-system__species-row--scanned td {
+  color: rgba(var(--color-secondary-r), var(--color-secondary-g), var(--color-secondary-b), 0.35) !important;
+}
+
+.exploration-system__species-row--dim.exploration-system__species-row--scanned td .icon {
+  color: rgba(var(--color-secondary-r), var(--color-secondary-g), var(--color-secondary-b), 0.35) !important;
+}

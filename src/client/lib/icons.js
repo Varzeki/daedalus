@@ -1,4 +1,4 @@
-import iconJson from '../public/fonts/icarus-terminal/icarus-terminal.json'
+import iconJson from '../public/fonts/daedalus-terminal/daedalus-terminal.json'
 import { SURFACE_PORTS, PLANETARY_BASES } from '../../shared/consts'
 class _Icons {
 

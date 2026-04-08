@@ -89,8 +89,14 @@ class System {
     // Note: System names are unique (they can change, but will still be unique)
     // so is okay to use them as a key.
     if (!global.CACHE.SYSTEMS[systemName.toLowerCase()] || useCache === false) {
-      // Get system from EDSM
-      const system = await EDSM.system(systemName)
+      // Get system from EDSM (with fallback if EDSM is unavailable)
+      let system
+      try {
+        system = await EDSM.system(systemName)
+      } catch (e) {
+        console.log(`[EDSM] Failed to fetch system '${systemName}': ${e.message}`)
+        system = { name: systemName, bodies: [], stations: [], edsmError: true }
+      }
 
       // TODO Look up recent local data we have in the logs for bodies in the
       // system and merge data with about bodies and stations from EDSM,

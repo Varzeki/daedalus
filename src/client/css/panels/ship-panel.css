@@ -230,10 +230,10 @@
 @keyframes ship-panel__ship-pip-animation {
   0%,
   100% {
-    padding-right: 0;
+    transform: scaleX(1);
   }
   50% {
-    padding-right: .3rem;
+    transform: scaleX(0.97);
   }
 }
 
@@ -334,7 +334,7 @@ table.table--flex-inline.table--interactive tbody tr.table__row--active td.ship-
   text-shadow: none;
 }
 
-.ship-panel .icon.icarus-terminal-engineering {
+.ship-panel .icon.daedalus-terminal-engineering {
   /* This is a hack, weird spacing got introduced at some point */
   width: 2rem !important;
   display: inline-block;
@@ -428,7 +428,7 @@ table.ship-panel__lights td {
   text-align: center;
   opacity: 0.5;
   border: .2rem solid var(--color-primary);
-  transition: all .25s ease-in-out;
+  transition: opacity .25s ease-in-out, border-color .25s ease-in-out, background-color .25s ease-in-out;
   border-radius: 10rem;
   margin-bottom: .25rem;
 }

@@ -26,7 +26,7 @@ const ICONS_DIR = path.join(ASSETS_DIR, 'icons')
 function clean () {
   if (!fs.existsSync(ASSETS_DIR)) fs.mkdirSync(ASSETS_DIR, { recursive: true })
   if (!fs.existsSync(ICONS_DIR)) fs.mkdirSync(ICONS_DIR, { recursive: true })
-  if (fs.existsSync(ICON_FONT_DIR)) fs.rmdirSync(ICON_FONT_DIR, { recursive: true })
+  if (fs.existsSync(ICON_FONT_DIR)) fs.rmSync(ICON_FONT_DIR, { recursive: true })
 }
 
 async function build () {
@@ -52,7 +52,7 @@ async function build () {
   await svgtofont({
     src: path.join(RESOURCES_DIR, 'icons'),
     dist: ICON_FONT_DIR,
-    fontName: 'icarus-terminal',
+    fontName: 'daedalus-terminal',
     css: true,
     outSVGReact: false,
     outSVGPath: true,
@@ -62,7 +62,7 @@ async function build () {
       normalize: true
     },
     website: {
-      title: 'ICARUS Terminal Font',
+      title: 'DAEDALUS Terminal Font',
       logo: false,
       version: packageJson.version
     }
@@ -71,14 +71,21 @@ async function build () {
 
 function copy () {
   [
-    'icarus-terminal.css',
-    'icarus-terminal.eot',
-    'icarus-terminal.woff',
-    'icarus-terminal.woff2',
-    'icarus-terminal.ttf',
-    'icarus-terminal.svg',
-    'icarus-terminal.json'
-  ].forEach(fontAsset => fse.copySync(path.join(ASSETS_DIR, 'icon-font', fontAsset), `src/client/public/fonts/icarus-terminal/${fontAsset}`))
+    'daedalus-terminal.css',
+    'daedalus-terminal.eot',
+    'daedalus-terminal.woff',
+    'daedalus-terminal.woff2',
+    'daedalus-terminal.ttf',
+    'daedalus-terminal.svg',
+    'daedalus-terminal.json'
+  ].forEach(fontAsset => {
+    const src = path.join(ASSETS_DIR, 'icon-font', fontAsset)
+    if (fs.existsSync(src)) {
+      fse.copySync(src, `src/client/public/fonts/daedalus-terminal/${fontAsset}`)
+    } else {
+      console.warn(`Warning: ${fontAsset} not found, skipping copy`)
+    }
+  })
 
   fse.copySync(path.join(ASSETS_DIR, 'icons'), 'src/client/public/icons')
 }

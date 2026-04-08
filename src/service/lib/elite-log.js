@@ -123,67 +123,7 @@ class EliteLog {
         logs = logs.filter(log => (Date.parse(log.timestamp) > Date.parse(this.lastActiveTimestamp)))
       }
 
-      // Enforces unique database entry constraint using checksum.
-      // This makes initial load times slower, but makes it easier to make the
-      // app more performant once the initial import is complete. To optimise
-      // for performance and memory usage we only persist events to the database
-      // where it makes sense to do so, otherwise we just keep the most recent 
-      // copy of each event type in memory.
-      await db.ensureIndex({ fieldName: '_checksum', unique: true })
-      
-      const logsIngested = []
-      for (const log of logs) {
-        this.numberOfEventsImported++
-
-        let logIngested = false
-        const eventName = log.event
-        const eventTimestamp = log.timestamp
-
-        // Generate unique checksum for each message to avoid duplicates.
-        // This is also useful for clients who receive new event log entries
-        // so they can ignore events they ahve seen before (e.g. after a reload)
-        log._checksum = this.#checksum(JSON.stringify(log))
-
-        // Keep track of the most recent timestamp seen across all logs
-        // (so when we are called again can skip over logs we've already seen)
-        if (!this.lastActiveTimestamp)
-          this.lastActiveTimestamp = eventTimestamp
-        
-        if (Date.parse(eventTimestamp) > Date.parse(this.lastActiveTimestamp))
-          this.lastActiveTimestamp = eventTimestamp
-
-        // Skip ignored event types (e.g. Music)
-        if (INGORED_EVENT_TYPES.includes(eventName)) continue
-
-        // Only persist supported event types in the databases
-        if (PERSIST_ALL_EVENTS === true || PERSISTED_EVENT_TYPES.includes(eventName)) {
-          // Insert each message one by one, as using bulk import with constraint
-          // (which is faster) tends to fail because logs contain duplicates.
-          const isUnique = await this.#insertUnique(log)
-
-          if (isUnique === true) logIngested = true
-        } else {
-          // If it's not a persisted event type, only keep a copy of it if it
-          // has a more recent timestamp than the event we currently have.
-          // This is useful if we only ever need the latest version of and event
-          // and is faster and uses less RAM than keeping everything in memory.
-          if (this.singleInstanceEvents[eventName]) {
-            if (Date.parse(eventTimestamp) > Date.parse(this.singleInstanceEvents[eventName].timestamp)) {
-              this.singleInstanceEvents[eventName] = log
-              logIngested = true
-            }
-          } else {
-            this.singleInstanceEvents[eventName] = log
-            logIngested = true
-          }
-        }
-
-        // If log was ingested, set to true and trigger callback
-        if (logIngested) {
-          logsIngested.push(log)
-          if (this.logEventCallback) this.logEventCallback(log)
-        }
-      }
+      const logsIngested = await this.#processLogs(logs)
       resolve(logsIngested)
     })
   }
@@ -227,11 +167,20 @@ class EliteLog {
 
   async getEvents(event, count = 0) {
     // For single instance events, return single copy we are holding in memory
-    if (this.singleInstanceEvents[event]) return [this.singleInstanceEvents[event]]
-    if (count > 0) {
-      return await db.find({ event }).sort({ timestamp: -1 }).limit(count)
-    } else {
-      return await db.find({ event }).sort({ timestamp: -1 })
+    if (this.singleInstanceEvents[event]) {
+      return [this.singleInstanceEvents[event]]
+    }
+    try {
+      let result
+      if (count > 0) {
+        result = await db.find({ event }).sort({ timestamp: -1 }).limit(count)
+      } else {
+        result = await db.find({ event }).sort({ timestamp: -1 })
+      }
+      return result
+    } catch (e) {
+      console.error(`getEvents('${event}') error:`, e.message)
+      throw e
     }
   }
 
@@ -310,24 +259,136 @@ class EliteLog {
     // fs.watch is proving to not be reliable and is not picking up changes
     // to game logs on Windows at all so falling back to the older
     // fs.watchFile, which uses polling rather than file system events.
-    let debounce
+    //
+    // Uses incremental reading: only reads new bytes appended since the last
+    // read, rather than re-reading the entire file each poll. This reduces
+    // disk I/O from potentially hundreds of MB/sec to just a few bytes.
+    let lastReadOffset = 0
+    let partialLine = ''
+    let processing = false
+
+    // Set initial offset to current file size — historical data has already
+    // been loaded by the initial load() call, so we only want new events.
+    try {
+      lastReadOffset = fs.statSync(file.name).size
+    } catch (e) { /* file may not exist yet */ }
+
     return fs.watchFile(
       file.name,
-      { interval: 1000 },
-      async (event, filename) => {
-        if (!filename) return
-        if (debounce) return
-        debounce = setTimeout(() => { debounce = false }, 100)
-        const logs = await this.load({file})
+      { interval: 250 },
+      async (curr, prev) => {
+        // curr/prev are fs.Stats objects from fs.watchFile
+        if (!curr || curr.size === lastReadOffset) return // No new data
+        if (processing) return // Previous read still being processed
+        processing = true
+
         try {
-          // Trigger callback for each log entry loaded
-          if (callback) logs.map(log => callback(log))
+          if (curr.size < lastReadOffset) {
+            // File was truncated or rotated — reset and read from start
+            lastReadOffset = 0
+            partialLine = ''
+          }
+
+          const bytesToRead = curr.size - lastReadOffset
+          const buffer = Buffer.alloc(bytesToRead)
+          const fd = fs.openSync(file.name, 'r')
+          try {
+            fs.readSync(fd, buffer, 0, bytesToRead, lastReadOffset)
+          } finally {
+            fs.closeSync(fd)
+          }
+
+          const newData = partialLine + buffer.toString()
+          const lines = newData.split('\n')
+
+          // Last element may be an incomplete line still being written
+          partialLine = lines.pop()
+
+          const newLogs = []
+          for (const line of lines) {
+            try {
+              newLogs.push(JSON.parse(line))
+            } catch (e) {
+              // Skip unparseable lines (blank lines, partial writes, etc.)
+            }
+          }
+
+          lastReadOffset = curr.size
+
+          if (newLogs.length > 0) {
+            const ingestedLogs = await this.#processLogs(newLogs)
+            if (callback) ingestedLogs.map(log => callback(log))
+          }
         } catch (e) {
-          console.error(e)
+          console.error('Error reading journal incrementally:', e)
+        } finally {
+          processing = false
         }
-    })
+      }
+    )
   }
-  
+
+  // Process and ingest parsed log entries — handles checksums, deduplication,
+  // database persistence, single-instance events, and callbacks.
+  async #processLogs(logs) {
+    await db.ensureIndex({ fieldName: '_checksum', unique: true })
+
+    const logsIngested = []
+    for (const log of logs) {
+      this.numberOfEventsImported++
+
+      let logIngested = false
+      const eventName = log.event
+      const eventTimestamp = log.timestamp
+
+      // Generate unique checksum for each message to avoid duplicates.
+      // This is also useful for clients who receive new event log entries
+      // so they can ignore events they have seen before (e.g. after a reload)
+      log._checksum = this.#checksum(JSON.stringify(log))
+
+      // Keep track of the most recent timestamp seen across all logs
+      // (so when we are called again can skip over logs we've already seen)
+      if (!this.lastActiveTimestamp)
+        this.lastActiveTimestamp = eventTimestamp
+
+      if (Date.parse(eventTimestamp) > Date.parse(this.lastActiveTimestamp))
+        this.lastActiveTimestamp = eventTimestamp
+
+      // Skip ignored event types (e.g. Music)
+      if (INGORED_EVENT_TYPES.includes(eventName)) continue
+
+      // Only persist supported event types in the databases
+      if (PERSIST_ALL_EVENTS === true || PERSISTED_EVENT_TYPES.includes(eventName)) {
+        // Insert each message one by one, as using bulk import with constraint
+        // (which is faster) tends to fail because logs contain duplicates.
+        const isUnique = await this.#insertUnique(log)
+
+        if (isUnique === true) logIngested = true
+      } else {
+        // If it's not a persisted event type, only keep a copy of it if it
+        // has a more recent timestamp than the event we currently have.
+        // This is useful if we only ever need the latest version of an event
+        // and is faster and uses less RAM than keeping everything in memory.
+        if (this.singleInstanceEvents[eventName]) {
+          if (Date.parse(eventTimestamp) > Date.parse(this.singleInstanceEvents[eventName].timestamp)) {
+            this.singleInstanceEvents[eventName] = log
+            logIngested = true
+          }
+        } else {
+          this.singleInstanceEvents[eventName] = log
+          logIngested = true
+        }
+      }
+
+      // If log was ingested, set to true and trigger callback
+      if (logIngested) {
+        logsIngested.push(log)
+        if (this.logEventCallback) this.logEventCallback(log)
+      }
+    }
+    return logsIngested
+  }
+
   async #insertUnique(log) {
     return await new Promise(async (resolve, reject) => {
       db.insert(log)
@@ -353,7 +414,9 @@ class EliteLog {
 
         const files = globFiles.map(name => {
           const { size, mtime: lastModified } = fs.statSync(name)
-          const lineCount = fs.readFileSync(name).toString().split('\n').length
+          // Estimate line count from file size to avoid reading entire files
+          // (~200 bytes per journal line on average)
+          const lineCount = Math.max(1, Math.ceil(size / 200))
           return new File({ name, lastModified, size, lineCount })
         })
 

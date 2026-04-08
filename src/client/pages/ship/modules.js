@@ -15,7 +15,7 @@ export default function ShipStatusPage () {
   // Using state for toggle switches like this allow us to have the UI
   // respond immediately to the input from the user, even if it takes the game
   // API a second or two to callback and update us with the new state.
-  // It also means that even if they do go out of sync, the UI in ICARUS
+  // It also means that even if they do go out of sync, the UI in DAEDALUS
   // Terminal will correctly reflect the in game state after a second or two.
   const [toggleSwitches, setToggleSwitches] = useState({
     lights: false,

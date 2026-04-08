@@ -15,6 +15,7 @@ class MyDocument extends Document {
     return (
       <Html lang='en' data-fx-crt='true' data-fx-crt-text='false' data-fx-crt-text-animated='false'>
         <Head>
+          <link rel='preload' href='/images/textures/galaxy.jpg' as='image' />
           <link rel='manifest' href='/manifest.json' />
           <link rel='apple-touch-icon' izes='180x180' href='/icons/icon-180x180.png' />
           <meta name='theme-color' content='#000' />
@@ -96,7 +97,7 @@ class MyDocument extends Document {
         <!-- Shadows on planets  -->
         <filter id="svg-filter__planet-shadow">
           <feOffset dx="-500" dy="-500"/>
-          <feGaussianBlur stdDeviation="200" result="offset-blur"/>
+          <feGaussianBlur stdDeviation="80" result="offset-blur"/>
           <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
           <feFlood flood-color="black" flood-opacity="1" result="color"/>
           <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
@@ -105,7 +106,7 @@ class MyDocument extends Document {
         </filter>
         <filter id="svg-filter__planet-shadow--small">
           <feOffset dx="-200" dy="-200"/>
-          <feGaussianBlur stdDeviation="100" result="offset-blur"/>
+          <feGaussianBlur stdDeviation="40" result="offset-blur"/>
           <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
           <feFlood flood-color="black" flood-opacity="1" result="color"/>
           <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
@@ -114,7 +115,7 @@ class MyDocument extends Document {
         </filter>
         <filter id="svg-filter__star-glow">
           <feOffset dx="0" dy="0"/>
-          <feGaussianBlur stdDeviation="500" result="offset-blur"/>
+          <feGaussianBlur stdDeviation="150" result="offset-blur"/>
           <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
           <feFlood flood-color="rgba(255,0,0,.5)" flood-opacity="1" result="color"/>
           <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
@@ -123,7 +124,7 @@ class MyDocument extends Document {
         </filter>
         <filter id="svg-filter__star-glow--light">
           <feOffset dx="0" dy="0"/>
-          <feGaussianBlur stdDeviation="500" result="offset-blur"/>
+          <feGaussianBlur stdDeviation="150" result="offset-blur"/>
           <feComposite operator="out" in="SourceGraphic" in2="offset-blur" result="inverse"/>
           <feFlood flood-color="rgba(255,0,0,.25)" flood-opacity="1" result="color"/>
           <feComposite operator="in" in="color" in2="inverse" result="shadow"/>
@@ -178,24 +179,24 @@ class MyDocument extends Document {
         document.write(\`
           <svg style="position: absolute; height: 0; margin: 0; padding: 0; top: -100px;">
             <defs>
-              <pattern id="svg-pattern__star-surface" patternUnits="userSpaceOnUse" preserveAspectRatio="none" width="4096" height="4096">
-                <image href="/images/textures/star.jpg" x="0" y="0" width="4096" height="4096"/>
+              <pattern id="svg-pattern__star-surface" patternUnits="userSpaceOnUse" preserveAspectRatio="none" width="2048" height="2048">
+                <image href="/images/textures/star.jpg" x="0" y="0" width="2048" height="2048"/>
               </pattern>
-              <pattern id="svg-pattern__planet-surface" patternUnits="userSpaceOnUse" preserveAspectRatio="none" width="4096" height="4096">
-                <image href="/images/textures/rock.jpg" x="0" y="0" width="4096" height="4096"/>
+              <pattern id="svg-pattern__planet-surface" patternUnits="userSpaceOnUse" preserveAspectRatio="none" width="2048" height="2048">
+                <image href="/images/textures/rock.jpg" x="0" y="0" width="2048" height="2048"/>
               </pattern>
-              <pattern id="svg-pattern__planet-surface-animated" x="0" patternUnits="userSpaceOnUse" preserveAspectRatio="none" width="4096" height="4096">
-                <image href="/images/textures/rock.jpg" x="0" y="0" width="4096" height="4096"/>
-                <animate attributeName="x" values="0;4096" dur="30s" repeatCount="indefinite"/>
+              <pattern id="svg-pattern__planet-surface-animated" x="0" patternUnits="userSpaceOnUse" preserveAspectRatio="none" width="2048" height="2048">
+                <image href="/images/textures/rock.jpg" x="0" y="0" width="2048" height="2048"/>
+                <animate attributeName="x" values="0;2048" dur="30s" repeatCount="indefinite"/>
               </pattern>
-              <pattern id="svg-pattern__planet-surface--clouds" patternUnits="userSpaceOnUse" preserveAspectRatio="none" width="4096" height="4096">
-                <image href="/images/textures/clouds.jpg" x="0" y="0" width="4096" height="4096"/>
+              <pattern id="svg-pattern__planet-surface--clouds" patternUnits="userSpaceOnUse" preserveAspectRatio="none" width="2048" height="2048">
+                <image href="/images/textures/clouds.jpg" x="0" y="0" width="2048" height="2048"/>
               </pattern>
-              <pattern id="svg-pattern__planet-surface--gas-giant" patternUnits="userSpaceOnUse" preserveAspectRatio="none" width="4096" height="4096">
+              <pattern id="svg-pattern__planet-surface--gas-giant" patternUnits="userSpaceOnUse" preserveAspectRatio="none" width="2048" height="2048">
+                <image href="/images/textures/gas-giant.jpg" x="0" y="0" width="2048" height="2048"/>
+              </pattern>
+              <pattern id="svg-pattern__planet-surface--brown-dwarf" patternUnits="userSpaceOnUse" preserveAspectRatio="none" width="4096" height="4096">
                 <image href="/images/textures/gas-giant.jpg" x="0" y="0" width="4096" height="4096"/>
-              </pattern>
-              <pattern id="svg-pattern__planet-surface--brown-dwarf" patternUnits="userSpaceOnUse" preserveAspectRatio="none" width="8192" height="8192">
-                <image href="/images/textures/gas-giant.jpg" x="0" y="0" width="8192" height="8192"/>
               </pattern>
             </defs>
           </svg>

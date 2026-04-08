@@ -64,7 +64,7 @@
   --filter-system-map-planet-landable: contrast(1.15) brightness(1.2);
   
   --base-font-size: 1.25rem;
-  --text-shadow: 0 0 20px;
+  --text-shadow: 0 0 8px;
 
   /*
     CSS variables cant' be used with media queries, these breakpoints are

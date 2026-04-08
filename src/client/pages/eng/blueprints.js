@@ -102,7 +102,7 @@ export default function EngineeringMaterialsPage () {
                         style={{ width: '1rem' }}
                       >
                         <i
-                          className='icon icarus-terminal-wrench'
+                          className='icon daedalus-terminal-wrench'
                           style={{ position: 'relative', top: '.15rem' }}
                         />
                       </td>
@@ -114,7 +114,7 @@ export default function EngineeringMaterialsPage () {
                         <h4 className='text-muted'>{blueprint.originalName}</h4>
                       </td>
                       <td className='text-center' style={{ width: '1rem' }}>
-                        <i className='icon icarus-terminal-chevron-right' style={{ fontSize: '1rem' }} />
+                        <i className='icon daedalus-terminal-chevron-right' style={{ fontSize: '1rem' }} />
                       </td>
                     </tr>
                   )}
@@ -145,7 +145,7 @@ export default function EngineeringMaterialsPage () {
                       style={{ width: '1rem' }}
                     >
                       <i
-                        className='icon icarus-terminal-wrench'
+                        className='icon daedalus-terminal-wrench'
                         style={{ position: 'relative', top: '.15rem' }}
                       />
                     </td>
@@ -157,7 +157,7 @@ export default function EngineeringMaterialsPage () {
                       <h4 className='text-muted'>{blueprint.originalName}</h4>
                     </td>
                     <td className='text-center' style={{ width: '1rem' }}>
-                      <i className='icon icarus-terminal-chevron-right' style={{ fontSize: '1rem' }} />
+                      <i className='icon daedalus-terminal-chevron-right' style={{ fontSize: '1rem' }} />
                     </td>
                   </tr>
                 )}
@@ -171,7 +171,7 @@ export default function EngineeringMaterialsPage () {
               <a className='text-link text-uppercase'><span className='text-link-text'>Blueprints</span></a>
             </Link>
             <span className='text-link text-uppercase text-muted'>
-              <i className='icon icarus-terminal-chevron-right' style={{ fontSize: '1rem' }} />
+              <i className='icon daedalus-terminal-chevron-right' style={{ fontSize: '1rem' }} />
               {selectedBlueprint.name}
             </span>
           </p>
@@ -197,7 +197,7 @@ export default function EngineeringMaterialsPage () {
                         style={{ width: '1rem' }}
                       >
                         <i
-                          className='icon icarus-terminal-wrench'
+                          className='icon daedalus-terminal-wrench'
                           style={{ position: 'relative', top: '.15rem' }}
                         />
                       </td>
@@ -210,7 +210,7 @@ export default function EngineeringMaterialsPage () {
                       </td>
                       <td className='text-info text-no-wrap' style={{ minWidth: '3rem' }}>
                         <span className='visible-medium' style={{ fontSize: '1.75rem', lineHeight: '1.75rem' }}>
-                          <i className='icon icarus-terminal-engineering float-right' />
+                          <i className='icon daedalus-terminal-engineering float-right' />
                           <span className='float-right' style={{ marginRight: '.25rem' }}>{module.engineering.level}</span>
                         </span>
                         <span className='hidden-medium float-right' style={{ height: '1.75rem' }}>
@@ -218,7 +218,7 @@ export default function EngineeringMaterialsPage () {
                             <i
                               style={{ fontSize: '1.75rem', lineHeight: '1.75rem', width: '1.75rem', display: 'inline-block', marginRight: '0.1rem' }}
                               key={`engineering_${module.engineering.symbol}_applied-to_${module.name}_slot_${module.slot}_engineering-grade_${i}`}
-                              className='icon icarus-terminal-engineering'
+                              className='icon daedalus-terminal-engineering'
                             />
                           )}
                         </span>
@@ -252,7 +252,7 @@ export default function EngineeringMaterialsPage () {
                     style={{ width: '1rem' }}
                   >
                     <i
-                      className='icon icarus-terminal-engineer'
+                      className='icon daedalus-terminal-engineer'
                       style={{ position: 'relative', top: '.15rem' }}
                     />
                   </td>
@@ -321,7 +321,7 @@ export default function EngineeringMaterialsPage () {
                   <i
                     style={{ fontSize: '2rem', width: '2rem', display: 'inline-block', marginRight: '0.1rem' }}
                     key={`${selectedBlueprint.symbol}_${grade}_engineering_${i}`}
-                    className='icon icarus-terminal-engineering'
+                    className='icon daedalus-terminal-engineering'
                   />
                 )}
               </h4>
@@ -330,7 +330,7 @@ export default function EngineeringMaterialsPage () {
                   if (!v.improvement) return null
                   return (
                     <p key={`feature_${k}_${v}`} className='text-success'>
-                      <i className='icon icarus-terminal-chevron-up' style={{ marginRight: '.2rem', position: 'relative', top: '.1rem' }} />
+                      <i className='icon daedalus-terminal-chevron-up' style={{ marginRight: '.2rem', position: 'relative', top: '.1rem' }} />
                       {k}
                       <span className='float-right'>
                         {v.value[0] === v.value[1] && <>{v.value[0] >= 0 && '+'}{v.value[0]}</>}
@@ -343,7 +343,7 @@ export default function EngineeringMaterialsPage () {
                   if (v.improvement) return null
                   return (
                     <p key={`feature_${k}_${v}`} className='text-danger'>
-                      <i className='icon icarus-terminal-chevron-down' style={{ marginRight: '.2rem', position: 'relative', top: '.1rem' }} />
+                      <i className='icon daedalus-terminal-chevron-down' style={{ marginRight: '.2rem', position: 'relative', top: '.1rem' }} />
                       {k}
                       <span className='float-right'>
                         {v.value[0] === v.value[1] && <>{v.value[0] >= 0 && '+'}{v.value[0]}</>}
@@ -374,7 +374,7 @@ export default function EngineeringMaterialsPage () {
                           className={component.count > 0 ? 'text-primary' : 'text-muted text-danger'}
                         >
                           <td className='text-center' style={{ background: 'var(--color-primary-dark)', width: '1rem' }}>
-                            <i className={`icon icarus-terminal-materials-grade-${component.grade}`} style={{ fontSize: '2.5rem' }} />
+                            <i className={`icon daedalus-terminal-materials-grade-${component.grade}`} style={{ fontSize: '2.5rem' }} />
                           </td>
                           <td style={{ background: 'var(--color-primary-dark)' }}>
                             <CopyOnClick>{component.name}</CopyOnClick>

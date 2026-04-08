@@ -6,6 +6,7 @@ let socket = null// Store socket connection (defaults to null)
 let callbackHandlers = {} // Store callbacks waiting to be executed (pending response from server)
 let deferredEventQueue = [] // Store events waiting to be sent (used when server is not ready yet or offline)
 let recentBroadcastEvents = 0
+let broadcastActivityTimeout = null
 
 const defaultSocketState = {
   connected: false, // Boolean to indicate current connection status
@@ -14,7 +15,10 @@ const defaultSocketState = {
 }
 
 const socketOptions = {
-  notifications: true
+  notifications: false,
+  explorationAutoSwitch: false,
+  audioEnabled: false,
+  landingPadEnabled: false
 }
 
 function socketDebugMessage () { /* console.log(...arguments) */ }
@@ -52,13 +56,16 @@ function connect (socketState, setSocketState) {
       // track recent requests so the activity monitor in the UI can reflect
       // that there is activity and that the client is receiving events.
       recentBroadcastEvents++
-      setTimeout(() => {
-        recentBroadcastEvents--
-        setSocketState(prevState => ({
-          ...prevState,
-          active: socketRequestsPending()
-        }))
-      }, 500)
+      if (!broadcastActivityTimeout) {
+        broadcastActivityTimeout = setTimeout(() => {
+          broadcastActivityTimeout = null
+          recentBroadcastEvents = 0
+          setSocketState(prevState => ({
+            ...prevState,
+            active: socketRequestsPending()
+          }))
+        }, 500)
+      }
 
       // Trigger notifications for key actions
       // TODO Refactor out into a seperate handler
@@ -83,12 +90,24 @@ function connect (socketState, setSocketState) {
           if (message.event === 'Scanned') notification('Scan detected')
         }
       } catch (e) { console.log('NOTIFICATION_ERROR', e) }
+
+      // Auto-switch exploration pages on FSD events
+      try {
+        if (socketOptions.explorationAutoSwitch && name === 'newLogEntry') {
+          const path = window.location.pathname
+          if (path.startsWith('/exploration')) {
+            if (message.event === 'StartJump' && message.JumpType === 'Hyperspace') {
+              if (path !== '/exploration/route') window.location.href = '/exploration/route'
+            } else if (message.event === 'FSDJump' || message.event === 'Location') {
+              if (path !== '/exploration/system') window.location.href = '/exploration/system'
+            }
+          }
+        }
+      } catch (e) { console.log('AUTO_SWITCH_ERROR', e) }
     }
     socketDebugMessage('Message received from socket server', requestId, name, message)
   }
   socket.onopen = async (e) => {
-    socketDebugMessage('Connected to socket server')
-
     setSocketState(prevState => ({
       ...prevState,
       active: socketRequestsPending(),
@@ -117,12 +136,16 @@ function connect (socketState, setSocketState) {
 
     // If we are fully loaded, then set 'ready' state to true, otherwise wait
     // until get a loadingProgress event that indicates the service is loaded
-    const loadingStats = await sendEvent('getLoadingStatus')
-    if (loadingStats.loadingComplete) {
-      setSocketState(prevState => ({
-        ...prevState,
-        ready: true
-      }))
+    try {
+      const loadingStats = await sendEvent('getLoadingStatus')
+      if (loadingStats.loadingComplete) {
+        setSocketState(prevState => ({
+          ...prevState,
+          ready: true
+        }))
+      }
+    } catch (err) {
+      console.error('getLoadingStatus failed:', err)
     }
   }
   socket.onclose = (e) => {
@@ -148,7 +171,7 @@ const SocketContext = createContext()
 function SocketProvider ({ children }) {
   const [socketState, setSocketState] = useState(defaultSocketState)
 
-  if (typeof WebSocket !== 'undefined' && socketState.connected !== true) {
+  if (typeof window !== 'undefined' && typeof WebSocket !== 'undefined' && socketState.connected !== true) {
     connect(socketState, setSocketState)
   }
 
@@ -175,10 +198,8 @@ function sendEvent (name, message = null) {
     }
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ requestId, name, message }))
-      socketDebugMessage('Message sent to socket server', requestId, name, message)
     } else {
       deferredEventQueue.push({ requestId, name, message })
-      socketDebugMessage('Message queued', requestId, name, message)
     }
   })
 }

@@ -1,10 +1,10 @@
-!define APP_NAME "ICARUS Terminal"
-!define COMP_NAME "ICARUS"
+!define APP_NAME "DAEDALUS Terminal"
+!define COMP_NAME "DAEDALUS"
 !define VERSION "${PRODUCT_VERSION}"
-!define COPYRIGHT "ICARUS"
+!define COPYRIGHT "DAEDALUS"
 !define DESCRIPTION "Application"
-!define INSTALLER_NAME "../../dist/ICARUS Setup.exe"
-!define MAIN_APP_EXE "ICARUS Terminal.exe"
+!define INSTALLER_NAME "../../dist/DAEDALUS Setup.exe"
+!define MAIN_APP_EXE "DAEDALUS Terminal.exe"
 !define INSTALL_TYPE "SetShellVarContext current"
 !define REG_ROOT "HKCU"
 !define REG_APP_PATH "Software\Microsoft\Windows\CurrentVersion\App Paths\${MAIN_APP_EXE}"
@@ -28,7 +28,7 @@ OutFile "${INSTALLER_NAME}"
 BrandingText "${APP_NAME}"
 XPStyle on
 InstallDirRegKey "${REG_ROOT}" "${REG_APP_PATH}" ""
-InstallDir "$PROGRAMFILES\ICARUS Terminal"
+InstallDir "$PROGRAMFILES\DAEDALUS Terminal"
 
 ######################################################################
 
@@ -53,7 +53,7 @@ InstallDir "$PROGRAMFILES\ICARUS Terminal"
 
 !ifdef REG_START_MENU
 !define MUI_STARTMENUPAGE_NODISABLE
-!define MUI_STARTMENUPAGE_DEFAULTFOLDER "ICARUS Terminal"
+!define MUI_STARTMENUPAGE_DEFAULTFOLDER "DAEDALUS Terminal"
 !define MUI_STARTMENUPAGE_REGISTRY_ROOT "${REG_ROOT}"
 !define MUI_STARTMENUPAGE_REGISTRY_KEY "${UNINSTALL_PATH}"
 !define MUI_STARTMENUPAGE_REGISTRY_VALUENAME "${REG_START_MENU}"
@@ -83,8 +83,8 @@ Section -MainProgram
 ${INSTALL_TYPE}
 SetOverwrite ifnewer
 SetOutPath "$INSTDIR"
-File "..\..\build\bin\ICARUS Service.exe"
-File "..\..\build\bin\ICARUS Terminal.exe"
+File "..\..\build\bin\DAEDALUS Service.exe"
+File "..\..\build\bin\DAEDALUS Terminal.exe"
 File "..\..\build\bin\webview.dll"
 File "..\..\build\bin\WebView2Loader.dll"
 File "..\assets\icon.ico"
@@ -110,12 +110,12 @@ CreateShortCut "$SMPROGRAMS\$SM_Folder\${APP_NAME} Website.lnk" "$INSTDIR\${APP_
 !endif
 
 !ifndef REG_START_MENU
-CreateDirectory "$SMPROGRAMS\ICARUS Terminal"
-CreateShortCut "$SMPROGRAMS\ICARUS Terminal\${APP_NAME}.lnk" "$INSTDIR\${MAIN_APP_EXE}"
+CreateDirectory "$SMPROGRAMS\DAEDALUS Terminal"
+CreateShortCut "$SMPROGRAMS\DAEDALUS Terminal\${APP_NAME}.lnk" "$INSTDIR\${MAIN_APP_EXE}"
 CreateShortCut "$DESKTOP\${APP_NAME}.lnk" "$INSTDIR\${MAIN_APP_EXE}"
 !ifdef WEB_SITE
 WriteIniStr "$INSTDIR\${APP_NAME} website.url" "InternetShortcut" "URL" "${WEB_SITE}"
-CreateShortCut "$SMPROGRAMS\ICARUS Terminal\${APP_NAME} Website.lnk" "$INSTDIR\${APP_NAME} website.url"
+CreateShortCut "$SMPROGRAMS\DAEDALUS Terminal\${APP_NAME} Website.lnk" "$INSTDIR\${APP_NAME} website.url"
 !endif
 !endif
 
@@ -135,8 +135,8 @@ SectionEnd
 
 Section Uninstall
 ${INSTALL_TYPE}
-Delete "$INSTDIR\ICARUS Service.exe"
-Delete "$INSTDIR\ICARUS Terminal.exe"
+Delete "$INSTDIR\DAEDALUS Service.exe"
+Delete "$INSTDIR\DAEDALUS Terminal.exe"
 Delete "$INSTDIR\webview.dll"
 Delete "$INSTDIR\WebView2Loader.dll"
 Delete "$INSTDIR\icon.ico"
@@ -159,13 +159,13 @@ RmDir "$SMPROGRAMS\$SM_Folder"
 !endif
 
 !ifndef REG_START_MENU
-Delete "$SMPROGRAMS\ICARUS Terminal\${APP_NAME}.lnk"
+Delete "$SMPROGRAMS\DAEDALUS Terminal\${APP_NAME}.lnk"
 !ifdef WEB_SITE
-Delete "$SMPROGRAMS\ICARUS Terminal\${APP_NAME} Website.lnk"
+Delete "$SMPROGRAMS\DAEDALUS Terminal\${APP_NAME} Website.lnk"
 !endif
 Delete "$DESKTOP\${APP_NAME}.lnk"
 
-RmDir "$SMPROGRAMS\ICARUS Terminal"
+RmDir "$SMPROGRAMS\DAEDALUS Terminal"
 !endif
 
 DeleteRegKey ${REG_ROOT} "${REG_APP_PATH}"

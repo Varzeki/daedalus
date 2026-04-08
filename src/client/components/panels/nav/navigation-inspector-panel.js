@@ -14,7 +14,7 @@ export default function NavigationInspectorPanel ({ systemObject, setSystemObjec
   if (systemObject.type === 'Planet') systemObjectSubType = systemObject.subType
 
   // TODO Move to icon class
-  let iconClass = 'text-info icon icarus-terminal-'
+  let iconClass = 'text-info icon daedalus-terminal-'
   switch (systemObject.type.toLowerCase()) {
     case 'star':
       iconClass += 'star'
@@ -71,10 +71,10 @@ export default function NavigationInspectorPanel ({ systemObject, setSystemObjec
   if (systemObject.terraformingState && systemObject.terraformingState !== 'Not terraformable' && systemObject.terraformingState !== 'Terraformed') showExploration = true
 
   return (
-    <div className='inspector navigation-panel__inspector fx-fade-in'>
+    <div className='inspector navigation-panel__inspector'>
       <div className='inspector__title' onClick={() => { setSystemObjectByName(null) }}>
         <button className='inspector__close-button'>
-          <i className='icon icarus-terminal-chevron-right' />
+          <i className='icon daedalus-terminal-chevron-right' />
         </button>
         <h3>{inspectorTitle}</h3>
       </div>
@@ -97,28 +97,28 @@ export default function NavigationInspectorPanel ({ systemObject, setSystemObjec
 
               {systemObject.hasOwnProperty('mapped') && <>
                 {systemObject.mapped === true
-                  ? <p className='text-info text-muted'><i className='icarus-terminal-scan' style={{position: 'relative', top: '.3rem', fontSize: '1.5rem'}}/> Surface scanned</p>
-                  : <p className='text-info'><i className='icarus-terminal-scan' style={{position: 'relative', top: '.3rem', fontSize: '1.5rem'}}/> Surface scan required</p>}
+                  ? <p className='text-info text-muted'><i className='daedalus-terminal-scan' style={{position: 'relative', top: '.3rem', fontSize: '1.5rem'}}/> Surface scanned</p>
+                  : <p className='text-info'><i className='daedalus-terminal-scan' style={{position: 'relative', top: '.3rem', fontSize: '1.5rem'}}/> Surface scan required</p>}
               </>}
-              {isLandable ? <p className='text-info'><i className='icarus-terminal-planet-lander' style={{position: 'relative', top: '.3rem', fontSize: '1.5rem'}}/> Landable surface</p> : null}
+              {isLandable ? <p className='text-info'><i className='daedalus-terminal-planet-lander' style={{position: 'relative', top: '.3rem', fontSize: '1.5rem'}}/> Landable surface</p> : null}
 
               {systemObject.terraformingState && systemObject.terraformingState !== 'Not terraformable' && systemObject.terraformingState !== 'Terraformed' && 
-                <p className='text-info'><i className='icarus-terminal-planet-terraformable' style={{position: 'relative', top: '.2rem', fontSize: '1.5rem'}}/> Terraformable</p>}
+                <p className='text-info'><i className='daedalus-terminal-planet-terraformable' style={{position: 'relative', top: '.2rem', fontSize: '1.5rem'}}/> Terraformable</p>}
 
-              {systemObject.volcanismType !== 'No volcanism' ? <p className='text-info text-no-wrap'><i className='icarus-terminal-planet-volcanic' style={{position: 'relative', top: '.2rem', fontSize: '1.5rem'}}/> {systemObject.volcanismType}</p> : null}
+              {systemObject.volcanismType !== 'No volcanism' ? <p className='text-info text-no-wrap'><i className='daedalus-terminal-planet-volcanic' style={{position: 'relative', top: '.2rem', fontSize: '1.5rem'}}/> {systemObject.volcanismType}</p> : null}
 
               {systemObject?.signals?.biological > 0 && !systemObject?.biologicalGenuses && <>
                 {systemObject?.signals?.biological === 1 &&
-                  <p className='text-info'><i className='icarus-terminal-plant' style={{position: 'relative', top: '.2rem', fontSize: '1.5rem'}}/> {systemObject?.signals?.biological} Biological Signal</p>
+                  <p className='text-info'><i className='daedalus-terminal-plant' style={{position: 'relative', top: '.2rem', fontSize: '1.5rem'}}/> {systemObject?.signals?.biological} Biological Signal</p>
                 }
                 {systemObject?.signals?.biological > 1 &&
-                  <p className='text-info'><i className='icarus-terminal-plant' style={{position: 'relative', top: '.2rem', fontSize: '1.5rem'}}/> {systemObject?.signals?.biological} Biological Signals</p>
+                  <p className='text-info'><i className='daedalus-terminal-plant' style={{position: 'relative', top: '.2rem', fontSize: '1.5rem'}}/> {systemObject?.signals?.biological} Biological Signals</p>
                 }
               </>}
 
               {systemObject.biologicalGenuses && <>
                 {systemObject.biologicalGenuses.map(genus => 
-                  <p key={`navigation-inspector_${systemObject.id}_bio-signal_${genus}`} className='text-info'><i className='icarus-terminal-plant' style={{position: 'relative', top: '.2rem', fontSize: '1.5rem'}}/> {genus}</p>
+                  <p key={`navigation-inspector_${systemObject.id}_bio-signal_${genus}`} className='text-info'><i className='daedalus-terminal-plant' style={{position: 'relative', top: '.2rem', fontSize: '1.5rem'}}/> {genus}</p>
                 )}
               </>}
 
@@ -160,7 +160,7 @@ export default function NavigationInspectorPanel ({ systemObject, setSystemObjec
                 <div className='text-info'>
                   {surfacePorts.map(base => (
                     <p key={`navigation-inspector_${systemObject.id}_${base.id}`} className='text-link text-no-wrap' onClick={() => setSystemObjectByName(base.name)}>
-                      <i className='icon icarus-terminal-planetary-port' />
+                      <i className='icon daedalus-terminal-planetary-port' />
                       <span className='text-link-text text-no-wrap'>{base.name}</span>
                     </p>
                   ))}
@@ -173,7 +173,7 @@ export default function NavigationInspectorPanel ({ systemObject, setSystemObjec
                 <div className='text-info'>
                   {settlements.map(base => (
                     <p key={`navigation-inspector_${systemObject.id}_${base.id}`} className='text-link text-no-wrap' onClick={() => setSystemObjectByName(base.name)}>
-                      <i className='icon icarus-terminal-settlement' />
+                      <i className='icon daedalus-terminal-settlement' />
                       <span className='text-link-text text-no-wrap'>{base.name}</span>
                     </p>
                   ))}
@@ -227,7 +227,7 @@ export default function NavigationInspectorPanel ({ systemObject, setSystemObjec
           <div className='navigation-panel__inspector-section navigation-panel__inspector-section--location'>
             <h4 className='text-primary'>Location</h4>
             <p className='text-info text-link text-no-wrap' onClick={() => setSystemObjectByName(systemObject.body.name)}>
-              <i className='icon icarus-terminal-planet' /> <span className='text-link-text text-no-wrap'>{systemObject.body.name}</span>
+              <i className='icon daedalus-terminal-planet' /> <span className='text-link-text text-no-wrap'>{systemObject.body.name}</span>
             </p>
           </div>}
 

@@ -53,11 +53,11 @@ export default function IndexPage () {
       }}
       />
       <div style={{ padding: '.5rem 1rem', opacity: connected ? 1 : 0, zoom: '1.2', fontWeight: 'bold' }}>
-        <h1 className='text-info' style={{ marginBottom: '.5rem' }}>
-          <i className='icon icarus-terminal-logo' style={{ position: 'relative', top: '.75rem' }} />ICARUS
+        <h1 className='text-info' style={{ marginBottom: '.5rem', position: 'relative', paddingLeft: '4.5rem' }}>
+          <i className='icon daedalus-terminal-logo' style={{ position: 'absolute', left: '-.25rem', top: '.1rem', fontSize: '4rem', textShadow: '0 0 1px' }} />DAEDALUS
         </h1>
         <span className='launcher-title'>
-          <h3 className='text-primary'>ICARUS Terminal</h3>
+          <h3 className='text-primary'>DAEDALUS Terminal</h3>
           <h4 className='text-primary text-muted'>Version {packageJson.version}</h4>
         </span>
         {update && update.isUpgrade &&
@@ -79,10 +79,10 @@ export default function IndexPage () {
                   setDownloadingUpdate(true)
                   installUpdate()
                 }}
-              ><i className='icon icarus-terminal-download' /> Install Update
+              ><i className='icon daedalus-terminal-download' /> Install Update
               </button>}
             {downloadingUpdate && <p className='text-primary text-blink-slow'>
-              <i style={{position: 'relative', top: '.2rem', marginRight: '.2rem'}} className='icon icarus-terminal-download' /> Downloading update...
+              <i style={{position: 'relative', top: '.2rem', marginRight: '.2rem'}} className='icon daedalus-terminal-download' /> Downloading update...
             </p>}
           </div>}
         <div style={{ position: 'absolute', bottom: '.5rem', left: '1rem' }}>

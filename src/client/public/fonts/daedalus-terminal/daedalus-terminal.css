@@ -1,0 +1,125 @@
+@font-face {
+  font-family: "daedalus-terminal";
+  src: url('daedalus-terminal.eot?t=1775614240516'); /* IE9*/
+  src: url('daedalus-terminal.eot?t=1775614240516#iefix') format('embedded-opentype'), /* IE6-IE8 */
+  url("daedalus-terminal.woff2?t=1775614240516") format("woff2"),
+  url("daedalus-terminal.woff?t=1775614240516") format("woff"),
+  url('daedalus-terminal.ttf?t=1775614240516') format('truetype'), /* chrome, firefox, opera, Safari, Android, iOS 4.2+*/
+  url('daedalus-terminal.svg?t=1775614240516#daedalus-terminal') format('svg'); /* iOS 4.1- */
+}
+
+[class^="daedalus-terminal-"], [class*=" daedalus-terminal-"] {
+  font-family: 'daedalus-terminal' !important;
+  font-size:16px;
+  font-style:normal;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+}
+
+
+.daedalus-terminal-0_copy:before { content: "\ea01"; }
+.daedalus-terminal-asteroid-base:before { content: "\ea02"; }
+.daedalus-terminal-atmosphere:before { content: "\ea03"; }
+.daedalus-terminal-barrel:before { content: "\ea04"; }
+.daedalus-terminal-cargo-buy:before { content: "\ea05"; }
+.daedalus-terminal-cargo-export:before { content: "\ea06"; }
+.daedalus-terminal-cargo-import:before { content: "\ea07"; }
+.daedalus-terminal-cargo-sell:before { content: "\ea08"; }
+.daedalus-terminal-cargo:before { content: "\ea09"; }
+.daedalus-terminal-chevron-down:before { content: "\ea0a"; }
+.daedalus-terminal-chevron-left:before { content: "\ea0b"; }
+.daedalus-terminal-chevron-right:before { content: "\ea0c"; }
+.daedalus-terminal-chevron-up:before { content: "\ea0d"; }
+.daedalus-terminal-cogs:before { content: "\ea0e"; }
+.daedalus-terminal-color-picker:before { content: "\ea0f"; }
+.daedalus-terminal-coriolis-starport:before { content: "\ea10"; }
+.daedalus-terminal-credits:before { content: "\ea11"; }
+.daedalus-terminal-direction-heading:before { content: "\ea12"; }
+.daedalus-terminal-download:before { content: "\ea13"; }
+.daedalus-terminal-economy:before { content: "\ea14"; }
+.daedalus-terminal-engineer:before { content: "\ea15"; }
+.daedalus-terminal-engineering:before { content: "\ea16"; }
+.daedalus-terminal-exit:before { content: "\ea17"; }
+.daedalus-terminal-fleet-carrier-lg:before { content: "\ea18"; }
+.daedalus-terminal-fleet-carrier:before { content: "\ea19"; }
+.daedalus-terminal-fuel:before { content: "\ea1a"; }
+.daedalus-terminal-fullscreen-exit:before { content: "\ea1b"; }
+.daedalus-terminal-fullscreen-window-exit:before { content: "\ea1c"; }
+.daedalus-terminal-fullscreen-window:before { content: "\ea1d"; }
+.daedalus-terminal-fullscreen:before { content: "\ea1e"; }
+.daedalus-terminal-help:before { content: "\ea1f"; }
+.daedalus-terminal-info:before { content: "\ea20"; }
+.daedalus-terminal-inventory:before { content: "\ea21"; }
+.daedalus-terminal-location-filled:before { content: "\ea22"; }
+.daedalus-terminal-location:before { content: "\ea23"; }
+.daedalus-terminal-logo:before { content: "\ea24"; }
+.daedalus-terminal-materials-encoded:before { content: "\ea25"; }
+.daedalus-terminal-materials-grade-1:before { content: "\ea26"; }
+.daedalus-terminal-materials-grade-2:before { content: "\ea27"; }
+.daedalus-terminal-materials-grade-3:before { content: "\ea28"; }
+.daedalus-terminal-materials-grade-4:before { content: "\ea29"; }
+.daedalus-terminal-materials-grade-5:before { content: "\ea2a"; }
+.daedalus-terminal-materials-manufactured:before { content: "\ea2b"; }
+.daedalus-terminal-materials-raw:before { content: "\ea2c"; }
+.daedalus-terminal-materials-xeno:before { content: "\ea2d"; }
+.daedalus-terminal-materials:before { content: "\ea2e"; }
+.daedalus-terminal-megaship-lg:before { content: "\ea2f"; }
+.daedalus-terminal-megaship:before { content: "\ea30"; }
+.daedalus-terminal-notifications-disabled:before { content: "\ea31"; }
+.daedalus-terminal-notifications:before { content: "\ea32"; }
+.daedalus-terminal-ocellus-starport:before { content: "\ea33"; }
+.daedalus-terminal-orbis-starport:before { content: "\ea34"; }
+.daedalus-terminal-outpost:before { content: "\ea35"; }
+.daedalus-terminal-pin-window:before { content: "\ea36"; }
+.daedalus-terminal-planet-ammonia-based-life:before { content: "\ea37"; }
+.daedalus-terminal-planet-ammonia-world:before { content: "\ea38"; }
+.daedalus-terminal-planet-atmosphere-landable:before { content: "\ea39"; }
+.daedalus-terminal-planet-atmosphere:before { content: "\ea3a"; }
+.daedalus-terminal-planet-earthlike:before { content: "\ea3b"; }
+.daedalus-terminal-planet-empty:before { content: "\ea3c"; }
+.daedalus-terminal-planet-gas-giant:before { content: "\ea3d"; }
+.daedalus-terminal-planet-high-metal-content:before { content: "\ea3e"; }
+.daedalus-terminal-planet-high-value:before { content: "\ea3f"; }
+.daedalus-terminal-planet-landable:before { content: "\ea40"; }
+.daedalus-terminal-planet-lander:before { content: "\ea41"; }
+.daedalus-terminal-planet-life:before { content: "\ea42"; }
+.daedalus-terminal-planet-ringed:before { content: "\ea43"; }
+.daedalus-terminal-planet-terraformable:before { content: "\ea44"; }
+.daedalus-terminal-planet-volcanic:before { content: "\ea45"; }
+.daedalus-terminal-planet-water-based-life:before { content: "\ea46"; }
+.daedalus-terminal-planet-water-world:before { content: "\ea47"; }
+.daedalus-terminal-planet:before { content: "\ea48"; }
+.daedalus-terminal-planetary-port-large:before { content: "\ea49"; }
+.daedalus-terminal-planetary-port:before { content: "\ea4a"; }
+.daedalus-terminal-plant:before { content: "\ea4b"; }
+.daedalus-terminal-poi-empty:before { content: "\ea4c"; }
+.daedalus-terminal-poi:before { content: "\ea4d"; }
+.daedalus-terminal-power:before { content: "\ea4e"; }
+.daedalus-terminal-route:before { content: "\ea4f"; }
+.daedalus-terminal-scan:before { content: "\ea50"; }
+.daedalus-terminal-search:before { content: "\ea51"; }
+.daedalus-terminal-settings:before { content: "\ea52"; }
+.daedalus-terminal-settlement:before { content: "\ea53"; }
+.daedalus-terminal-shield:before { content: "\ea54"; }
+.daedalus-terminal-ship:before { content: "\ea55"; }
+.daedalus-terminal-signal-even-bars:before { content: "\ea56"; }
+.daedalus-terminal-signal:before { content: "\ea57"; }
+.daedalus-terminal-sound:before { content: "\ea58"; }
+.daedalus-terminal-star:before { content: "\ea59"; }
+.daedalus-terminal-sync:before { content: "\ea5a"; }
+.daedalus-terminal-system-authority-solid:before { content: "\ea5b"; }
+.daedalus-terminal-system-authority:before { content: "\ea5c"; }
+.daedalus-terminal-system-bodies:before { content: "\ea5d"; }
+.daedalus-terminal-system-orbits:before { content: "\ea5e"; }
+.daedalus-terminal-table-index:before { content: "\ea5f"; }
+.daedalus-terminal-table-inspector:before { content: "\ea60"; }
+.daedalus-terminal-table-rows:before { content: "\ea61"; }
+.daedalus-terminal-trending-down-chart:before { content: "\ea62"; }
+.daedalus-terminal-trending-down:before { content: "\ea63"; }
+.daedalus-terminal-trending-steady-chart:before { content: "\ea64"; }
+.daedalus-terminal-trending-steady:before { content: "\ea65"; }
+.daedalus-terminal-trending-up-chart:before { content: "\ea66"; }
+.daedalus-terminal-trending-up:before { content: "\ea67"; }
+.daedalus-terminal-triangle-up:before { content: "\ea68"; }
+.daedalus-terminal-warning:before { content: "\ea69"; }
+.daedalus-terminal-wrench:before { content: "\ea6a"; }

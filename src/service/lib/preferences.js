@@ -18,11 +18,11 @@ class Preferences {
   preferencesDir () {
     switch (os.platform()) {
       case 'win32': // Windows (all versions)
-        return path.join(os.homedir(), 'AppData', 'Local', 'ICARUS Terminal')
+        return path.join(os.homedir(), 'AppData', 'Local', 'DAEDALUS Terminal')
       case 'darwin': // Mac OS
-        return path.join(os.homedir(), 'Library', 'ICARUS Terminal')
+        return path.join(os.homedir(), 'Library', 'DAEDALUS Terminal')
       default: // Default to a location for some other form of unix
-        return path.join(os.homedir(), '.icarus-terminal')
+        return path.join(os.homedir(), '.daedalus-terminal')
     }
   }
 }

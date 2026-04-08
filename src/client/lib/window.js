@@ -1,22 +1,22 @@
-function isWindowsApp () { return (typeof window !== 'undefined' && typeof window.icarusTerminal_version === 'function') }
-function isWindowFullScreen () { if (isWindowsApp()) { return window.icarusTerminal_isFullScreen() } }
-function isWindowPinned () { if (isWindowsApp()) { return window.icarusTerminal_isPinned() } }
-function openReleaseNotes () { if (isWindowsApp()) { return window.icarusTerminal_openReleaseNotes() } }
-function openTerminalInBrowser () { if (isWindowsApp()) { return window.icarusTerminal_openTerminalInBrowser() } }
+function isWindowsApp () { return (typeof window !== 'undefined' && typeof window.daedalusTerminal_version === 'function') }
+function isWindowFullScreen () { if (isWindowsApp()) { return window.daedalusTerminal_isFullScreen() } }
+function isWindowPinned () { if (isWindowsApp()) { return window.daedalusTerminal_isPinned() } }
+function openReleaseNotes () { if (isWindowsApp()) { return window.daedalusTerminal_openReleaseNotes() } }
+function openTerminalInBrowser () { if (isWindowsApp()) { return window.daedalusTerminal_openTerminalInBrowser() } }
 
 function appVersion () {
-  if (isWindowsApp()) { return window.icarusTerminal_version() }
+  if (isWindowsApp()) { return window.daedalusTerminal_version() }
   return null
 }
 
 function newWindow () {
-  if (isWindowsApp()) { return window.icarusTerminal_newWindow() }
+  if (isWindowsApp()) { return window.daedalusTerminal_newWindow() }
 
   window.open(`//${window.location.host}`)
 }
 
 function closeWindow () {
-  if (isWindowsApp()) { return window.icarusTerminal_quit() }
+  if (isWindowsApp()) { return window.daedalusTerminal_quit() }
 
   window.close()
 }
@@ -24,18 +24,18 @@ function closeWindow () {
 async function checkForUpdate () {
   if (isWindowsApp()) {
     try {
-      return JSON.parse(await window.icarusTerminal_checkForUpdate())
+      return JSON.parse(await window.daedalusTerminal_checkForUpdate())
     } catch {}
     return null
   }
 }
 
 function installUpdate () {
-  if (isWindowsApp()) { return window.icarusTerminal_installUpdate() }
+  if (isWindowsApp()) { return window.daedalusTerminal_installUpdate() }
 }
 
 async function toggleFullScreen () {
-  if (isWindowsApp()) { return await window.icarusTerminal_toggleFullScreen() }
+  if (isWindowsApp()) { return await window.daedalusTerminal_toggleFullScreen() }
 
   if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.webkitCurrentFullScreenElement) {
     if (document.documentElement.requestFullscreen) {
@@ -61,7 +61,7 @@ async function toggleFullScreen () {
 }
 
 async function togglePinWindow () {
-  if (isWindowsApp()) { return await window.icarusTerminal_togglePinWindow() }
+  if (isWindowsApp()) { return await window.daedalusTerminal_togglePinWindow() }
 }
 
 module.exports = {

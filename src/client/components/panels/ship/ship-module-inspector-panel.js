@@ -15,7 +15,7 @@ export default function ShipModuleInspectorPanel ({ module, setSelectedModule })
     <div className='inspector inspector--horizontal ship-panel__module-inspector'>
       <div className='inspector__title' onClick={() => { setSelectedModule(null) }}>
         <button className='inspector__close-button'>
-          <i className='icon icarus-terminal-chevron-right' />
+          <i className='icon daedalus-terminal-chevron-right' />
         </button>
         <h3>{inspectorTitle}</h3>
       </div>
@@ -59,7 +59,7 @@ export default function ShipModuleInspectorPanel ({ module, setSelectedModule })
                   {[...Array(module.engineering.level)].map((j, i) =>
                     <i
                       key={`${module.name}_${module.slot}_engineering_${i}`}
-                      className='icon icarus-terminal-engineering'
+                      className='icon daedalus-terminal-engineering'
                     />
                   )}
                 </p>

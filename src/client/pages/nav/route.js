@@ -17,7 +17,7 @@ export default function NavListPage () {
   const [system, setSystem] = useState()
   const currentSystemRef = useRef(null)
 
-  useEffect(animateTableEffect)
+  useEffect(animateTableEffect, [])
   
   // Scroll to current route once, on view load
   useEffect(() => {
@@ -47,7 +47,7 @@ export default function NavListPage () {
       const newNavRoute = await sendEvent('getNavRoute')
       if (newNavRoute) setNavRoute(newNavRoute)
     }
-  }))
+  }), [])
 
   useEffect(() => eventListener('gameStateChange', async (log) => {
     const newNavRoute = await sendEvent('getNavRoute')
@@ -55,7 +55,7 @@ export default function NavListPage () {
     // to current destination and if it is then execute setScrolled(false) so
     // that the route scroll position will update
     if (newNavRoute) setNavRoute(newNavRoute)
-  }))
+  }), [])
 
   useEffect(() => {
     if (!router.isReady) return
@@ -78,7 +78,7 @@ export default function NavListPage () {
                 {navRoute?.currentSystem &&
                   <>
                     <h3 className='text-primary'>
-                      <i className='icarus-terminal-location-filled text-secondary' style={{ position: 'relative', top: '.25rem', marginRight: '.5rem' }} />
+                      <i className='daedalus-terminal-location-filled text-secondary' style={{ position: 'relative', top: '.25rem', marginRight: '.5rem' }} />
                       Location
                     </h3>
                     <h2 className='navigation-panel__route-heading text-info'>
@@ -90,7 +90,7 @@ export default function NavListPage () {
                 {navRoute?.destination &&
                   <>
                     <h3 className='text-primary'>
-                      <i className='icarus-terminal-route' style={{ position: 'relative', top: '.25rem', marginRight: '.5rem' }} />
+                      <i className='daedalus-terminal-route' style={{ position: 'relative', top: '.25rem', marginRight: '.5rem' }} />
                       Destination
                     </h3>
                     <h2 className='navigation-panel__route-heading text-info text-right'>
@@ -110,7 +110,7 @@ export default function NavListPage () {
               <table className='navigation-panel__route-plan table--animated table--interactive'>
                 <tbody className='fx-fade-in'>
                   {navRoute.route.map((route, i) => {
-                    const icon = route?.isCurrentSystem === true ? 'icarus-terminal-location-filled' : 'icarus-terminal-star'
+                    const icon = route?.isCurrentSystem === true ? 'daedalus-terminal-location-filled' : 'daedalus-terminal-star'
                     const previouslyVistedSystem = navRoute?.inSystemOnRoute && (navRoute?.route?.length - navRoute.jumpsToDestination) > (i + 1)
                     return (
                       <tr
@@ -131,11 +131,11 @@ export default function NavListPage () {
                             <br/>
                             {route.numberOfStars > 0 && <span className='text-no-wrap'>
                               <span style={{marginRight: '1rem'}}>
-                                <i className='icon icarus-terminal-star' style={{ position: 'relative', top: '.35rem', fontSize: '1.5rem'}}/> {route.numberOfStars}
+                                <i className='icon daedalus-terminal-star' style={{ position: 'relative', top: '.35rem', fontSize: '1.5rem'}}/> {route.numberOfStars}
                                 <span className='hidden-small'> {route.numberOfStars === 1 ? 'Star' : 'Stars'}</span>
                               </span>
                               {route.numberOfPlanets > 0 && <>
-                                <i className='icon icarus-terminal-planet' style={{ position: 'relative', top: '.35rem', fontSize: '1.5rem'}}/> {route.numberOfPlanets}
+                                <i className='icon daedalus-terminal-planet' style={{ position: 'relative', top: '.35rem', fontSize: '1.5rem'}}/> {route.numberOfPlanets}
                                 <span className='hidden-small'> {route.numberOfPlanets === 1 ? 'Planet' : 'Planets'}</span>
                               </>}
                             </span>}
@@ -160,15 +160,15 @@ export default function NavListPage () {
                         <td className='text-right' style={{ width: '1rem', paddingLeft: '.5rem', paddingRight: '.5rem' }}>
                           <span className={previouslyVistedSystem ? 'text-info text-muted' : 'text-info'}>
                             {route?.isExplored === false && <>
-                              <i className='icarus-terminal-scan' style={{ position: 'relative', fontSize: '2rem', top: '.25rem', marginRight: '.5rem' }}/>
+                              <i className='daedalus-terminal-scan' style={{ position: 'relative', fontSize: '2rem', top: '.25rem', marginRight: '.5rem' }}/>
                               <br className='visible-small'/>
                             </>}
                           </span>
                           <span className={previouslyVistedSystem ? 'text-muted' : ''}>
                             {route.starClass.match(/^[OBAFGKM]/)
-                              ? <i className='icarus-terminal-fuel' style={{ position: 'relative', fontSize: '2rem', top: '.25rem', marginRight: '.5rem' }} />
+                              ? <i className='daedalus-terminal-fuel' style={{ position: 'relative', fontSize: '2rem', top: '.25rem', marginRight: '.5rem' }} />
                               : route.starClass.match(/^[DNH]/) 
-                                ? <i className='text-danger icarus-terminal-warning' style={{ position: 'relative', fontSize: '2rem', top: '.25rem', marginRight: '.5rem' }} />
+                                ? <i className='text-danger daedalus-terminal-warning' style={{ position: 'relative', fontSize: '2rem', top: '.25rem', marginRight: '.5rem' }} />
                                 : ''}
                             </span>
                         </td>
@@ -179,7 +179,7 @@ export default function NavListPage () {
                           </span>
                         </td>
                         <td className='text-center' style={{ width: '1rem' }}>
-                          <i className='icon icarus-terminal-chevron-right' style={{ fontSize: '1rem' }} />
+                          <i className='icon daedalus-terminal-chevron-right' style={{ fontSize: '1rem' }} />
                         </td>
                       </tr>
                     )

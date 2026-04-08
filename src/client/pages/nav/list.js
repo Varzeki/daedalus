@@ -110,46 +110,46 @@ export default function NavListPage () {
           </p>
           <div className='text-uppercase'>
             <p className='text-secondary'>
-              <i className='icon icarus-terminal-planet-lander text-secondary' /> Landable
+              <i className='icon daedalus-terminal-planet-lander text-secondary' /> Landable
             </p>
             <p>
-              <i className='icon icarus-terminal-planet-atmosphere' /> Atmosphere
+              <i className='icon daedalus-terminal-planet-atmosphere' /> Atmosphere
             </p>
             <p>
-              <i className='icon icarus-terminal-planet-volcanic' /> Volcanic activity
+              <i className='icon daedalus-terminal-planet-volcanic' /> Volcanic activity
             </p>
             <p>
-              <i className='icon icarus-terminal-planet-terraformable' /> Terraformable
+              <i className='icon daedalus-terminal-planet-terraformable' /> Terraformable
             </p>
             <p>
-              <i className='icon icarus-terminal-planet-earthlike' /> Earthlike
+              <i className='icon daedalus-terminal-planet-earthlike' /> Earthlike
             </p>
             <p>
-              <i className='icon icarus-terminal-planet-water-world' /> Water World
+              <i className='icon daedalus-terminal-planet-water-world' /> Water World
             </p>
             <p>
-              <i className='icon icarus-terminal-planet-ammonia-world' /> Ammonia World
+              <i className='icon daedalus-terminal-planet-ammonia-world' /> Ammonia World
             </p>
             <p>
-              <i className='icon icarus-terminal-planet-high-metal-content' /> High metal content / Metal rich
+              <i className='icon daedalus-terminal-planet-high-metal-content' /> High metal content / Metal rich
             </p>
             <p>
-              <i className='icon icarus-terminal-planet-gas-giant' /> Gas Giant
+              <i className='icon daedalus-terminal-planet-gas-giant' /> Gas Giant
             </p>
             <p>
-              <i className='icon icarus-terminal-plant' /> Biological signal
+              <i className='icon daedalus-terminal-plant' /> Biological signal
             </p>
             <p>
-              <i className='icon icarus-terminal-planet-water-based-life' /> Water based life
+              <i className='icon daedalus-terminal-planet-water-based-life' /> Water based life
             </p>
             <p>
-              <i className='icon icarus-terminal-planet-ammonia-based-life' /> Ammonia based life
+              <i className='icon daedalus-terminal-planet-ammonia-based-life' /> Ammonia based life
             </p>
             <p>
-              <i className='icon icarus-terminal-planet-ringed' /> Ringed body
+              <i className='icon daedalus-terminal-planet-ringed' /> Ringed body
             </p>
             <p>
-              <i className='text-success icon icarus-terminal-credits' /> High scan value
+              <i className='text-success icon daedalus-terminal-credits' /> High scan value
             </p>
           </div>
         </div>

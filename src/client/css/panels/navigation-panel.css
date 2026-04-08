@@ -22,12 +22,14 @@
   top: 0;
   bottom: 0;
   width: 21.5rem;
-  transition: right .5s ease-in-out;
+  transition: transform .5s ease-in-out;
   z-index: 10;
+  will-change: transform;
 }
 
 .navigation-panel__inspector--hidden {
-  right: -21.5rem;
+  transform: translateX(100%);
+  transition: none;
   padding: 0;
   animation-delay: 0;
 }
@@ -81,12 +83,16 @@
   height: 100%;
   z-index: 3;
   overflow: hidden;
-  transition: right .5s ease-in-out;
 }
 
 .navigation-panel__list--inspector,
 .navigation-panel__map--inspector {
   right: 22rem;
+}
+
+/* List view: animate normally (text rows are cheap to relayout) */
+.navigation-panel__list {
+  transition: right .5s ease-in-out;
 }
 
 .navigation-panel__list {
@@ -151,20 +157,7 @@
   right: 0;
   bottom: 0;
   background: linear-gradient(rgba(0,0,0,0), rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .15));
-  animation: system-map-fade-in-animation 1s ease-in-out;
-  animation-fill-mode: forwards;
-}
-
-
-@keyframes system-map-fade-in-animation {
-  0% {
-    mask: linear-gradient(90deg, #000 25%, #000000e6 50%, #00000000) 150% 0 / 400% no-repeat;
-    opacity: .5;
-  }
-  100% {
-    mask: linear-gradient(90deg, #000 25%, #000000e6 50%, #00000000) 0 / 400% no-repeat;
-    opacity: 1;
-  }
+  isolation: isolate;
 }
 
 
@@ -217,12 +210,10 @@
 
 .navigation-panel__map-background::after {
   background-color: black;
-  background-image: url(/images/textures/stars.jpg);
-  background-size: 50rem;
-  background-position-y: var(--background-position-y-offset-stars);
   background-image: url(/images/textures/galaxy.jpg);
   background-position: center center;
   background-size: cover;
+  filter: brightness(70%);
   content: " ";
   display: block;
   position: absolute;
@@ -231,13 +222,6 @@
   bottom: 0;
   right: 0;
   z-index: -2;
-  animation: navigation-panel__map-background-fade-in-animation 1s ease-in-out;
-  animation-fill-mode: forwards;
-}
-
-@keyframes navigation-panel__map-background-fade-in-animation {
-  from { filter: blur(2rem) brightness(200%); }
-  to { filter: blur(0) brightness(50%); }
 }
 
 .navigation-panel__map-background::before {
@@ -254,6 +238,7 @@
   bottom: 0;
   right: 0;
   z-index: -1;
+  contain: strict;
 }
 
 .system-map__planet-icon {

@@ -48,7 +48,7 @@
   border: .2rem solid var(--color-info);
   opacity: .5;
   border-radius: 5rem;
-  transition: all .25s ease-in-out;
+  transition: opacity .25s ease-in-out, border-color .25s ease-in-out;
 }
 
 .checkbox .checkbox__control:after {
@@ -62,7 +62,7 @@
   background-color: var(--color-info);
   border: .2rem solid var(--color-info);
   border-radius: 5rem;
-  transition: all .2s ease-in-out;
+  transition: left .2s ease-in-out, background-color .2s ease-in-out;
 }
 
 .checkbox input:checked ~ .checkbox__control {

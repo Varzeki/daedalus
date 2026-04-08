@@ -5,7 +5,7 @@ This includes material from the Elite Dangerous wiki at Fandom and is licensed u
 * https://elite-dangerous.fandom.com
 * https://www.fandom.com/licensing
 
-The purpose of exporting this data is to be able to provide additional information inside ICARUS Terminal, such as context sensitive information about modules, equipment, items, factions, etc and to provide a glossary/codex.
+The purpose of exporting this data is to be able to provide additional information inside DAEDALUS Terminal, such as context sensitive information about modules, equipment, items, factions, etc and to provide a glossary/codex.
 
 This will be done with appropriate licensing information and credits / backlinks.
 

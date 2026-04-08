@@ -37,10 +37,11 @@
   bottom: .5rem;
   left: .5rem;
   right: .5rem;
-  transition: .25s ease-in-out;
+  transition: opacity .25s ease-in-out;
   opacity: 0;
   overflow: hidden;
   z-index: 10;
+  contain: layout style;
 }
 
 .layout__full-width {

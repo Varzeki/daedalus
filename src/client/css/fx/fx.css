@@ -79,6 +79,8 @@ html[data-fx-crt="true"] body::before {
   z-index: 10010; /* 10000 and above so is on top of notifications */
   background-size: 100% 3px, 3px 100%;
   pointer-events: none;
+  transform: translateZ(0); /* Promote to own compositor layer */
+  contain: strict;
 }
 
 .crt-fx::after,
@@ -96,6 +98,8 @@ html[data-fx-crt="true"] .layout__overlay {
   bottom: 0;
   right: 0;
   z-index: 10005; 
+  transform: translateZ(0); /* Promote to own compositor layer */
+  contain: strict;
 }
 
 @keyframes text-refraction-animation {

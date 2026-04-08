@@ -35,21 +35,21 @@ eventHandlers.syncMessage = (message) => broadcastEvent('syncMessage', message)
 
 // TODO Define these in another file / merge with eventHandlers before porting
 // over existing event handlers from the internal build
-const ICARUS_EVENTS = {
-  IcarusGameLoadedEvent: {
+const DAEDALUS_EVENTS = {
+  DaedalusGameLoadedEvent: {
     events: ['LoadGame'],
     handler: async () => { /* Return JSON */ }
   }
 }
 
-const GAME_EVENT_TO_ICARUS_EVENT_MAP = {}
+const GAME_EVENT_TO_DAEDALUS_EVENT_MAP = {}
 
-// Create mapping of game events to ICARUS events, so that when a game event
-// happens it's easy to lookup what ICARUS events to fire
-Object.keys(ICARUS_EVENTS).forEach(icarusEventName => {
-  ICARUS_EVENTS[icarusEventName].events.forEach(gameEventName => {
-    if (!GAME_EVENT_TO_ICARUS_EVENT_MAP[gameEventName]) GAME_EVENT_TO_ICARUS_EVENT_MAP[gameEventName] = []
-    GAME_EVENT_TO_ICARUS_EVENT_MAP[gameEventName].push(icarusEventName)
+// Create mapping of game events to DAEDALUS events, so that when a game event
+// happens it's easy to lookup what DAEDALUS events to fire
+Object.keys(DAEDALUS_EVENTS).forEach(daedalusEventName => {
+  DAEDALUS_EVENTS[daedalusEventName].events.forEach(gameEventName => {
+    if (!GAME_EVENT_TO_DAEDALUS_EVENT_MAP[gameEventName]) GAME_EVENT_TO_DAEDALUS_EVENT_MAP[gameEventName] = []
+    GAME_EVENT_TO_DAEDALUS_EVENT_MAP[gameEventName].push(daedalusEventName)
   })
 })
 
@@ -87,14 +87,14 @@ const logEventCallback = (log) => {
   numberOfEventsImported = eliteLog.stats().numberOfEventsImported
 
   // Add logic to handle broadcasting specific game events
-  if (GAME_EVENT_TO_ICARUS_EVENT_MAP[eventName]) {
+  if (GAME_EVENT_TO_DAEDALUS_EVENT_MAP[eventName]) {
     // Only fire events *if* we are not loading (otherwise can generate
     // thousands of messages in a few seconds, which slows loading)
     if (!loadingInProgress) {
-      // Fire off all ICARUS_EVENTS that depend on this game event
-      GAME_EVENT_TO_ICARUS_EVENT_MAP[eventName].map(async (icarusEventName) => {
-        const message = await ICARUS_EVENTS[icarusEventName].handler()
-        broadcastEvent(icarusEventName, message)
+      // Fire off all DAEDALUS_EVENTS that depend on this game event
+      GAME_EVENT_TO_DAEDALUS_EVENT_MAP[eventName].map(async (daedalusEventName) => {
+        const message = await DAEDALUS_EVENTS[daedalusEventName].handler()
+        broadcastEvent(daedalusEventName, message)
       })
     }
   } else {
@@ -124,7 +124,7 @@ async function init ({ days = 7 } = {}) {
   loadingEndTime = null // Reset
 
   loadingProgressEvent() // Fire first event
-  loadingProgressInterval = setInterval(loadingProgressEvent, 100)
+  loadingProgressInterval = setInterval(loadingProgressEvent, 500)
 
   await eliteJson.load() // Load JSON files then watch for changes
   eliteJson.watch(eliteJsonCallback) // @TODO Pass a callback to handle new messages

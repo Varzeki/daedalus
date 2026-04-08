@@ -72,7 +72,7 @@ export default function ShipModules ({ name, modules, selectedModule, setSelecte
                       {[...Array(module.engineering.level)].map((j, i) =>
                         <i
                           key={`${name}_${module.name}_${module.slot}_engineering_${i}`}
-                          className='icon icarus-terminal-engineering'
+                          className='icon daedalus-terminal-engineering'
                         />
                       )}
                     </div>}

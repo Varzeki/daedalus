@@ -38,7 +38,7 @@ function clean () {
 
 async function build () {
   await compile({
-    name: 'ICARUS Service',
+    name: 'DAEDALUS Service',
     ico: SERVICE_ICON,
     input: ENTRY_POINT,
     output: SERVICE_UNOPTIMIZED_BUILD,

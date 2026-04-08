@@ -4,8 +4,7 @@
   bottom: 0;
   left: 0;
   right: 0;
-  background: rgba(0,0,0,.5);
-  backdrop-filter: blur(.1rem);
+  background: rgba(0,0,0,.6);
   z-index: 19999;
   transition: .5s ease-in-out;
 }
@@ -21,7 +20,7 @@
   margin: auto;
   max-width: min(50rem, 150vw);
   max-height: min(52rem, 100vh);
-  box-shadow: 0 0 5rem black, 0 0 10rem black;
+  box-shadow: 0 0 3rem black;
   padding: 0.5rem;
   overflow: hidden;
   transition: opacity .25s ease-in-out;

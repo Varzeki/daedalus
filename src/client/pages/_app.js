@@ -2,7 +2,8 @@ import App from 'next/app'
 import { Toaster } from 'react-hot-toast'
 import { SocketProvider, eventListener } from 'lib/socket'
 import { loadColorSettings, saveColorSettings } from 'components/settings'
-import '../public/fonts/icarus-terminal/icarus-terminal.css'
+import 'lib/performance-profiler'
+import '../public/fonts/daedalus-terminal/daedalus-terminal.css'
 import '../css/main.css'
 
 const handleKeyPress = (event) => {
@@ -150,6 +151,8 @@ export default class MyApp extends App {
           />
         </div>
         <Component {...pageProps} />
+        {/* Pre-decode galaxy background so it's instant when nav map mounts */}
+        <img src='/images/textures/galaxy.jpg' alt='' decoding='async' style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }} />
       </SocketProvider>
     )
   }

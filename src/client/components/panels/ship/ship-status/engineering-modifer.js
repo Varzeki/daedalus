@@ -6,7 +6,7 @@ export default function EngineeringModifier ({ module, modifier }) {
       style={{ margin: 0, padding: 0 }}
     >
       <i
-        className={`icon icarus-terminal-chevron-${modifier.improvement ? 'up' : 'down'}`}
+        className={`icon daedalus-terminal-chevron-${modifier.improvement ? 'up' : 'down'}`}
         style={{ marginRight: '.25rem', fontSize: '1rem', position: 'relative', top: '.1rem' }}
       />
       {modifier.name}

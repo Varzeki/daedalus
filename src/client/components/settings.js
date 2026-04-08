@@ -20,13 +20,14 @@ function Settings ({ visible, toggleVisible = () => {}, defaultActiveSettingsPan
                 className={`button--icon ${item.active ? 'button--active' : ''}`}
                 onClick={() => setActiveSettingsPanel(item.name)}
               >
-                <i className={`icon icarus-terminal-${item.icon}`} />
+                <i className={`icon daedalus-terminal-${item.icon}`} />
               </button>
             </Fragment>
           )}
         </div>
         {activeSettingsPanel === 'Theme' && <ThemeSettings visible={visible} />}
         {activeSettingsPanel === 'Sounds' && <SoundSettings visible={visible} />}
+        {activeSettingsPanel === 'Exploration' && <ExplorationSettings visible={visible} />}
         <div className='modal-dialog__footer'>
           <hr style={{ margin: '1rem 0 .5rem 0' }} />
           <button className='float-right' onClick={toggleVisible}>
@@ -40,66 +41,239 @@ function Settings ({ visible, toggleVisible = () => {}, defaultActiveSettingsPan
 
 function SoundSettings ({ visible }) {
   const [preferences, setPreferences] = useState()
-  const [voices, setVoices] = useState()
+  const [voicepackDir, setVoicepackDir] = useState('')
+  const [voicepackStatus, setVoicepackStatus] = useState(null)
+  const [voicepackDetecting, setVoicepackDetecting] = useState(false)
 
   useEffect(async () => {
-    setPreferences(await sendEvent('getPreferences'))
-    setVoices(await sendEvent('getVoices'))
+    const prefs = await sendEvent('getPreferences')
+    setPreferences(prefs)
+    // Initialize voicepack dir from preferences or auto-detect
+    if (prefs?.voicepackDir) {
+      setVoicepackDir(prefs.voicepackDir)
+      setVoicepackStatus(await sendEvent('validateVoicepackDir', { dir: prefs.voicepackDir }))
+    } else {
+      setVoicepackDetecting(true)
+      const detected = await sendEvent('detectVoicepackDir')
+      if (detected?.detected) {
+        setVoicepackDir(detected.dir)
+        setVoicepackStatus({ valid: true, name: detected.dir.split(/[\\/]/).pop().replace(/^hcspack-/i, '') })
+      }
+      setVoicepackDetecting(false)
+    }
   }, [visible])
 
   // Listen for changes to preferences triggered by other terminals
+  useEffect(() => eventListener('syncMessage', async (event) => {
+    if (event.name === 'preferences') {
+      const prefs = await sendEvent('getPreferences')
+      setPreferences(prefs)
+      if (prefs?.voicepackDir) {
+        setVoicepackDir(prefs.voicepackDir)
+        setVoicepackStatus(await sendEvent('validateVoicepackDir', { dir: prefs.voicepackDir }))
+      }
+    }
+  }), [])
+
+  const saveVoicepackDir = async (dir) => {
+    setVoicepackDir(dir)
+    if (dir) {
+      const status = await sendEvent('validateVoicepackDir', { dir })
+      setVoicepackStatus(status)
+      const newPreferences = JSON.parse(JSON.stringify(preferences || {}))
+      newPreferences.voicepackDir = dir
+      setPreferences(await sendEvent('setPreferences', newPreferences))
+    } else {
+      setVoicepackStatus(null)
+      const newPreferences = JSON.parse(JSON.stringify(preferences || {}))
+      delete newPreferences.voicepackDir
+      setPreferences(await sendEvent('setPreferences', newPreferences))
+    }
+  }
+
+  return (
+    <div className='modal-dialog__panel modal-dialog__panel--with-navigation scrollable'>
+      <h3 className='text-primary'>Sounds</h3>
+      <p>
+        Configure voice announcements for ship events and alerts.
+        Audio plays through the computer DAEDALUS Terminal is running on.
+      </p>
+      <h4 className='text-primary'>COVAS Voiceover</h4>
+      <p>
+        Play authentic in-game COVAS voice clips for ship events. These are
+        the same announcements that play in-game (e.g. docking granted, frameshift
+        drive charging). Enable this if you have the game audio muted.
+      </p>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '.5rem', cursor: 'pointer' }}>
+        <input
+          type='checkbox'
+          checked={preferences?.covasVoiceoverEnabled || false}
+          disabled={!preferences}
+          onChange={async (e) => {
+            const newPreferences = JSON.parse(JSON.stringify(preferences))
+            newPreferences.covasVoiceoverEnabled = e.target.checked
+            setPreferences(await sendEvent('setPreferences', newPreferences))
+          }}
+        />
+        Enable COVAS voiceover
+      </label>
+      <hr style={{ margin: '1rem 0' }} />
+      <h4 className='text-primary'>COVAS Extended Alerts</h4>
+      <p>
+        Additional voice warnings beyond what the game provides, such as low
+        fuel alerts, dangerous system warnings, high gravity cautions, and
+        notifications when valuable bodies are discovered.
+      </p>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '.5rem', cursor: 'pointer' }}>
+        <input
+          type='checkbox'
+          checked={preferences?.covasExtendedEnabled || false}
+          disabled={!preferences}
+          onChange={async (e) => {
+            const newPreferences = JSON.parse(JSON.stringify(preferences))
+            newPreferences.covasExtendedEnabled = e.target.checked
+            setPreferences(await sendEvent('setPreferences', newPreferences))
+          }}
+        />
+        Enable extended voice alerts
+      </label>
+      <hr style={{ margin: '1rem 0' }} />
+      <h4 className='text-primary'>HCS Voicepack</h4>
+      <p>
+        Set the path to an HCS voicepack directory. This will be auto-detected
+        from Steam if VoiceAttack is installed.
+      </p>
+      <input
+        type='text'
+        value={voicepackDir}
+        placeholder={voicepackDetecting ? 'Detecting...' : 'Path to voicepack directory'}
+        disabled={voicepackDetecting}
+        style={{ width: '100%', maxWidth: '30rem' }}
+        onChange={(e) => setVoicepackDir(e.target.value)}
+        onBlur={(e) => saveVoicepackDir(e.target.value.trim())}
+        onKeyDown={(e) => { if (e.key === 'Enter') saveVoicepackDir(e.target.value.trim()) }}
+      />
+      {voicepackStatus && (
+        <p style={{ marginTop: '.5rem' }} className={voicepackStatus.valid ? 'text-secondary' : 'text-danger'}>
+          {voicepackStatus.valid
+            ? <>Valid Voicepack &mdash; {voicepackStatus.name}</>
+            : <>Invalid Voicepack</>
+          }
+        </p>
+      )}
+    </div>
+  )
+}
+
+function formatCredits (value) {
+  return Number(value).toLocaleString('fr-FR').replace(/\u202F/g, ' ')
+}
+
+function parseCredits (str) {
+  return parseInt(str.replace(/[^0-9]/g, ''), 10) || 0
+}
+
+function CreditInput ({ value, disabled, onChange }) {
+  const [displayValue, setDisplayValue] = useState(formatCredits(value))
+  const [focused, setFocused] = useState(false)
+
+  useEffect(() => {
+    if (!focused) setDisplayValue(formatCredits(value))
+  }, [value, focused])
+
+  return (
+    <input
+      type='text'
+      style={{ width: '10rem' }}
+      disabled={disabled}
+      value={displayValue}
+      onFocus={() => setFocused(true)}
+      onChange={(e) => setDisplayValue(e.target.value)}
+      onBlur={(e) => {
+        setFocused(false)
+        const parsed = parseCredits(e.target.value)
+        setDisplayValue(formatCredits(parsed))
+        onChange(parsed)
+      }}
+    />
+  )
+}
+
+function ExplorationSettings ({ visible }) {
+  const [preferences, setPreferences] = useState()
+
+  useEffect(async () => {
+    setPreferences(await sendEvent('getPreferences'))
+  }, [visible])
+
   useEffect(() => eventListener('syncMessage', async (event) => {
     if (event.name === 'preferences') {
       setPreferences(await sendEvent('getPreferences'))
     }
   }), [])
 
+  const updatePreference = async (key, value) => {
+    const newPreferences = JSON.parse(JSON.stringify(preferences))
+    newPreferences[key] = value
+    setPreferences(await sendEvent('setPreferences', newPreferences))
+  }
+
   return (
     <div className='modal-dialog__panel modal-dialog__panel--with-navigation scrollable'>
-      <h3 className='text-primary'>Sounds</h3>
+      <h3 className='text-primary'>Exploration</h3>
       <p>
-        ICARUS Terminal includes a voice assistant that can give confirmation of
-        commands and relay information about your ship and your surroundings.
+        Configure how exploration data is evaluated and displayed.
       </p>
-      <p className='text-danger'>
-        This feature is highly experimental and not compatible with all voices.
-      </p>
-      <h4 className='text-primary'>Voice assistant</h4>
-      <select
-        value={preferences?.voice ?? 'None'}
-        disabled={!voices || !preferences}
-        name='voices'
-        style={{ width: '20rem' }}
-        onChange={async (e) => {
-          const voice = e.target.value
-          const newPreferences = JSON.parse(JSON.stringify(preferences))
-          newPreferences.voice = voice === 'None' ? null : voice
-          setPreferences(await sendEvent('setPreferences', newPreferences))
-          if (voice !== 'None') {
-            sendEvent('testVoice', { voice })
-          }
-        }}
-      >
-        {voices && preferences && <>
-          <option value='None'>None</option>
-          <option disabled>─</option>
-          {voices && voices.map(voice => <option key={`voice_${voice}`}>{voice}</option>)}
-        </>}
-      </select>
-      <br /><br />
-      <h4 className='text-primary'>About voice assistant</h4>
+      <h4 className='text-primary'>Value thresholds</h4>
       <p>
-        The current implementation is only intended for debugging / testing.
+        Set the minimum credit value for a body or biological to be
+        counted as &ldquo;valuable&rdquo; in the exploration views.
       </p>
+      <table className='table--layout'>
+        <tbody>
+          <tr>
+            <td style={{ paddingLeft: '.5rem', whiteSpace: 'nowrap' }}>
+              Min. valuable body
+            </td>
+            <td>
+              <CreditInput
+                disabled={!preferences}
+                value={preferences?.explorationMinBodyValue ?? 1000000}
+                onChange={(v) => updatePreference('explorationMinBodyValue', v)}
+              />
+              <span className='text-muted' style={{ marginLeft: '.5rem' }}>Cr</span>
+            </td>
+          </tr>
+          <tr>
+            <td style={{ paddingLeft: '.5rem', whiteSpace: 'nowrap' }}>
+              Min. valuable biological
+            </td>
+            <td>
+              <CreditInput
+                disabled={!preferences}
+                value={preferences?.explorationMinBioValue ?? 7000000}
+                onChange={(v) => updatePreference('explorationMinBioValue', v)}
+              />
+              <span className='text-muted' style={{ marginLeft: '.5rem' }}>Cr</span>
+            </td>
+          </tr>
+        </tbody>
+      </table>
+      <h4 className='text-primary' style={{ marginTop: '1rem' }}>Value prediction</h4>
       <p>
-        Audio will be played through the computer ICARUS Terminal is running on.
+        When disabled, the value column will only include bodies and
+        biologicals that meet the thresholds above, showing what you
+        would earn by scanning only the valuable items.
       </p>
-      <p>
-        This setting uses your computers native Text To Speech capabilities.
-      </p>
-      <p>
-        Third party / commercial voices can provide improved voice audio quality.
-      </p>
+      <label style={{ display: 'flex', alignItems: 'center', gap: '.5rem', cursor: 'pointer' }}>
+        <input
+          type='checkbox'
+          disabled={!preferences}
+          checked={preferences?.explorationIncludeNonValuable !== false}
+          onChange={(e) => updatePreference('explorationIncludeNonValuable', e.target.checked)}
+        />
+        Include non-valuable items in value prediction
+      </label>
     </div>
   )
 }
@@ -145,11 +319,11 @@ function ThemeSettings () {
           <tr>
             <td style={{ paddingLeft: '.5rem' }}>
               <button className='button--active text-no-wrap' style={{ pointerEvents: 'none' }}>
-                <i className='icon icarus-terminal-color-picker' /> Text <span className='text-muted'>Muted</span>
+                <i className='icon daedalus-terminal-color-picker' /> Text <span className='text-muted'>Muted</span>
               </button>
               <br />
               <button className='text-no-wrap' style={{ pointerEvents: 'none' }}>
-                <i className='icon icarus-terminal-color-picker' /> Text <span className='text-muted'>Muted</span>
+                <i className='icon daedalus-terminal-color-picker' /> Text <span className='text-muted'>Muted</span>
               </button>
             </td>
             <td className='text-center'>
@@ -183,11 +357,11 @@ function ThemeSettings () {
           <tr>
             <td style={{ paddingLeft: '.5rem' }}>
               <button className='button--secondary button--active text-no-wrap' style={{ pointerEvents: 'none' }}>
-                <i className='icon icarus-terminal-color-picker' /> Text <span className='text-muted'>Muted</span>
+                <i className='icon daedalus-terminal-color-picker' /> Text <span className='text-muted'>Muted</span>
               </button>
               <br />
               <button className='button--secondary text-no-wrap' style={{ pointerEvents: 'none' }}>
-                <i className='icon icarus-terminal-color-picker' /> Text <span className='text-muted'>Muted</span>
+                <i className='icon daedalus-terminal-color-picker' /> Text <span className='text-muted'>Muted</span>
               </button>
             </td>
             <td className='text-center'>
@@ -246,7 +420,7 @@ function ThemeSettings () {
             document.activeElement.blur()
           }}
         >
-          <i className='icon icarus-terminal-sync' /> Sync theme settings
+          <i className='icon daedalus-terminal-sync' /> Sync theme settings
         </button>
       </div>
       <h4 className='text-primary'>Reset theme</h4>

@@ -1,9 +1,10 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
-import { socketOptions } from 'lib/socket'
+import { sendEvent, eventListener, socketOptions } from 'lib/socket'
 import { isWindowFullScreen, isWindowPinned, toggleFullScreen, togglePinWindow } from 'lib/window'
 import { eliteDateTime } from 'lib/format'
 import { Settings } from 'components/settings'
+import LandingPadOverlay from 'components/landing-pad-overlay'
 import notification from 'lib/notification'
 
 const NAV_BUTTONS = [
@@ -16,6 +17,11 @@ const NAV_BUTTONS = [
     name: 'Ship',
     abbr: 'Ship',
     path: '/ship'
+  },
+  {
+    name: 'Exploration',
+    abbr: 'Expl',
+    path: '/exploration'
   },
   {
     name: 'Engineering',
@@ -37,7 +43,13 @@ export default function Header ({ connected, active }) {
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [isPinned, setIsPinned] = useState(false)
   const [notificationsVisible, setNotificationsVisible] = useState(socketOptions.notifications)
+  const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(socketOptions.explorationAutoSwitch)
   const [settingsVisible, setSettingsVisible] = useState(false)
+  const [toolbarOpen, setToolbarOpen] = useState(false)
+  const [audioEnabled, setAudioEnabled] = useState(socketOptions.audioEnabled)
+  const [landingPadEnabled, setLandingPadEnabled] = useState(socketOptions.landingPadEnabled)
+  const [landingPadData, setLandingPadData] = useState(null)
+  const [lastSettlementEconomy, setLastSettlementEconomy] = useState(null)
 
   async function fullScreen () {
     const newFullScreenState = await toggleFullScreen()
@@ -76,15 +88,48 @@ export default function Header ({ connected, active }) {
     document.activeElement.blur()
   }
 
-  useEffect(async () => {
-    // icarusTerminal_* methods are not always accessible while the app is loading.
+  function toggleAutoSwitch () {
+    socketOptions.explorationAutoSwitch = !autoSwitchEnabled
+    setAutoSwitchEnabled(socketOptions.explorationAutoSwitch)
+    document.activeElement.blur()
+  }
+
+  async function toggleAudio () {
+    const prefs = await sendEvent('getPreferences')
+    const newEnabled = !audioEnabled
+    prefs.covasVoiceoverEnabled = newEnabled
+    prefs.covasExtendedEnabled = newEnabled
+    await sendEvent('setPreferences', prefs)
+    socketOptions.audioEnabled = newEnabled
+    setAudioEnabled(newEnabled)
+    document.activeElement.blur()
+  }
+
+  function toggleLandingPad () {
+    const newEnabled = !landingPadEnabled
+    socketOptions.landingPadEnabled = newEnabled
+    setLandingPadEnabled(newEnabled)
+    if (!newEnabled) setLandingPadData(null)
+    document.activeElement.blur()
+  }
+
+  useEffect(() => {
+    let mounted = true
+    // daedalusTerminal_* methods are not always accessible while the app is loading.
     // This handles that by calling them when the component is mounted.
     // It uses a global for isWindowsApp to reduce UI flicker.
-    if (typeof window !== 'undefined' && typeof window.icarusTerminal_version === 'function') {
+    if (typeof window !== 'undefined' && typeof window.daedalusTerminal_version === 'function') {
       IS_WINDOWS_APP = true
     }
-    setIsFullScreen(await isWindowFullScreen())
-    setIsPinned(await isWindowPinned())
+    ;(async () => {
+      const fs = await isWindowFullScreen()
+      const pin = await isWindowPinned()
+      if (mounted) {
+        setIsFullScreen(fs)
+        setIsPinned(pin)
+      }
+    })()
+    return () => { mounted = false }
   }, [])
 
   useEffect(() => {
@@ -94,7 +139,54 @@ export default function Header ({ connected, active }) {
     return () => clearInterval(dateTimeInterval)
   }, [])
 
-  let signalClassName = 'icon icarus-terminal-signal '
+  // Sync audio toggle state with preferences
+  useEffect(() => {
+    let mounted = true
+    ;(async () => {
+      const prefs = await sendEvent('getPreferences')
+      if (mounted) {
+        const enabled = prefs?.covasVoiceoverEnabled === true
+        socketOptions.audioEnabled = enabled
+        setAudioEnabled(enabled)
+      }
+    })()
+    return () => { mounted = false }
+  }, [])
+
+  useEffect(() => eventListener('syncMessage', async (event) => {
+    if (event.name === 'preferences') {
+      const prefs = await sendEvent('getPreferences')
+      const enabled = prefs?.covasVoiceoverEnabled === true
+      socketOptions.audioEnabled = enabled
+      setAudioEnabled(enabled)
+    }
+  }), [])
+
+  // Landing pad overlay: listen for DockingGranted and dismiss events
+  useEffect(() => {
+    const DISMISS_EVENTS = ['Docked', 'DockingCancelled', 'DockingTimeout', 'StartJump', 'Shutdown', 'Undocked']
+    return eventListener('newLogEntry', (message) => {
+      if (message.event === 'ApproachSettlement' && message.StationEconomy) {
+        // Extract economy name from "$economy_Extraction;" format
+        const raw = message.StationEconomy
+        const match = raw.match(/\$economy_(\w+);/)
+        setLastSettlementEconomy(match ? match[1] : null)
+      }
+      if (message.event === 'DockingGranted' && landingPadEnabled) {
+        setLandingPadData({
+          pad: message.LandingPad,
+          stationName: message.StationName,
+          stationType: message.StationType,
+          economy: lastSettlementEconomy
+        })
+      }
+      if (DISMISS_EVENTS.includes(message.event)) {
+        setLandingPadData(null)
+      }
+    })
+  }, [landingPadEnabled, lastSettlementEconomy])
+
+  let signalClassName = 'icon daedalus-terminal-signal '
   if (!connected) {
     signalClassName += 'text-primary'
   } else if (active) {
@@ -108,44 +200,62 @@ export default function Header ({ connected, active }) {
   return (
     <header>
       <hr className='small' />
-      <h1 className='text-info' style={{ padding: '.6rem 0 .25rem 3.75rem' }}>
-        <i className='icon icarus-terminal-logo' style={{ position: 'absolute', fontSize: '3rem', left: 0 }} />ICARUS <span className='hidden-small'>Terminal</span>
+      <h1 className='text-info' style={{ padding: '.6rem 0 .25rem 5.5rem' }}>
+        <i className='icon daedalus-terminal-logo' style={{ position: 'absolute', fontSize: '5rem', left: '-.5rem', top: '.7rem', textShadow: '0 0 1px' }} />DAEDALUS <span className='hidden-small'>Terminal</span>
       </h1>
-      <div style={{ position: 'absolute', top: '1rem', right: '.5rem' }}>
-        <p
-          className='text-primary text-center text-uppercase'
-          style={{ display: 'inline-block', padding: 0, margin: 0, lineHeight: '1rem', minWidth: '7.5rem' }}
-        >
-           <span style={{position: 'relative', top: '.3rem', fontSize: '2.4rem', paddingTop: '.25rem'}}>
-           {dateTime.time}
-          </span>
-          <br/>
-          <span style={{fontSize: '1.1rem', position: 'relative', top: '.4rem'}}>
-            {dateTime.day} {dateTime.month} {dateTime.year}
-          </span>
-        </p>
+      <div style={{ position: 'absolute', top: '1rem', right: '.5rem', display: 'flex', alignItems: 'center' }}>
+        <div className={`header__toolbar ${toolbarOpen ? 'header__toolbar--open' : ''}`}>
+          <p
+            className='text-primary text-center text-uppercase'
+            style={{ display: 'inline-block', padding: 0, margin: 0, lineHeight: '1rem', minWidth: '7.5rem' }}
+          >
+            <span style={{position: 'relative', top: '.3rem', fontSize: '2.4rem', paddingTop: '.25rem'}}>
+            {dateTime.time}
+            </span>
+            <br/>
+            <span style={{fontSize: '1.1rem', position: 'relative', top: '.4rem'}}>
+              {dateTime.day} {dateTime.month} {dateTime.year}
+            </span>
+          </p>
 
-        <button disabled className='button--icon button--transparent' style={{ marginRight: '.5rem', opacity: active ? 1 : .25, transition: 'all .25s ease-out' }}>
-          <i className={signalClassName} style={{ position: 'relative', transition: 'all .25s ease', fontSize: '3rem', lineHeight: '1.8rem', top: '.5rem', right: '.25rem' }} />
-        </button>
+          <button disabled className='button--icon button--transparent' style={{ marginRight: '.5rem', opacity: active ? 1 : .25, transition: 'all .25s ease-out' }}>
+            <i className={signalClassName} style={{ position: 'relative', transition: 'all .25s ease', fontSize: '3rem', lineHeight: '1.8rem', top: '.5rem', right: '.25rem' }} />
+          </button>
 
-        {IS_WINDOWS_APP &&
-          <button tabIndex='1' onClick={pinWindow} className={`button--icon ${isPinned ? 'button--transparent' : ''}`} style={{ marginRight: '.5rem' }} disabled={isFullScreen}>
-            <i className='icon icarus-terminal-pin-window' style={{ fontSize: '2rem' }} />
-          </button>}
+          {IS_WINDOWS_APP &&
+            <button tabIndex='1' onClick={pinWindow} className={`button--icon ${isPinned ? 'button--transparent' : ''}`} style={{ marginRight: '.5rem' }} disabled={isFullScreen}>
+              <i className='icon daedalus-terminal-pin-window' style={{ fontSize: '2rem' }} />
+            </button>}
 
-        <button tabIndex='1' onClick={toggleNotifications} className='button--icon' style={{ marginRight: '.5rem' }}>
-          <i className={`icon ${notificationsVisible ? 'icarus-terminal-notifications' : 'icarus-terminal-notifications-disabled text-muted'}`} style={{ fontSize: '2rem' }} />
-        </button>
+          <button tabIndex='1' onClick={toggleNotifications} className='button--icon' style={{ marginRight: '.5rem' }}>
+            <i className={`icon ${notificationsVisible ? 'daedalus-terminal-notifications' : 'daedalus-terminal-notifications-disabled text-muted'}`} style={{ fontSize: '2rem' }} />
+          </button>
 
-        <button
-          tabIndex='1' className='button--icon' style={{ marginRight: '.5rem' }}
-          onClick={() => { setSettingsVisible(!settingsVisible); document.activeElement.blur() }}
-        >
-          <i className='icon icarus-terminal-settings' style={{ fontSize: '2rem' }} />
-        </button>
-        <button tabIndex='1' onClick={fullScreen} className='button--icon'>
-          <i className='icon icarus-terminal-fullscreen' style={{ fontSize: '2rem' }} />
+          <button tabIndex='1' onClick={toggleAutoSwitch} className='button--icon' style={{ marginRight: '.5rem' }} title='Auto-switch exploration pages'>
+            <i className={`icon daedalus-terminal-sync ${autoSwitchEnabled ? '' : 'text-muted'}`} style={{ fontSize: '2rem' }} />
+          </button>
+
+          <button tabIndex='1' onClick={toggleAudio} className='button--icon' style={{ marginRight: '.5rem' }} title='Toggle COVAS audio'>
+            <i className={`icon daedalus-terminal-sound ${audioEnabled ? '' : 'text-muted'}`} style={{ fontSize: '2rem' }} />
+          </button>
+
+          <button tabIndex='1' onClick={toggleLandingPad} className='button--icon' style={{ marginRight: '.5rem' }} title='Landing pad overlay'>
+            <i className={`icon daedalus-terminal-planet-lander ${landingPadEnabled ? '' : 'text-muted'}`} style={{ fontSize: '2rem' }} />
+          </button>
+
+          <button
+            tabIndex='1' className='button--icon' style={{ marginRight: '.5rem' }}
+            onClick={() => { setSettingsVisible(!settingsVisible); document.activeElement.blur() }}
+          >
+            <i className='icon daedalus-terminal-settings' style={{ fontSize: '2rem' }} />
+          </button>
+          <button tabIndex='1' onClick={fullScreen} className='button--icon'>
+            <i className='icon daedalus-terminal-fullscreen' style={{ fontSize: '2rem' }} />
+          </button>
+        </div>
+
+        <button tabIndex='1' onClick={() => { setToolbarOpen(!toolbarOpen); document.activeElement.blur() }} className='button--icon'>
+          <i className={`icon ${toolbarOpen ? 'daedalus-terminal-chevron-right' : 'daedalus-terminal-chevron-left'}`} style={{ fontSize: '2rem', transition: 'transform .2s ease' }} />
         </button>
       </div>
       <hr />
@@ -167,6 +277,7 @@ export default function Header ({ connected, active }) {
       </div>
       <hr className='bold' />
       <Settings visible={settingsVisible} toggleVisible={() => setSettingsVisible(!settingsVisible)} />
+      <LandingPadOverlay data={landingPadData} onDismiss={() => setLandingPadData(null)} />
     </header>
   )
 }

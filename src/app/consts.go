@@ -1,12 +1,13 @@
 package main
 
 const ICON = "icon.ico"
-const LAUNCHER_WINDOW_TITLE = "ICARUS Terminal Launcher"
-const TERMINAL_WINDOW_TITLE = "ICARUS Terminal"
-const LPSZ_CLASS_NAME = "IcarusTerminalWindowClass"
-const SERVICE_EXECUTABLE = "ICARUS Service.exe"
-const TERMINAL_EXECUTABLE = "ICARUS Terminal.exe"
-const RELEASE_NOTES_URL = "https://github.com/iaincollins/icarus/releases"
+const LAUNCHER_WINDOW_TITLE = "DAEDALUS Terminal Launcher"
+const TERMINAL_WINDOW_TITLE = "DAEDALUS Terminal"
+const LPSZ_CLASS_NAME = "DaedalusTerminalWindowClass"
+const SERVICE_EXECUTABLE = "DAEDALUS Service.exe"
+const TERMINAL_EXECUTABLE = "DAEDALUS Terminal.exe"
+// TODO Update to DAEDALUS fork URL when available
+const RELEASE_NOTES_URL = ""
 const DEBUGGER = true
 
 const defaultLauncherWindowWidth = int32(900)

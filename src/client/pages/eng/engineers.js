@@ -98,7 +98,7 @@ function ListEngineers ({ engineers, currentSystem }) {
             >
               <td className={`text-primary text-center ${engineer.progress.status.toLowerCase() === 'unlocked' ? '' : 'text-muted'}`} style={{ width: '2rem' }}>
                 <i
-                  className='icon icarus-terminal-engineer'
+                  className='icon daedalus-terminal-engineer'
                   style={{ fontSize: '1.75rem', lineHeight: '2rem', width: '2rem', display: 'inline-block' }}
                 />
               </td>
@@ -117,7 +117,7 @@ function ListEngineers ({ engineers, currentSystem }) {
                       <i
                         style={{ fontSize: '1.5rem', width: '1.5rem', display: 'inline-block', marginRight: '0.1rem', marginTop: '.25rem' }}
                         key={`${engineer.name}_rank_${i}`}
-                        className='icon icarus-terminal-engineering'
+                        className='icon daedalus-terminal-engineering'
                       />
                     )}
                   </h4>}

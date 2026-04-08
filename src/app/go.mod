@@ -1,4 +1,4 @@
-module icarus-terminal
+module daedalus-terminal
 
 go 1.17
 

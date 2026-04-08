@@ -104,6 +104,25 @@ function EngineeringPanelNavItems (activePanel) {
   return navigationItems
 }
 
+function ExplorationPanelNavItems (activePanel) {
+  const navigationItems = [
+    {
+      name: 'Route',
+      icon: 'route',
+      url: '/exploration/route'
+    },
+    {
+      name: 'System',
+      icon: 'system-orbits',
+      url: '/exploration/system'
+    }
+  ]
+  navigationItems.forEach(item => {
+    if (item.name.toLowerCase() === activePanel.toLowerCase()) item.active = true
+  })
+  return navigationItems
+}
+
 function SettingsNavItems (activePanel) {
   const navigationItems = [
     {
@@ -113,6 +132,10 @@ function SettingsNavItems (activePanel) {
     {
       name: 'Sounds',
       icon: 'sound'
+    },
+    {
+      name: 'Exploration',
+      icon: 'scan'
     }
   ]
   navigationItems.forEach(item => {
@@ -124,6 +147,7 @@ function SettingsNavItems (activePanel) {
 module.exports = {
   ShipPanelNavItems,
   NavPanelNavItems,
+  ExplorationPanelNavItems,
   EngineeringPanelNavItems,
   SettingsNavItems
 }

@@ -1,7 +1,7 @@
 {
-  "name": "icarus",
-  "version": "0.22.0",
-  "description": "ICARUS Terminal for Elite Dangerous",
+  "name": "daedalus",
+  "version": "1.0.0",
+  "description": "DAEDALUS Terminal for Elite Dangerous",
   "scripts": {
     "build": "npm run build:client && npm run build:app && npm run build:service && npm run build:package",
     "build:client": "cd src/client && next build && next export -o ../../build/client",
@@ -25,7 +25,7 @@
   },
   "keywords": [],
   "author": "",
-  "license": "ISC",
+  "license": "GPL-3.0-or-later",
   "devDependencies": {
     "changeexe": "^1.0.2",
     "csvtojson": "^2.0.10",
@@ -62,7 +62,7 @@
     "yargs": "^17.2.1"
   },
   "engines": {
-    "npm": "9.6.7",
-    "node": "18.17.1"
+    "npm": ">=9.6.7",
+    "node": ">=18.17.1"
   }
 }

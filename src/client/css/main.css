@@ -22,6 +22,7 @@
 
 @import "panels/navigation-panel.css";
 @import "panels/ship-panel.css";
+@import "panels/exploration-panel.css";
 @import "panels/engineering-panel.css";
 
 @import "overrides/safari.css";
@@ -33,7 +34,7 @@
 }
 
 /* Override generated defaults for terminal font */
-[class^="icarus-terminal-"], [class*=" icarus-terminal-"] {
+[class^="daedalus-terminal-"], [class*=" daedalus-terminal-"] {
   font-size: inherit;
   font-weight: 500;
   pointer-events: none;
@@ -54,7 +55,6 @@ a,
 html {
   zoom: 100%;
   background: black;
-  filter: saturate(1.1);
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: subpixel-antialiased;
   -webkit-font-smoothing: antialiased;
@@ -128,7 +128,7 @@ html {
   display: block;
   position: absolute;
   opacity: 0;
-  transition: all .1s ease-in;
+  transition: opacity .1s ease-in;
   content: "\ea01";
   color: var(--color-secondary);
   text-shadow: .1rem .1rem 0 var(--color-secondary-dark);
@@ -136,7 +136,7 @@ html {
   right: -1.75rem;
   font-size: 1.25rem;
   line-height: 1.25rem;
-  font-family: 'icarus-terminal' !important;
+  font-family: 'daedalus-terminal' !important;
   font-style: normal;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
@@ -223,6 +223,21 @@ body::after {
 
 header {
   padding: 0 .5rem .5rem .5rem;
+}
+
+.header__toolbar {
+  display: inline-flex;
+  align-items: center;
+  overflow: hidden;
+  max-width: 0;
+  opacity: 0;
+  transition: max-width .3s ease, opacity .2s ease;
+  white-space: nowrap;
+}
+
+.header__toolbar--open {
+  max-width: 50rem;
+  opacity: 1;
 }
 
 h1, h2, h3, h4, h5, h6 {

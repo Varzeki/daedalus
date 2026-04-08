@@ -90,15 +90,16 @@ export default function SystemMapObject ({ systemObject, setSystemObject, parent
       let hasPlanetaryPort = false
       let hasPlanetaryFacilities = false
 
-      // TODO Make these explict properties (bools) that are pre-calculated
-      systemObject?._planetaryBases?.forEach(base => {
-        if (PLANETARY_OUTPOSTS.concat(SETTLEMENTS).includes(base.type)) {
-          hasPlanetaryFacilities = true
+      if (systemObject?._planetaryBases) {
+        for (const base of systemObject._planetaryBases) {
+          if (SURFACE_PORTS.includes(base.type)) {
+            hasPlanetaryPort = true
+          } else if (PLANETARY_OUTPOSTS.includes(base.type) || SETTLEMENTS.includes(base.type)) {
+            hasPlanetaryFacilities = true
+          }
+          if (hasPlanetaryPort && hasPlanetaryFacilities) break
         }
-        if (SURFACE_PORTS.includes(base.type)) {
-          hasPlanetaryPort = true
-        }
-      })
+      }
 
       return (
         <g

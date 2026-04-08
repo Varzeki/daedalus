@@ -99,7 +99,7 @@ table tbody tr.table__row--large td {
 table:not(.table--inline).table--interactive tbody tr:hover:not(.table-row--disabled):not(:focus) td {
   color: var(--color-primary);
   background: var(--color-primary-dark);
-  transition: all .1s ease;
+  transition: color .1s ease, background-color .1s ease;
 }
 
 table:not(.table--inline).table--interactive tbody tr:focus:not(.table-row--disabled) td {

@@ -1,0 +1,107 @@
+{
+  "_comment": "Maps Elite Dangerous events to COVAS (Verity) voice clips. 'voiceover' = strict in-game replacements. 'extended' = additional computed alerts beyond what the game provides.",
+
+  "voiceover": {
+    "logEvents": {
+      "StartJump_Supercruise": { "file": "frameshift_drive_charging.wav" },
+      "StartJump_Hyperspace": { "countdown": true },
+      "ApproachBody": { "file": "engage.wav" },
+      "DockingGranted": { "file": "docking_request_granted.wav" },
+      "DockingDenied": { "file": "docking_request_denied.wav" },
+      "Docked": { "file": "docking_successful_engines_disengaged.wav" },
+      "Undocked": { "file": "ship_released_engines_engaged.wav" },
+      "FSSDiscoveryScan": { "file": "system_scan_complete.wav" },
+      "FSSAllBodiesFound": { "file": "all_system_bodies_located.wav" },
+      "SAAScanComplete": { "file": "surface_scan_complete.wav" },
+      "Scanned": { "file": "scan_detected.wav" },
+      "NavRoute": { "file": "route_plotted.wav" },
+      "ShieldState_ShieldsUp": { "file": "shields_online.wav" },
+      "ShieldState_ShieldsDown": { "file": "shields_offline.wav" },
+      "HullDamage": { "file": "taking_damage.wav", "debounce": 45000 },
+      "HeatWarning": { "file": "warning_taking_heat_damage.wav" },
+      "HeatDamage": { "file": "warning_temperature_critical.wav" },
+      "UnderAttack": { "file": "under_attack.wav", "debounce": 15000 },
+      "FighterDestroyed": { "file": "fighter_destroyed.wav" },
+      "SRVDestroyed": { "file": "critical_alert.wav" },
+      "DiedEvent": { "file": "eject.wav" },
+      "Resurrect": { "file": "process_complete.wav" },
+      "ApproachSettlement": { "file": "incoming_signal.wav" },
+      "CodexEntry": { "file": "new_codex_entry.wav" },
+      "FuelScoop": { "file": "fuel_scooping.wav" },
+      "JetConeBoost": { "file": "frameshift_drive_supercharged.wav" },
+      "ReservoirReplenished": { "file": "fuel_replenished.wav" },
+      "Synthesis": { "file": "process_complete.wav" },
+      "Repair": { "file": "repair_complete.wav" },
+      "RepairAll": { "file": "repair_complete.wav" },
+      "RebootRepair": { "file": "system_reboot_sequence_initiated.wav" },
+      "AfmuRepairs": { "file": "diagnostic_repair_sequence_initiated.wav" },
+      "LaunchFighter": { "file": "fighter_deployed.wav" },
+      "DockFighter": { "file": "fighter_docking_sequence_initiated.wav" },
+      "LaunchSRV": { "file": "deployment_sequence_complete.wav" },
+      "LaunchDrone": { "file": "programming_limpet_drone.wav" },
+      "ProspectedAsteroid": { "file": "prospector_limpet_engaged.wav" },
+      "Bounty": { "file": "target_destroyed.wav" },
+      "CommitCrime_bounty": { "file": "bounty_incurred.wav" },
+      "Interdicted": { "file": "frameshift_anomaly_detected.wav" },
+      "MissionFailed": { "file": "mission_failed.wav" },
+      "ReceiveText": { "file": "incoming_message.wav" },
+      "Screenshot": { "file": "process_complete.wav" },
+      "CockpitBreached": { "file": "canopy_compromised.wav" },
+      "SelfDestruct": { "file": "selfdestruct_sequence_initiated.wav" },
+      "CarrierJump": { "file": "massive_frameshift_surge_detected.wav" }
+    },
+
+    "hullThresholds": {
+      "compromised": { "file": "hull_integrity_compromised.wav", "below": 0.5 },
+      "critical": { "file": "hull_integrity_critical.wav", "below": 0.2 }
+    },
+
+    "oxygenThresholds": {
+      "low": { "file": "warning_oxygen_low.wav", "below": 0.5 },
+      "critical": { "file": "warning_oxygen_critical.wav", "below": 0.15 }
+    },
+
+    "canopyThresholds": {
+      "critical": { "file": "canopy_critical.wav" }
+    },
+
+    "capacityAlerts": {
+      "cargoFull": { "file": "cargo_hold_at_maximum_capacity.wav" },
+      "powerExceeded": { "file": "power_plant_capacity_exceeded.wav" }
+    },
+
+    "fsdAlerts": {
+      "beyondSafetyLimits": { "file": "warning_frameshift_drive_operating_beyond_safety_limits.wav" }
+    },
+
+    "combatAlerts": {
+      "causticDamage": { "file": "caustic_damage_detected.wav" }
+    },
+
+    "countdownSequence": ["five.wav", "four.wav", "3.wav", "two.wav", "one.wav", "engage.wav"],
+
+    "statusFlags": {
+      "cargoScoopDeployed_true": { "file": "cargo_scoop_deployed.wav" },
+      "cargoScoopDeployed_false": { "file": "cargo_scoop_retracted.wav" },
+      "landingGearDown_true": { "file": "landing_gear_deployed.wav" },
+      "landingGearDown_false": { "file": "landing_gear_retracted.wav" },
+      "silentRunning_true": { "file": "silent_running.wav" },
+      "silentRunning_false": { "file": "thermal_signature_restored.wav" }
+    }
+  },
+
+  "extended": {
+    "lowFuel": { "file": "main_fuel_tank_low.wav" },
+    "lowFuelLastChance": { "file": "warning_last_chance_to_refuel_on_current_route.wav" },
+    "dangerousSystem": { "file": "warning_target_system_safety_risk.wav" },
+    "notableStellarPhenomena": { "file": "unknown_anomaly_detected.wav" },
+    "highGravity": { "file": "high_gravity_warning.wav" },
+    "valuableBody": { "file": "new_discovery.wav" },
+    "systemSurveyComplete": { "file": "all_system_bodies_located.wav" },
+    "hazardousEnvironment": { "file": "warning_hazardous_environment.wav" },
+    "securityDetected": { "file": "security_forces_detected.wav" },
+    "capitalSignature": { "file": "warning_capital_class_signature_detected.wav" },
+    "alienDiscovery": { "file": "alien_civilization_discovery.wav" },
+    "energySurge": { "file": "energy_surge_detected.wav" }
+  }
+}

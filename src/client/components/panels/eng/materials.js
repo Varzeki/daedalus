@@ -80,7 +80,7 @@ function MaterialsTable ({ materialType, materialCategory, materials }) {
                 </span>
               </td>
               <td className='text-right text-no-wrap' style={{ width: '3rem' }}>
-                <i style={{ fontSize: '3rem' }} className={`icon icarus-terminal-materials-grade-${item.grade}`} />
+                <i style={{ fontSize: '3rem' }} className={`icon daedalus-terminal-materials-grade-${item.grade}`} />
               </td>
             </tr>
           )}

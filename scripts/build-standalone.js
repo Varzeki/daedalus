@@ -34,7 +34,7 @@ function clean () {
 
 async function build () {
   await compile({
-    name: 'ICARUS Service',
+    name: 'DAEDALUS Service',
     ico: SERVICE_ICON,
     input: ENTRY_POINT,
     output: SERVICE_STANDALONE_BUILD + '-linux',
@@ -51,7 +51,7 @@ async function build () {
     }
   })
   await compile({
-    name: 'ICARUS Service',
+    name: 'DAEDALUS Service',
     ico: SERVICE_ICON,
     input: ENTRY_POINT,
     output: SERVICE_STANDALONE_BUILD + '-mac',
@@ -68,7 +68,7 @@ async function build () {
     }
   })
   await compile({
-    name: 'ICARUS Service',
+    name: 'DAEDALUS Service',
     ico: SERVICE_ICON,
     input: ENTRY_POINT,
     output: SERVICE_STANDALONE_BUILD + '-windows',

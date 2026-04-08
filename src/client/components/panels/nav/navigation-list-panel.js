@@ -22,13 +22,13 @@ export default function NavigationListPanel ({ system, systemObject, setSystemOb
           tabIndex={3}
           style={{ position: 'absolute', top: '.25rem', right: '1.5rem', height: '2.25rem', width: '2.25rem', zIndex: 20 }}
         >
-          <i style={{ fontSize: '1.8rem', lineHeight: '2.3rem' }} className='icon icarus-terminal-help' />
+          <i style={{ fontSize: '1.8rem', lineHeight: '2.3rem' }} className='icon daedalus-terminal-help' />
         </button>
         <table className='table--animated table--interactive'>
           <thead>
             <tr>
               <th style={{ paddingTop: '.4rem' }} className='text-info'>
-                <i style={{ fontSize: '1.5rem', marginRight: '.25rem', position: 'relative', left: '.1rem', xtop: '-.1rem' }} className='float-left icarus-terminal-system-orbits' />
+                <i style={{ fontSize: '1.5rem', marginRight: '.25rem', position: 'relative', left: '.1rem', xtop: '-.1rem' }} className='float-left daedalus-terminal-system-orbits' />
                 <CopyOnClick append=' system'>{system.name}</CopyOnClick>
               </th>
               <th style={{ width: '1rem' }} className='hidden-small'>&nbsp;</th>
@@ -115,7 +115,7 @@ function NavigationTableRow ({ stars, systemObject, depth = 0, setSystemObject }
   const isAtmospheric = systemObject.atmosphereComposition && !systemObject?.subType?.toLowerCase()?.includes('gas giant')
 
   // TODO Move to icon class
-  let iconClass = 'icon system-object-icon icarus-terminal-'
+  let iconClass = 'icon system-object-icon daedalus-terminal-'
   switch (systemObject.type.toLowerCase()) {
     case 'star':
       iconClass += 'star'
@@ -177,19 +177,19 @@ function NavigationTableRow ({ stars, systemObject, depth = 0, setSystemObject }
               </>
             : systemObject.name}
           <span className={systemObject.isLandable ? 'text-secondary' : ''}>
-            {(systemObject.atmosphereComposition && !systemObject?.subType?.toLowerCase()?.includes('gas giant')) && <i className='float-right icon icarus-terminal-planet-atmosphere' />}
-            {systemObject.volcanismType && systemObject.volcanismType !== 'No volcanism' && <i className='float-right icon icarus-terminal-planet-volcanic' />}
-            {systemObject.terraformingState && systemObject.terraformingState !== 'Not terraformable' && systemObject.terraformingState !== 'Terraformed' && <i className='float-right icon icarus-terminal-planet-terraformable' />}
-            {systemObject?.subType?.toLowerCase() === 'earth-like world' && <i className='float-right icon icarus-terminal-planet-earthlike' />}
-            {systemObject?.subType?.toLowerCase() === 'ammonia world' && <i className='float-right icon icarus-terminal-planet-ammonia-world' />}
-            {(systemObject?.subType?.toLowerCase()?.includes('water world') || systemObject?.subType?.toLowerCase()?.includes('water giant')) && <i className='float-right icon icarus-terminal-planet-water-world' />}
-            {(systemObject?.subType?.toLowerCase() === 'high metal content world' || systemObject?.subType?.toLowerCase() === 'metal rich') && <i className='float-right icon icarus-terminal-planet-high-metal-content' />}
-            {systemObject?.subType?.toLowerCase()?.includes('gas giant') && <i className='float-right icon icarus-terminal-planet-gas-giant' />}
-            {systemObject?.subType?.toLowerCase()?.includes('water-based life') && <i className='float-right icon icarus-terminal-planet-water-based-life' />}
-            {systemObject?.subType?.toLowerCase()?.includes('ammonia-based life') && <i className='float-right icon icarus-terminal-planet-ammonia-based-life' />}
-            {systemObject?.subType?.toLowerCase()?.includes('with life') && <i className='float-right icon icarus-terminal-planet-life' />}
-            {systemObject?.signals?.biological > 0 && <i className='float-right icon icarus-terminal-plant' />}
-            {systemObject.rings && <i className='float-right icon icarus-terminal-planet-ringed' />}
+            {(systemObject.atmosphereComposition && !systemObject?.subType?.toLowerCase()?.includes('gas giant')) && <i className='float-right icon daedalus-terminal-planet-atmosphere' />}
+            {systemObject.volcanismType && systemObject.volcanismType !== 'No volcanism' && <i className='float-right icon daedalus-terminal-planet-volcanic' />}
+            {systemObject.terraformingState && systemObject.terraformingState !== 'Not terraformable' && systemObject.terraformingState !== 'Terraformed' && <i className='float-right icon daedalus-terminal-planet-terraformable' />}
+            {systemObject?.subType?.toLowerCase() === 'earth-like world' && <i className='float-right icon daedalus-terminal-planet-earthlike' />}
+            {systemObject?.subType?.toLowerCase() === 'ammonia world' && <i className='float-right icon daedalus-terminal-planet-ammonia-world' />}
+            {(systemObject?.subType?.toLowerCase()?.includes('water world') || systemObject?.subType?.toLowerCase()?.includes('water giant')) && <i className='float-right icon daedalus-terminal-planet-water-world' />}
+            {(systemObject?.subType?.toLowerCase() === 'high metal content world' || systemObject?.subType?.toLowerCase() === 'metal rich') && <i className='float-right icon daedalus-terminal-planet-high-metal-content' />}
+            {systemObject?.subType?.toLowerCase()?.includes('gas giant') && <i className='float-right icon daedalus-terminal-planet-gas-giant' />}
+            {systemObject?.subType?.toLowerCase()?.includes('water-based life') && <i className='float-right icon daedalus-terminal-planet-water-based-life' />}
+            {systemObject?.subType?.toLowerCase()?.includes('ammonia-based life') && <i className='float-right icon daedalus-terminal-planet-ammonia-based-life' />}
+            {systemObject?.subType?.toLowerCase()?.includes('with life') && <i className='float-right icon daedalus-terminal-planet-life' />}
+            {systemObject?.signals?.biological > 0 && <i className='float-right icon daedalus-terminal-plant' />}
+            {systemObject.rings && <i className='float-right icon daedalus-terminal-planet-ringed' />}
             {(systemObject?.subType?.toLowerCase() === 'earth-like world'
               || systemObject?.subType?.toLowerCase() === 'water world'
               || systemObject?.subType?.toLowerCase() === 'ammonia world'
@@ -197,7 +197,7 @@ function NavigationTableRow ({ stars, systemObject, depth = 0, setSystemObject }
               || systemObject?.subType?.toLowerCase()?.includes('class ii gas giant')
               || systemObject?.subType?.toLowerCase() === 'metal rich'
             )
-              && <i className='float-right text-success icon icarus-terminal-credits' />}
+              && <i className='float-right text-success icon daedalus-terminal-credits' />}
           </span>
         </div>
       </td>

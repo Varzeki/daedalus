@@ -15,7 +15,8 @@ import (
 	"time"
 )
 
-const LATEST_RELEASE_URL = "https://api.github.com/repos/iaincollins/icarus/releases/latest"
+// TODO Update to DAEDALUS fork URL when available
+const LATEST_RELEASE_URL = ""
 
 type Release struct {
 	InstalledVersion string `json:"installedVersion"`
@@ -26,6 +27,11 @@ type Release struct {
 }
 
 func CheckForUpdate() (bool, error) {
+	// Auto-update disabled until DAEDALUS release URL is configured
+	if LATEST_RELEASE_URL == "" {
+		return false, nil
+	}
+
 	latestUpdate, err := GetLatestRelease()
 	if err != nil {
 		return false, err
@@ -151,7 +157,7 @@ func GetLatestRelease() (Release, error) {
 
 func DownloadUpdate(downloadUrl string) (string, error) {
 	tmpDir, _ := ioutil.TempDir("", "*")
-	tmpfile := filepath.Join(tmpDir, "ICARUS Update.exe")
+	tmpfile := filepath.Join(tmpDir, "DAEDALUS Update.exe")
 
 	// Get file to download
 	resp, err := http.Get(downloadUrl)

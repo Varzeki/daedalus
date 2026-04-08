@@ -31,7 +31,7 @@ const commandLineArgs = yargs
   .alias('h', 'help')
   .argv
 
-console.log(`ICARUS Terminal Service ${packageJson.version}`)
+console.log(`DAEDALUS Terminal Service ${packageJson.version}`)
 
 // Parse command line arguments
 const PORT = commandLineArgs.port || commandLineArgs.p || 3300 // Port to listen on
@@ -96,6 +96,10 @@ if (DEVELOPMENT) {
   // requests will be forwarded to a web server which is started on localhost
   // to allow UI changes to be tested without rebuilding the app.
   exec('npx next src/client')
+  proxy.on('error', (err, req, res) => {
+    if (res.writeHead) res.writeHead(502, { 'Content-Type': 'text/plain' })
+    if (res.end) res.end('Waiting for Next.js dev server...')
+  })
   httpServer = http.createServer((req, res) => proxy.web(req, res, { target: 'http://localhost:3000' }))
 } else {
   // The default behaviour (i.e. production) is to serve static assets. When the
@@ -113,14 +117,13 @@ function webSocketDebugMessage () { /* console.log(...arguments) */ }
 webSocketServer.on('connection', socket => {
   webSocketDebugMessage('WebSocket connection open')
   socket.on('message', async (event) => {
-    const { requestId, name, message } = JSON.parse(event)
-    webSocketDebugMessage('WebSocket message received', name, event.toString())
+    const { requestId, name, message } = JSON.parse(event.toString())
     if (eventHandlers[name]) {
       try {
         const data = await eventHandlers[name](message || {})
         socket.send(JSON.stringify({ requestId, name, message: data }))
       } catch (e) {
-        console.error('ERROR_SOCKET_NO_EVENT_HANDLER', name, e)
+        console.error(`Handler error [${name}]:`, e.message)
       }
     }
   })

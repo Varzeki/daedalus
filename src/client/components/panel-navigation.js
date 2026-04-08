@@ -34,7 +34,7 @@ export default function PanelNavigation ({ items = [], search = () => {}, exit }
                   setSearchInputVisible(!searchInputVisible)
                 }}
               >{searchInputVisible}
-                <i className={`icon icarus-terminal-${item.icon}`} />
+                <i className={`icon daedalus-terminal-${item.icon}`} />
               </button>
               {searchInputVisible &&
                 <form
@@ -79,7 +79,7 @@ export default function PanelNavigation ({ items = [], search = () => {}, exit }
                   : () => item.url ? router.push(item.url) : () => null
               }
             >
-              <i className={`icon icarus-terminal-${item.icon}`} />
+              <i className={`icon daedalus-terminal-${item.icon}`} />
             </button>}
         </Fragment>
       )}
@@ -89,7 +89,7 @@ export default function PanelNavigation ({ items = [], search = () => {}, exit }
           onClick={exit}
           data-secondary-navigation={items.length}
         >
-          <i className='icon icarus-terminal-exit' />
+          <i className='icon daedalus-terminal-exit' />
         </button>}
     </div>
   )

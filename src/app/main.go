@@ -71,7 +71,7 @@ func main() {
 
 	pathToExecutable, err := os.Executable()
 	if err != nil {
-		dialog.Message("%s", "Failed to start ICARUS Terminal Service\n\nUnable to determine current directory.").Title("Error").Error()
+		dialog.Message("%s", "Failed to start DAEDALUS Terminal Service\n\nUnable to determine current directory.").Title("Error").Error()
 		exitApplication(1)
 	}
 	dirname = filepath.Dir(pathToExecutable)
@@ -94,14 +94,14 @@ func main() {
 
 	// Check not already running
 	if checkProcessAlreadyExists(LAUNCHER_WINDOW_TITLE) {
-		dialog.Message("%s", "ICARUS Terminal is already running.\n\nYou can only run one instance at a time.").Title("Information").Info()
+		dialog.Message("%s", "DAEDALUS Terminal is already running.\n\nYou can only run one instance at a time.").Title("Information").Info()
 		exitApplication(1)
 	}
 
 	// Check for an update before running main launcher code
 	// updateAvailable, _ := CheckForUpdate()
 	// if updateAvailable {
-	// 	ok := dialog.Message("%s", "A new version of ICARUS Terminal is available.\n\nDo you want to install the update?").Title("New version available").YesNo()
+	// 	ok := dialog.Message("%s", "A new version of DAEDALUS Terminal is available.\n\nDo you want to install the update?").Title("New version available").YesNo()
 	// 	if ok {
 	// 		InstallUpdate()
 	// 		return
@@ -122,7 +122,7 @@ func main() {
 	// Exit if service fails to start
 	if serviceCmdErr != nil {
 		fmt.Println("Error starting service", serviceCmdErr.Error())
-		dialog.Message("%s%s", "Failed to start ICARUS Terminal Service.\n\n", serviceCmdErr.Error()).Title("Error").Error()
+		dialog.Message("%s%s", "Failed to start DAEDALUS Terminal Service.\n\n", serviceCmdErr.Error()).Title("Error").Error()
 		exitApplication(1)
 	}
 
@@ -144,10 +144,10 @@ func main() {
 
 		if diff.Seconds() < 10 {
 			// Show alternate dialog message if fails within X seconds of startup
-			dialog.Message("%s", "ICARUS Terminal Service failed to start.\n\nAntiVirus or Firewall software may have prevented it from starting or it may be conflicting with another application.").Title("Error").Error()
+			dialog.Message("%s", "DAEDALUS Terminal Service failed to start.\n\nAntiVirus or Firewall software may have prevented it from starting or it may be conflicting with another application.").Title("Error").Error()
 		} else {
 			fmt.Println("Service stopped unexpectedly.")
-			dialog.Message("%s", "ICARUS Terminal Service stopped unexpectedly.").Title("Error").Error()
+			dialog.Message("%s", "DAEDALUS Terminal Service stopped unexpectedly.").Title("Error").Error()
 		}
 		exitApplication(1)
 	}()
@@ -239,11 +239,11 @@ func bindFunctionsToWebView(w webview.WebView) {
 	var isPinned = false
 	defaultWindowStyle := win.GetWindowLong(hwnd, win.GWL_STYLE)
 
-	w.Bind("icarusTerminal_version", func() string {
+	w.Bind("daedalusTerminal_version", func() string {
 		return GetCurrentAppVersion()
 	})
 
-	w.Bind("icarusTerminal_checkForUpdate", func() string {
+	w.Bind("daedalusTerminal_checkForUpdate", func() string {
 		latestRelease, latestReleaseErr := GetLatestRelease()
 		if latestReleaseErr != nil {
 			return ""
@@ -257,19 +257,19 @@ func bindFunctionsToWebView(w webview.WebView) {
 		return string(response)
 	})
 
-	w.Bind("icarusTerminal_installUpdate", func() {
+	w.Bind("daedalusTerminal_installUpdate", func() {
 		InstallUpdate()
 	})
 
-	w.Bind("icarusTerminal_isFullScreen", func() bool {
+	w.Bind("daedalusTerminal_isFullScreen", func() bool {
 		return isFullScreen
 	})
 
-	w.Bind("icarusTerminal_isPinned", func() bool {
+	w.Bind("daedalusTerminal_isPinned", func() bool {
 		return isPinned
 	})
 
-	w.Bind("icarusTerminal_togglePinWindow", func() bool {
+	w.Bind("daedalusTerminal_togglePinWindow", func() bool {
 		if isFullScreen {
 			// Do nothing if in fullscreen mode (option in UI should be disabled)
 			return false
@@ -298,7 +298,7 @@ func bindFunctionsToWebView(w webview.WebView) {
 		return isPinned
 	})
 
-	w.Bind("icarusTerminal_toggleFullScreen", func() bool {
+	w.Bind("daedalusTerminal_toggleFullScreen", func() bool {
 		// FIXME Always go fullscreen on main monitor.
 		// If the window is on a second monitor, it should go fullscreen on that
 		// display instead. See the following URL for example of how to handle
@@ -338,7 +338,7 @@ func bindFunctionsToWebView(w webview.WebView) {
 		return isFullScreen
 	})
 
-	w.Bind("icarusTerminal_newWindow", func() int {
+	w.Bind("daedalusTerminal_newWindow", func() int {
 		terminalCmdInstance := exec.Command(filepath.Join(dirname, TERMINAL_EXECUTABLE), "--terminal=true", fmt.Sprintf("--port=%d", port))
 		terminalCmdInstance.Dir = dirname
 		terminalCmdErr := terminalCmdInstance.Start()
@@ -359,11 +359,11 @@ func bindFunctionsToWebView(w webview.WebView) {
 		return 0
 	})
 
-	w.Bind("icarusTerminal_openReleaseNotes", func() {
+	w.Bind("daedalusTerminal_openReleaseNotes", func() {
 		runUnelevated(RELEASE_NOTES_URL)
 	})
 
-	w.Bind("icarusTerminal_openTerminalInBrowser", func() {
+	w.Bind("daedalusTerminal_openTerminalInBrowser", func() {
 		runUnelevated(url)
 	})
 
@@ -374,13 +374,13 @@ func bindFunctionsToWebView(w webview.WebView) {
 	// I have tried multiple approaches to resolve this but I think it's a bug
 	// in the webview library this app imports.
 	/*
-		w.Bind("icarusTerminal_closeWindow", func() int {
+		w.Bind("daedalusTerminal_closeWindow", func() int {
 			w.Terminate()
 			return 0
 		})
 	*/
 
-	w.Bind("icarusTerminal_quit", func() int {
+	w.Bind("daedalusTerminal_quit", func() int {
 		exitApplication(0)
 		return 0
 	})
