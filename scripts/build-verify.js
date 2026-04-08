@@ -44,7 +44,12 @@ function verifyService () {
   return new Promise((resolve) => {
     console.log('\n--- Smoke test: Service (HTTP listen) ---')
     const port = 39123 + Math.floor(Math.random() * 1000)
-    const child = spawn(SERVICE_FINAL_BUILD, [`--port=${port}`], {
+    // Use a temp directory as save-game-dir so the service doesn't fail
+    // when no Elite Dangerous install is present (e.g. CI runners)
+    const os = require('os')
+    const tmpDir = path.join(os.tmpdir(), 'daedalus-smoke-test')
+    if (!require('fs').existsSync(tmpDir)) require('fs').mkdirSync(tmpDir, { recursive: true })
+    const child = spawn(SERVICE_FINAL_BUILD, [`--port=${port}`, `--save-game-dir=${tmpDir}`], {
       stdio: ['ignore', 'pipe', 'pipe'],
       windowsHide: true
     })
