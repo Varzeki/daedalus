@@ -15,12 +15,12 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
-          cache: 'npm'
 
       - uses: actions/setup-go@v5
         with:
-          go-version: '1.22'
+          go-version: 'stable'
           cache: true
+          cache-dependency-path: src/app/go.sum
 
       - name: Cache NSIS and UPX
         id: cache-tools
@@ -36,7 +36,15 @@ jobs:
         if: steps.cache-tools.outputs.cache-hit != 'true'
         run: choco install nsis upx -y
 
+      - name: Cache node_modules
+        id: cache-deps
+        uses: actions/cache@v4
+        with:
+          path: node_modules
+          key: node-modules-${{ hashFiles('package-lock.json') }}
+
       - name: Install dependencies
+        if: steps.cache-deps.outputs.cache-hit != 'true'
         run: npm ci
 
       - name: Get version from package.json
@@ -44,15 +52,14 @@ jobs:
         shell: bash
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
-      - name: Build client, app, and service
-        run: |
-          $clientJob = Start-Job { Set-Location $using:PWD; npm run build:client }
-          $appJob = Start-Job { Set-Location $using:PWD; npm run build:app }
-          $serviceJob = Start-Job { Set-Location $using:PWD; npm run build:service }
-          $clientJob, $appJob, $serviceJob | Wait-Job | Receive-Job
-          if ($clientJob.State -eq 'Failed' -or $appJob.State -eq 'Failed' -or $serviceJob.State -eq 'Failed') {
-            throw "One or more build jobs failed"
-          }
+      - name: Build client
+        run: npm run build:client
+
+      - name: Build app
+        run: npm run build:app
+
+      - name: Build service
+        run: npm run build:service
 
       - name: Smoke test binaries
         run: npm run build:verify

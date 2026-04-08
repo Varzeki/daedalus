@@ -45,9 +45,9 @@ function clean () {
 async function build () {
   if (DEBUG_CONSOLE) {
     // Build that opens console output to a terminal
-    execSync(`cd src/app && go build -o "${APP_UNOPTIMIZED_BUILD}"`)
+    execSync(`cd src/app && go build -o "${APP_UNOPTIMIZED_BUILD}"`, { stdio: 'inherit' })
   } else {
-    execSync(`cd src/app && go build -ldflags="-H windowsgui -s -w" -o "${APP_UNOPTIMIZED_BUILD}"`)
+    execSync(`cd src/app && go build -ldflags="-H windowsgui -s -w" -o "${APP_UNOPTIMIZED_BUILD}"`, { stdio: 'inherit' })
   }
 
   // Inject icon and version info before UPX compression.
