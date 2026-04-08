@@ -228,6 +228,15 @@ export default function ExplorationRoutePage () {
                           {(() => {
                             const hasBody = entry.bodyValue > 0
                             const hasBio = entry.bioValue > 0
+                            const totalExtracted = (entry.bodyValueExtracted || 0) + (entry.bioValueExtracted || 0)
+                            const totalPossible = (entry.bodyValue || 0) + (entry.bioValue || 0)
+
+                            // Past systems: show "extracted / possible" format
+                            if (isPast && totalPossible > 0) {
+                              return <span className='text-muted'>
+                                {totalExtracted.toLocaleString()} / {totalPossible.toLocaleString()} Cr
+                              </span>
+                            }
                             if (hasBody && hasBio) {
                               return <>
                                 <span className={isPast ? 'text-muted' : 'text-info'}>

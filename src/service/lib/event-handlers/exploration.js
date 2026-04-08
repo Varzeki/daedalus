@@ -155,8 +155,11 @@ class Exploration {
 
         // WasDiscovered=false means WE are the first discoverer
         // WasMapped=false means WE can get first-mapped bonus
-        body._isFirstDiscoverer = Scan[0].WasDiscovered === false
-        body._isFirstMapped = Scan[0].WasMapped === false
+        // Ignore NavBeaconDetail scans — bodies are already known from the
+        // nav beacon so showing first-discovery is misleading
+        const isNavBeacon = Scan[0].ScanType === 'NavBeaconDetail'
+        body._isFirstDiscoverer = !isNavBeacon && Scan[0].WasDiscovered === false
+        body._isFirstMapped = !isNavBeacon && Scan[0].WasMapped === false
 
         // Enrich with journal body properties needed by bio-predictor
         // Journal data is more authoritative when present
@@ -222,6 +225,7 @@ class Exploration {
       if (!scan.BodyName || knownBodies.has(scan.BodyName.toLowerCase())) continue
       knownBodies.add(scan.BodyName.toLowerCase())
 
+      const isNavBeacon = scan.ScanType === 'NavBeaconDetail'
       const journalBody = {
         name: scan.BodyName,
         bodyId: scan.BodyID,
@@ -232,8 +236,8 @@ class Exploration {
         terraformingState: scan.TerraformState === 'Terraformable' ? 'Candidate for terraforming' : (scan.TerraformState || ''),
         isMainStar: scan.DistanceFromArrivalLS === 0,
         distanceToArrival: scan.DistanceFromArrivalLS,
-        _isFirstDiscoverer: scan.WasDiscovered === false,
-        _isFirstMapped: scan.WasMapped === false,
+        _isFirstDiscoverer: !isNavBeacon && scan.WasDiscovered === false,
+        _isFirstMapped: !isNavBeacon && scan.WasMapped === false,
         _wasScanned: true,
         signals: { geological: 0, biological: 0, human: 0 },
         // Journal provides richer body data needed by bio-predictor
@@ -465,6 +469,8 @@ class Exploration {
       let scanProgress = null
       let bodyValue = 0
       let bioValue = 0
+      let bodyValueExtracted = 0
+      let bioValueExtracted = 0
       let valuableBodies = 0
       let valuableBiologicals = 0
       let discoverer = null
@@ -482,6 +488,54 @@ class Exploration {
           bioValue = result.bioValue
           valuableBodies = result.valuableBodies
           valuableBiologicals = result.valuableBiologicals
+        }
+
+        // Compute extracted values — what the player has already locked in
+        // from scanning (stars) and mapping (planets) + confirmed bio species.
+        // Honours the includeNonValuable filter to match the "possible" totals.
+        const minBodyValue = options.minBodyValue ?? 1000000
+        const minBioValue = options.minBioValue ?? 7000000
+        const includeNonValuable = options.includeNonValuable !== false
+
+        for (const body of edsmBodies) {
+          const bType = body.subType || body.type || body.group
+          const bTerraformable = (
+            body.terraformingState === 'Candidate for terraforming' ||
+            body.terraformingState === 'Terraformable' ||
+            body.terraformingState === 'Being terraformed' ||
+            body.terraformingState === 'Terraformed'
+          )
+          const bMass = body.earthMasses ?? body.solarMasses ?? 1
+          const bStar = isStarClass(bType)
+          const bFirstDisc = body._isFirstDiscoverer ?? false
+          const bFirstMap = body._isFirstMapped ?? false
+
+          // Stars count as extracted if scanned, planets if DSS mapped
+          const isExtracted = bStar ? (body._wasScanned ?? false) : (body._wasMapped ?? false)
+          if (isExtracted) {
+            const val = getBodyValue({
+              bodyType: bType,
+              isTerraformable: bTerraformable,
+              mass: bMass,
+              isFirstDiscoverer: bFirstDisc,
+              isMapped: !bStar,
+              isFirstMapped: bFirstMap,
+              withEfficiencyBonus: true
+            })
+            if (includeNonValuable || val >= minBodyValue) {
+              bodyValueExtracted += val
+            }
+          }
+
+          // Bio: only fully confirmed (analysed) species count as extracted
+          const knownSpecies = body._knownSpecies ?? []
+          if (knownSpecies.length > 0) {
+            const ffMult = (body._isFirstDiscoverer ?? false) ? 5 : 1
+            const spVal = knownSpecies.reduce((s, sp) => s + sp.reward * ffMult, 0)
+            if (includeNonValuable || spVal >= minBioValue) {
+              bioValueExtracted += spVal
+            }
+          }
         }
 
         // Detect partial vs complete scan using EDSM bodyCount
@@ -533,6 +587,8 @@ class Exploration {
         scanProgress,
         bodyValue,
         bioValue,
+        bodyValueExtracted,
+        bioValueExtracted,
         valuableBodies,
         valuableBiologicals,
         discoverer,

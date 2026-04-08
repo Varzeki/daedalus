@@ -238,33 +238,34 @@ export default function Header ({ connected, active }) {
           </button>
 
           {IS_WINDOWS_APP &&
-            <button tabIndex='1' onClick={pinWindow} className={`button--icon ${isPinned ? 'button--transparent' : ''}`} style={{ marginRight: '.5rem' }} disabled={isFullScreen}>
+            <button tabIndex='1' onClick={pinWindow} className={`button--icon ${isPinned ? 'button--transparent' : ''}`} style={{ marginRight: '.5rem' }} disabled={isFullScreen} data-tooltip='Pin window'>
               <i className='icon daedalus-terminal-pin-window' style={{ fontSize: '2rem' }} />
             </button>}
 
-          <button tabIndex='1' onClick={toggleNotifications} className='button--icon' style={{ marginRight: '.5rem' }}>
+          <button tabIndex='1' onClick={toggleNotifications} className='button--icon' style={{ marginRight: '.5rem' }} data-tooltip='Notifications'>
             <i className={`icon ${notificationsVisible ? 'daedalus-terminal-notifications' : 'daedalus-terminal-notifications-disabled text-muted'}`} style={{ fontSize: '2rem' }} />
           </button>
 
-          <button tabIndex='1' onClick={toggleAutoSwitch} className='button--icon' style={{ marginRight: '.5rem' }} title='Auto-switch exploration pages'>
+          <button tabIndex='1' onClick={toggleAutoSwitch} className='button--icon' style={{ marginRight: '.5rem' }} data-tooltip='Auto-switch exploration pages'>
             <i className={`icon daedalus-terminal-sync ${autoSwitchEnabled ? '' : 'text-muted'}`} style={{ fontSize: '2rem' }} />
           </button>
 
-          <button tabIndex='1' onClick={toggleAudio} className='button--icon' style={{ marginRight: '.5rem' }} title='Toggle COVAS audio'>
+          <button tabIndex='1' onClick={toggleAudio} className='button--icon' style={{ marginRight: '.5rem' }} data-tooltip='COVAS audio'>
             <i className={`icon daedalus-terminal-sound ${audioEnabled ? '' : 'text-muted'}`} style={{ fontSize: '2rem' }} />
           </button>
 
-          <button tabIndex='1' onClick={toggleLandingPad} className='button--icon' style={{ marginRight: '.5rem' }} title='Landing pad overlay'>
+          <button tabIndex='1' onClick={toggleLandingPad} className='button--icon' style={{ marginRight: '.5rem' }} data-tooltip='Landing pad overlay'>
             <i className={`icon daedalus-terminal-planet-lander ${landingPadEnabled ? '' : 'text-muted'}`} style={{ fontSize: '2rem' }} />
           </button>
 
           <button
             tabIndex='1' className='button--icon' style={{ marginRight: '.5rem' }}
             onClick={() => { setSettingsVisible(!settingsVisible); document.activeElement.blur() }}
+            data-tooltip='Settings'
           >
             <i className='icon daedalus-terminal-settings' style={{ fontSize: '2rem' }} />
           </button>
-          <button tabIndex='1' onClick={fullScreen} className='button--icon'>
+          <button tabIndex='1' onClick={fullScreen} className='button--icon' data-tooltip='Fullscreen'>
             <i className='icon daedalus-terminal-fullscreen' style={{ fontSize: '2rem' }} />
           </button>
         </div>

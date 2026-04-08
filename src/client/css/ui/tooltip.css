@@ -1,0 +1,34 @@
+/* Custom CSS-only tooltips using data-tooltip attribute */
+/* Replaces native Windows title tooltips with styled, instant tooltips */
+
+[data-tooltip] {
+  position: relative;
+}
+
+[data-tooltip]::after {
+  content: attr(data-tooltip);
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  padding: .3rem .6rem;
+  background: var(--color-background-panel);
+  color: var(--color-primary);
+  font-family: "Jura", sans-serif;
+  font-size: .85rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05rem;
+  white-space: nowrap;
+  pointer-events: none;
+  opacity: 0;
+  border: .1rem solid var(--color-primary);
+  box-shadow: 0 0 .5rem rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .3);
+  z-index: 9999;
+  margin-bottom: .35rem;
+  transition: none;
+}
+
+[data-tooltip]:hover::after {
+  opacity: 1;
+}

@@ -125,6 +125,13 @@
   background: rgba(0, 0, 0, 0.25);
 }
 
+/* Prevent interactive hover on species rows — they are detail rows, not clickable.
+   Without this override the generic table hover sticks on WebView2. */
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row:hover td {
+  background: rgba(0, 0, 0, 0.25) !important;
+  color: inherit !important;
+  transition: none !important;
+}
 
 
 .exploration-system__species-indent {
