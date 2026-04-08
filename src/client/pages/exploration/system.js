@@ -166,7 +166,6 @@ export default function ExplorationSystemPage () {
   const { connected, active, ready } = useSocket()
   const [componentReady, setComponentReady] = useState(false)
   const [systemData, setSystemData] = useState(null)
-  const [includeNonValuable, setIncludeNonValuable] = useState(true)
   const [loadError, setLoadError] = useState(false)
   const [sortKey, setSortKey] = useState(null) // null = default (distance), or column key
   const [sortAsc, setSortAsc] = useState(true)
@@ -183,7 +182,6 @@ export default function ExplorationSystemPage () {
 
   const fetchSystem = async () => {
     const prefs = await sendEvent('getPreferences')
-    setIncludeNonValuable(prefs?.explorationIncludeNonValuable !== false)
     return sendEvent('getExplorationSystem', {
       minBodyValue: prefs?.explorationMinBodyValue,
       minBioValue: prefs?.explorationMinBioValue,
@@ -232,20 +230,9 @@ export default function ExplorationSystemPage () {
     }
   }), [])
 
-  const allBodies = systemData?.bodies ?? []
+  const bodies = systemData?.bodies ?? []
   const cmdrName = systemData?.cmdrName
   const systemValue = systemData?.systemValue
-
-  // When includeNonValuable is off, hide non-valuable bodies and non-valuable species
-  const bodies = includeNonValuable
-    ? allBodies
-    : allBodies.filter(body => body.mappedValue >= MIN_BODY_VALUE || body.bioValue >= MIN_BIO_VALUE || body.isStar).map(body => {
-        if (!body.speciesDetail) return body
-        const filteredSpecies = body.speciesDetail.filter(sp => sp.reward >= MIN_BIO_VALUE)
-        return filteredSpecies.length === body.speciesDetail.length
-          ? body
-          : { ...body, speciesDetail: filteredSpecies.length > 0 ? filteredSpecies : null }
-      })
 
   // Sort bodies by selected column (default = server order: stars first, then distance)
   const sortedBodies = sortKey

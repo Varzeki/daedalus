@@ -623,7 +623,7 @@ class Exploration {
       const knownSpecies = body._knownSpecies ?? []
       const predictedSpecies = body._predictedSpecies ?? null
       const confirmedGenuses = body.biologicalGenuses ?? null
-      const bioValue = bioSignals > 0
+      const bioValueTotal = bioSignals > 0
         ? getExpectedBioValue(bioSignals, isFirstFootfall, knownSpecies, predictedSpecies, SPECIES_REWARDS, confirmedGenuses)
         : 0
 
@@ -697,6 +697,17 @@ class Exploration {
 
       // EDSM discoverer
       const edsmDiscoverer = body.discovery?.commander ?? null
+
+      // When includeNonValuable is off, the displayed bio value should only sum valuable species
+      const minBioValue = options.minBioValue ?? 7000000
+      const includeNonValuable = options.includeNonValuable !== false
+      let bioValue = bioValueTotal
+      if (!includeNonValuable && speciesDetail && speciesDetail.length > 0) {
+        const ffMultiplier = isFirstFootfall ? 5 : 1
+        bioValue = speciesDetail
+          .filter(sp => sp.reward >= minBioValue)
+          .reduce((sum, sp) => sum + sp.reward * ffMultiplier, 0)
+      }
 
       return {
         name: body.name,

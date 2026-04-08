@@ -103,7 +103,9 @@ function connect (socketState, setSocketState) {
         }
       } catch (e) { console.log('NOTIFICATION_ERROR', e) }
 
-      // Auto-switch exploration pages on hyperspace jump (via StartJump event)
+      // Auto-switch exploration pages on hyperspace jump
+      // Triggers on: StartJump(Hyperspace), or FSD charging while already in supercruise
+      // (charging in supercruise can only be a hyperspace jump)
       try {
         if (socketOptions.explorationAutoSwitch && name === 'newLogEntry') {
           const path = window.location.pathname
@@ -117,6 +119,25 @@ function connect (socketState, setSocketState) {
           }
         }
       } catch (e) { console.log('AUTO_SWITCH_CHARGE_ERROR', e) }
+
+      // Early auto-switch: FSD charging while in supercruise = hyperspace jump
+      try {
+        if (socketOptions.explorationAutoSwitch && name === 'gameStateChange') {
+          const path = window.location.pathname
+          if (path.startsWith('/exploration') && !socketOptions._autoSwitchFrom) {
+            sendEvent('getCmdrStatus').then(cmdrStatus => {
+              const flags = cmdrStatus?.flags || {}
+              const currentPath = window.location.pathname
+              if (!currentPath.startsWith('/exploration')) return
+              if (flags.fsdCharging && flags.supercruise && !socketOptions._autoSwitchFrom) {
+                // FSD charging in supercruise — must be hyperspace, switch early
+                socketOptions._autoSwitchFrom = currentPath
+                if (currentPath !== '/exploration/route') window.location.href = '/exploration/route'
+              }
+            }).catch(() => {})
+          }
+        }
+      } catch (e) { console.log('AUTO_SWITCH_EARLY_ERROR', e) }
 
       // Cancel auto-switch when FSD charge cancelled (flags clear without jump completing)
       try {
