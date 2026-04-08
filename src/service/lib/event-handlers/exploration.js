@@ -1,5 +1,5 @@
 const distance = require('../../../shared/distance')
-const { getBodyValue, getExpectedBioValue, getSystemValue, isStarClass, GENUS_MAX_VALUES } = require('../exploration-value')
+const { getBodyValue, getExpectedBioValue, getSystemValue, isStarClass, GENUS_MAX_VALUES, normalizeDssGenus } = require('../exploration-value')
 const { UNKNOWN_VALUE } = require('../../../shared/consts')
 const EDSM = require('../edsm')
 const { predictSpecies } = require('../bio-predictor')
@@ -193,6 +193,11 @@ class Exploration {
       // Merge SAASignalsFound (DSS-level signal data, more detailed)
       const SAASignalsFound = await this.eliteLog._query({ event: 'SAASignalsFound', BodyName: body.name }, 1)
       body._wasMapped = !!SAASignalsFound[0]
+      // Fallback: SAAScanComplete also confirms DSS mapping even if SAASignalsFound is missing
+      if (!body._wasMapped) {
+        const SAAScanComplete = await this.eliteLog._query({ event: 'SAAScanComplete', BodyName: body.name }, 1)
+        if (SAAScanComplete[0]) body._wasMapped = true
+      }
       if (SAASignalsFound[0]?.Signals) {
         for (const signal of SAASignalsFound[0].Signals) {
           if (signal?.Type === '$SAA_SignalType_Biological;') body.signals.biological = signal?.Count ?? 0
@@ -259,6 +264,10 @@ class Exploration {
       // Check for DSS-confirmed genus names on this journal-only body
       const SAASignals = await this.eliteLog._query({ event: 'SAASignalsFound', BodyName: scan.BodyName }, 1)
       journalBody._wasMapped = !!SAASignals[0]
+      if (!journalBody._wasMapped) {
+        const SAAScanComplete = await this.eliteLog._query({ event: 'SAAScanComplete', BodyName: scan.BodyName }, 1)
+        if (SAAScanComplete[0]) journalBody._wasMapped = true
+      }
       if (SAASignals[0]?.Signals) {
         for (const signal of SAASignals[0].Signals) {
           if (signal?.Type === '$SAA_SignalType_Biological;') journalBody.signals.biological = signal?.Count ?? 0
@@ -293,6 +302,14 @@ class Exploration {
           // Prune predictions using journal knowledge (inspired by EB's limitOccurrenceOfSpecies)
           const knownSpecies = body._knownSpecies ?? []
           const scannedGenera = body._scannedGenera ?? []
+
+          // Filter by DSS-confirmed genera (from SAASignalsFound) — these are
+          // definitive: only the confirmed genera can exist on this body
+          const dssGenera = body.biologicalGenuses ?? null
+          if (dssGenera && dssGenera.length > 0) {
+            const dssSet = new Set(dssGenera.map(g => normalizeDssGenus(g)))
+            predictions = predictions.filter(p => dssSet.has(p.genus?.toLowerCase()))
+          }
 
           if (scannedGenera.length > 0 || knownSpecies.length > 0) {
             const confirmedGenera = new Set(knownSpecies.map(s => s.genus?.toLowerCase()))

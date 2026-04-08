@@ -27,6 +27,8 @@ if (typeof window !== 'undefined') {
     const saved = JSON.parse(window.localStorage.getItem('daedalus-socket-options'))
     if (saved) {
       if (typeof saved.explorationAutoSwitch === 'boolean') socketOptions.explorationAutoSwitch = saved.explorationAutoSwitch
+      if (typeof saved.notifications === 'boolean') socketOptions.notifications = saved.notifications
+      if (typeof saved.landingPadEnabled === 'boolean') socketOptions.landingPadEnabled = saved.landingPadEnabled
     }
   } catch (e) { /* ignore */ }
 }

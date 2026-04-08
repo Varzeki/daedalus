@@ -528,5 +528,6 @@ module.exports = {
   isStarClass,
   EDSM_TYPE_MAP,
   GENUS_MAX_VALUES,
-  FIRST_FOOTFALL_MULTIPLIER
+  FIRST_FOOTFALL_MULTIPLIER,
+  normalizeDssGenus
 }

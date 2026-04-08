@@ -85,6 +85,11 @@ export default function Header ({ connected, active }) {
         }
       }, 2000)
     }
+    try {
+      const saved = JSON.parse(window.localStorage.getItem('daedalus-socket-options') || '{}')
+      saved.notifications = socketOptions.notifications
+      window.localStorage.setItem('daedalus-socket-options', JSON.stringify(saved))
+    } catch (e) { /* ignore */ }
     document.activeElement.blur()
   }
 
@@ -92,7 +97,9 @@ export default function Header ({ connected, active }) {
     socketOptions.explorationAutoSwitch = !autoSwitchEnabled
     setAutoSwitchEnabled(socketOptions.explorationAutoSwitch)
     try {
-      window.localStorage.setItem('daedalus-socket-options', JSON.stringify({ explorationAutoSwitch: socketOptions.explorationAutoSwitch }))
+      const saved = JSON.parse(window.localStorage.getItem('daedalus-socket-options') || '{}')
+      saved.explorationAutoSwitch = socketOptions.explorationAutoSwitch
+      window.localStorage.setItem('daedalus-socket-options', JSON.stringify(saved))
     } catch (e) { /* ignore */ }
     document.activeElement.blur()
   }
@@ -113,6 +120,11 @@ export default function Header ({ connected, active }) {
     socketOptions.landingPadEnabled = newEnabled
     setLandingPadEnabled(newEnabled)
     if (!newEnabled) setLandingPadData(null)
+    try {
+      const saved = JSON.parse(window.localStorage.getItem('daedalus-socket-options') || '{}')
+      saved.landingPadEnabled = newEnabled
+      window.localStorage.setItem('daedalus-socket-options', JSON.stringify(saved))
+    } catch (e) { /* ignore */ }
     document.activeElement.blur()
   }
 
