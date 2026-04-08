@@ -22,6 +22,13 @@ const TIMEOUT_MS = 15000
 
 async function verifyApp () {
   console.log('\n--- Smoke test: App (WebView2 initialization) ---')
+
+  // WebView2 requires a display — skip in headless CI environments
+  if (process.env.CI) {
+    console.log('⊘ Skipped (CI environment — no display for WebView2)')
+    return 0
+  }
+
   try {
     const output = execSync(`"${APP_FINAL_BUILD}" --smoke-test`, {
       timeout: TIMEOUT_MS,
