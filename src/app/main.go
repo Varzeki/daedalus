@@ -8,7 +8,7 @@ import (
 	"github.com/phayes/freeport"
 	"github.com/rodolfoag/gow32"
 	"github.com/sqweek/dialog"
-	"github.com/webview/webview"
+	webview "github.com/jchv/go-webview2"
 	"golang.org/x/sys/windows"
 	"os"
 	"os/exec"

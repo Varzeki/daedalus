@@ -11,10 +11,11 @@ const { UNKNOWN_VALUE } = require('../../shared/consts')
 
 const axios = require('axios')
 const retry = require('async-retry')
+const packageJson = require('../../../package.json')
 
 const baseUrl = 'https://www.edsm.net/'
 const axiosConfig = {
-  headers: { 'User-Agent': 'DAEDALUS-Terminal/1.0.0' },
+  headers: { 'User-Agent': `DAEDALUS-Terminal/${packageJson.version}` },
   timeout: 15000
 }
 

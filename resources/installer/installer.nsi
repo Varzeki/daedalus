@@ -21,7 +21,7 @@ VIAddVersionKey "FileVersion"  "${VERSION}"
 
 ######################################################################
 
-SetCompressor ZLIB
+SetCompressor LZMA
 Name "${APP_NAME}"
 Caption "${APP_NAME}"
 OutFile "${INSTALLER_NAME}"
@@ -85,8 +85,6 @@ SetOverwrite ifnewer
 SetOutPath "$INSTDIR"
 File "..\..\build\bin\DAEDALUS Service.exe"
 File "..\..\build\bin\DAEDALUS Terminal.exe"
-File "..\..\build\bin\webview.dll"
-File "..\..\build\bin\WebView2Loader.dll"
 File "..\assets\icon.ico"
 Call installWebView2
 SectionEnd
@@ -137,8 +135,6 @@ Section Uninstall
 ${INSTALL_TYPE}
 Delete "$INSTDIR\DAEDALUS Service.exe"
 Delete "$INSTDIR\DAEDALUS Terminal.exe"
-Delete "$INSTDIR\webview.dll"
-Delete "$INSTDIR\WebView2Loader.dll"
 Delete "$INSTDIR\icon.ico"
 Delete "$INSTDIR\uninstall.exe"
 !ifdef WEB_SITE

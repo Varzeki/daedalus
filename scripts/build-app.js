@@ -114,9 +114,6 @@ function injectMetadata (exePath, versionInfo, iconPath) {
 
 function copy () {
   fs.copyFileSync(APP_OPTIMIZED_BUILD, APP_FINAL_BUILD)
-  // Resources required by the app
-  fs.copyFileSync(path.join(RESOURCES_DIR, 'dll', 'webview.dll'), path.join(BIN_DIR, 'webview.dll'))
-  fs.copyFileSync(path.join(RESOURCES_DIR, 'dll', 'WebView2Loader.dll'), path.join(BIN_DIR, 'WebView2Loader.dll'))
   // Icon copied to bin dir as used by the terminal at runtime when spawning
   // new windows so must be shipped alongside the binary.
   // It's also an embeded resource in each executable but it's easier to access
