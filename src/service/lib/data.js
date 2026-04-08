@@ -1,7 +1,10 @@
+const fs = require('fs')
+const path = require('path')
+
 module.exports = class Data {
   constructor (asset) {
     this.asset = asset
-    this.data = require(`../data/${asset}.json`)
+    this.data = JSON.parse(fs.readFileSync(path.join(__dirname, '..', 'data', `${asset}.json`), 'utf8'))
   }
 
   getBySymbol (itemSymbol) {

@@ -35,6 +35,11 @@ function clean () {
   if (fs.existsSync(APP_UNOPTIMIZED_BUILD)) fs.unlinkSync(APP_UNOPTIMIZED_BUILD)
   if (fs.existsSync(APP_OPTIMIZED_BUILD)) fs.unlinkSync(APP_OPTIMIZED_BUILD)
   if (fs.existsSync(APP_FINAL_BUILD)) fs.unlinkSync(APP_FINAL_BUILD)
+  // Remove legacy DLLs no longer needed with go-webview2
+  for (const dll of ['webview.dll', 'WebView2Loader.dll']) {
+    const dllPath = path.join(BIN_DIR, dll)
+    if (fs.existsSync(dllPath)) fs.unlinkSync(dllPath)
+  }
 }
 
 async function build () {
@@ -44,6 +49,11 @@ async function build () {
   } else {
     execSync(`cd src/app && go build -ldflags="-H windowsgui -s -w" -o "${APP_UNOPTIMIZED_BUILD}"`)
   }
+
+  // Inject icon and version info before UPX compression.
+  // resedit reorganizes PE sections, which corrupts UPX-compressed binaries,
+  // so metadata must be applied to the uncompressed binary first.
+  injectMetadata(APP_UNOPTIMIZED_BUILD, APP_VERSION_INFO, APP_ICON)
 
   if (DEVELOPMENT_BUILD) {
     console.log('Development build (skipping compression)')
@@ -64,9 +74,6 @@ async function build () {
       fs.copyFileSync(APP_UNOPTIMIZED_BUILD, APP_OPTIMIZED_BUILD)
     }
   }
-
-  // Apply icon and resource changes after optimization
-  injectMetadata(APP_OPTIMIZED_BUILD, APP_VERSION_INFO, APP_ICON)
 }
 
 function injectMetadata (exePath, versionInfo, iconPath) {

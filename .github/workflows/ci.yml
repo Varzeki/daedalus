@@ -49,3 +49,6 @@ jobs:
 
       - name: Compile Go app
         run: cd src/app && go build -ldflags="-H windowsgui -s -w" -o ../../build/test-app.exe
+
+      - name: Smoke test app binary
+        run: .\build\test-app.exe --smoke-test

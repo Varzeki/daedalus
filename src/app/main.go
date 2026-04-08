@@ -60,7 +60,27 @@ func main() {
 	portPtr := flag.Int("port", defaultPort, "Port service should run on")
 	terminalMode := flag.Bool("terminal", false, "Run in terminal only mode")
 	installMode := flag.Bool("install", false, "First run after install")
+	smokeTest := flag.Bool("smoke-test", false, "Verify WebView2 initializes then exit")
 	flag.Parse()
+
+	// Smoke test: verify WebView2 can initialize, then exit
+	if *smokeTest {
+		w := webview.NewWithOptions(webview.WebViewOptions{
+			Debug: false,
+			WindowOptions: webview.WindowOptions{
+				Title:  "Smoke Test",
+				Width:  100,
+				Height: 100,
+			},
+		})
+		if w == nil {
+			fmt.Println("FAIL: WebView2 initialization failed")
+			os.Exit(1)
+		}
+		w.Destroy()
+		fmt.Println("OK: WebView2 initialized successfully")
+		os.Exit(0)
+	}
 
 	windowWidth = int32(*widthPtr)
 	windowHeight = int32(*heightPtr)
