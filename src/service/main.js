@@ -114,17 +114,23 @@ const webSocketServer = new WebSocket.Server({ server: httpServer })
 function webSocketDebugMessage () { /* console.log(...arguments) */ }
 
 // Bind message event handler to WebSocket server before starting server
+const MAX_WS_MESSAGE_SIZE = 1024 * 1024 // 1MB
+
 webSocketServer.on('connection', socket => {
   webSocketDebugMessage('WebSocket connection open')
   socket.on('message', async (event) => {
-    const { requestId, name, message } = JSON.parse(event.toString())
-    if (eventHandlers[name]) {
-      try {
-        const data = await eventHandlers[name](message || {})
-        socket.send(JSON.stringify({ requestId, name, message: data }))
-      } catch (e) {
-        console.error(`Handler error [${name}]:`, e.message)
+    try {
+      const raw = event.toString()
+      if (raw.length > MAX_WS_MESSAGE_SIZE) {
+        console.warn(`WebSocket message rejected: ${raw.length} bytes exceeds ${MAX_WS_MESSAGE_SIZE} limit`)
+        return
       }
+      const { requestId, name, message } = JSON.parse(raw)
+      if (typeof name !== 'string' || !eventHandlers[name]) return
+      const data = await eventHandlers[name](message || {})
+      socket.send(JSON.stringify({ requestId, name, message: data }))
+    } catch (e) {
+      console.error('WebSocket message error:', e.message)
     }
   })
 })

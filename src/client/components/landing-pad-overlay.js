@@ -2,18 +2,17 @@ import { useEffect, useRef } from 'react'
 
 // Station types that use the dodecagonal starport layout (45 pads)
 const STARPORT_TYPES = new Set([
-  'Coriolis', 'Orbis', 'Ocellus', 'AsteroidBase', 'Bernal', 'CraterPort', 'Dodec',
   'coriolis', 'orbis', 'ocellus', 'asteroidbase', 'bernal', 'craterport', 'dodec'
 ])
 
 // Station types that use the fleet carrier layout (16 pads)
 const CARRIER_TYPES = new Set([
-  'FleetCarrier', 'fleetcarrier'
+  'fleetcarrier'
 ])
 
 // Station types that are Odyssey on-foot settlements
 const SETTLEMENT_TYPES = new Set([
-  'OnFootSettlement', 'onfootsettlement'
+  'onfootsettlement'
 ])
 
 // Settlement templates from SrvSurvey - pad positions per economy/subType
@@ -415,11 +414,11 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
 
     const stationType = (data.stationType || '').toLowerCase()
 
-    if (STARPORT_TYPES.has(data.stationType) || STARPORT_TYPES.has(stationType)) {
+    if (STARPORT_TYPES.has(stationType)) {
       drawStarport(ctx, cx, cy, drawSize / 2, data.pad, colors)
-    } else if (CARRIER_TYPES.has(data.stationType) || CARRIER_TYPES.has(stationType)) {
+    } else if (CARRIER_TYPES.has(stationType)) {
       drawFleetCarrier(ctx, cx, cy, drawSize, data.pad, colors)
-    } else if (SETTLEMENT_TYPES.has(data.stationType) || SETTLEMENT_TYPES.has(stationType)) {
+    } else if (SETTLEMENT_TYPES.has(stationType)) {
       drawSettlement(ctx, cx, cy, drawSize, data.pad, data.economy, colors)
     } else {
       drawOutpost(ctx, cx, cy, drawSize, data.pad, colors)

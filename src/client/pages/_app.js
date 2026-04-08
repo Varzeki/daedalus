@@ -58,7 +58,7 @@ const handleKeyPress = (event) => {
         } else {
           return document.querySelector(`#primaryNavigation button[data-primary-navigation='6']`).click()
         }
-      case "6":
+      case "7":
         if (event.getModifierState('Alt')) {
           return document.querySelector(`#secondaryNavigation button[data-secondary-navigation='7']`).click() 
         } else {

@@ -11,24 +11,22 @@ class EliteJson {
     return this
   }
 
-  load({ file = null } = {}) {
-    return new Promise(async (resolve) => {
-      // If file specified, load that file, otherwise load all files
-      const files = file ? [file] : await this.#getFiles()
-      for (const file of files) {
-        await retry(async bail => {
-          // Load file contents as JSON
-          file.contents = JSON.parse(fs.readFileSync(file.name).toString())
-          // Track file if not already being tracked
-          if (!this.files[file.name]) this.files[file.name] = file
+  async load({ file = null } = {}) {
+    // If file specified, load that file, otherwise load all files
+    const files = file ? [file] : await this.#getFiles()
+    for (const file of files) {
+      await retry(async bail => {
+        // Load file contents as JSON
+        file.contents = JSON.parse(fs.readFileSync(file.name).toString())
+        // Track file if not already being tracked
+        if (!this.files[file.name]) this.files[file.name] = file
 
-          if (this.loadFileCallback) this.loadFileCallback(file)
-        }, {
-          retries: 10
-        })
-      }
-      resolve(file ? files[0] : files)
-    })
+        if (this.loadFileCallback) this.loadFileCallback(file)
+      }, {
+        retries: 10
+      })
+    }
+    return file ? files[0] : files
   }
 
   watch(callback) {

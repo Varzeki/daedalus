@@ -841,6 +841,7 @@ function sortByBrightness (parentStarBodies, body) {
  * @returns {Array} Array of { genus, species, variant, hitCount, probability } for all viable species
  */
 function predictSpecies (body, allBodies, starPos) {
+  try {
   // Only landable bodies can have biologicals
   // Stars and gas giants can't have biologicals
   if (body.type === 'Star') return []
@@ -888,6 +889,10 @@ function predictSpecies (body, allBodies, starPos) {
   uniqueSpecies.sort((a, b) => b.probability - a.probability)
 
   return uniqueSpecies
+  } catch (e) {
+    console.error(`Bio predictor error for body ${body?.name || 'unknown'}:`, e.message)
+    return []
+  }
 }
 
 /**
