@@ -1,0 +1,51 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  lint:
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Lint JavaScript (advisory)
+        run: npx standard "src/**/*.js" || true
+
+  build-client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - run: npm ci
+
+      - name: Build client
+        run: cd src/client && npx next build && npx next export -o ../../build/client
+
+  build-app:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version: '1.22'
+
+      - name: Compile Go app
+        run: cd src/app && go build -ldflags="-H windowsgui -s -w" -o ../../build/test-app.exe
