@@ -122,7 +122,7 @@ function BodyRow ({ body, cmdrName, systemName }) {
         </td>
         {/* Valuable */}
         <td className='text-center hidden-small' style={{ width: '2.5rem' }}>
-          {(isValuableBody || isValuableBio) && <i className='icon daedalus-terminal-credits text-success' style={{ fontSize: '1.4rem' }} />}
+          {(isValuableBody || isValuableBio) && <i className='icon daedalus-terminal-credits exploration-system__valuable-icon' style={{ fontSize: '1.4rem' }} />}
         </td>
         {/* Value (body / bio) */}
         <td className='text-right hidden-small' style={{ minWidth: '9rem' }}>
@@ -166,10 +166,24 @@ export default function ExplorationSystemPage () {
   const { connected, active, ready } = useSocket()
   const [componentReady, setComponentReady] = useState(false)
   const [systemData, setSystemData] = useState(null)
+  const [includeNonValuable, setIncludeNonValuable] = useState(true)
   const [loadError, setLoadError] = useState(false)
+  const [sortKey, setSortKey] = useState(null) // null = default (distance), or column key
+  const [sortAsc, setSortAsc] = useState(true)
+
+  const handleSort = (key) => {
+    if (sortKey === key) {
+      if (!sortAsc) { setSortKey(null); setSortAsc(true) } // third click resets
+      else setSortAsc(false)
+    } else {
+      setSortKey(key)
+      setSortAsc(true)
+    }
+  }
 
   const fetchSystem = async () => {
     const prefs = await sendEvent('getPreferences')
+    setIncludeNonValuable(prefs?.explorationIncludeNonValuable !== false)
     return sendEvent('getExplorationSystem', {
       minBodyValue: prefs?.explorationMinBodyValue,
       minBioValue: prefs?.explorationMinBioValue,
@@ -218,9 +232,36 @@ export default function ExplorationSystemPage () {
     }
   }), [])
 
-  const bodies = systemData?.bodies ?? []
+  const allBodies = systemData?.bodies ?? []
   const cmdrName = systemData?.cmdrName
   const systemValue = systemData?.systemValue
+
+  // When includeNonValuable is off, hide non-valuable bodies and non-valuable species
+  const bodies = includeNonValuable
+    ? allBodies
+    : allBodies.filter(body => body.mappedValue >= MIN_BODY_VALUE || body.bioValue >= MIN_BIO_VALUE || body.isStar).map(body => {
+        if (!body.speciesDetail) return body
+        const filteredSpecies = body.speciesDetail.filter(sp => sp.reward >= MIN_BIO_VALUE)
+        return filteredSpecies.length === body.speciesDetail.length
+          ? body
+          : { ...body, speciesDetail: filteredSpecies.length > 0 ? filteredSpecies : null }
+      })
+
+  // Sort bodies by selected column (default = server order: stars first, then distance)
+  const sortedBodies = sortKey
+    ? [...bodies].sort((a, b) => {
+        let va, vb
+        switch (sortKey) {
+          case 'name': va = a.name || ''; vb = b.name || ''; break
+          case 'type': va = a.subType || ''; vb = b.subType || ''; break
+          case 'value': va = (a.mappedValue || 0) + (a.bioValue || 0); vb = (b.mappedValue || 0) + (b.bioValue || 0); break
+          case 'bio': va = a.bioSignals || 0; vb = b.bioSignals || 0; break
+          default: return 0
+        }
+        const cmp = typeof va === 'string' ? va.localeCompare(vb) : va - vb
+        return sortAsc ? cmp : -cmp
+      })
+    : bodies
 
   // Compute valuable counts and scan progress (client-side)
   const valuableBodiesList = bodies.filter(body =>
@@ -240,6 +281,19 @@ export default function ExplorationSystemPage () {
   const scannedTrackable = scannedValuableBodies + scannedValuableBio
   const surveyComplete = totalTrackable === 0 || scannedTrackable === totalTrackable
   const progressPct = totalTrackable > 0 ? Math.round((scannedTrackable / totalTrackable) * 100) : 0
+
+  // Survey complete fade-out/fade-in transition
+  const [surveyPhase, setSurveyPhase] = useState(null) // null | 'fading-out' | 'complete'
+  useEffect(() => {
+    if (surveyComplete && totalTrackable > 0) {
+      // Start fade-out of table, then show complete message
+      setSurveyPhase('fading-out')
+      const timer = setTimeout(() => setSurveyPhase('complete'), 2000)
+      return () => clearTimeout(timer)
+    } else {
+      setSurveyPhase(null)
+    }
+  }, [surveyComplete, totalTrackable])
 
   return (
     <Layout connected={connected} active={active} ready={ready} loader={!componentReady}>
@@ -264,7 +318,7 @@ export default function ExplorationSystemPage () {
           </p>}
         {systemData && bodies.length > 0 &&
           <div className='exploration-system__header-stats'>
-            {valuableBodiesList.length > 0 &&
+            {valuableBodiesList.length > 0 && surveyPhase !== 'complete' &&
               <div className='exploration-system__kpi'>
                 <span className='exploration-system__kpi-value text-info'>
                   <i className='icon daedalus-terminal-planet exploration-system__kpi-icon' />
@@ -272,7 +326,7 @@ export default function ExplorationSystemPage () {
                 </span>
                 <span className='exploration-system__kpi-label text-info'>Bodies Scanned</span>
               </div>}
-            {totalValuableBio.length > 0 &&
+            {totalValuableBio.length > 0 && surveyPhase !== 'complete' &&
               <div className='exploration-system__kpi'>
                 <span className='exploration-system__kpi-value text-success'>
                   <i className='icon daedalus-terminal-plant exploration-system__kpi-icon' />
@@ -286,7 +340,7 @@ export default function ExplorationSystemPage () {
                   <div className='exploration-system__progress-bar-fill' style={{ width: `${progressPct}%` }} />
                 </div>
               </div>}
-            {surveyComplete &&
+            {surveyPhase === 'complete' &&
               <div className='exploration-system__kpi'>
                 <span className='exploration-system__survey-complete text-secondary'>
                   <i className='icon daedalus-terminal-scan' style={{ marginRight: '.5rem' }} />
@@ -295,12 +349,16 @@ export default function ExplorationSystemPage () {
               </div>}
           </div>}
         {bodies.length > 0 &&
-          <div className='scrollable' style={{ position: 'fixed', top: '14rem', bottom: '2rem', left: '5rem', right: '1rem' }}>
+          <div className={`scrollable${surveyPhase === 'fading-out' ? ' exploration-system__fade-out' : ''}${surveyPhase === 'complete' ? ' exploration-system__hidden' : ''}`} style={{ position: 'fixed', top: '14rem', bottom: '2rem', left: '5rem', right: '1rem' }}>
             <table className='exploration-system__table table--animated table--interactive'>
               <thead>
                 <tr>
-                  <th>Body</th>
-                  <th className='hidden-small'>Type</th>
+                  <th className='exploration-system__sortable-th' onClick={() => handleSort('name')}>
+                    Body {sortKey === 'name' && <span className='exploration-system__sort-indicator'>{sortAsc ? '▲' : '▼'}</span>}
+                  </th>
+                  <th className='hidden-small exploration-system__sortable-th' onClick={() => handleSort('type')}>
+                    Type {sortKey === 'type' && <span className='exploration-system__sort-indicator'>{sortAsc ? '▲' : '▼'}</span>}
+                  </th>
                   <th className='text-center hidden-small' style={{ width: '2.5rem' }} title='Landable'>
                     <i className='icon daedalus-terminal-planet-landable' style={{ fontSize: '1.3rem' }} />
                   </th>
@@ -310,9 +368,12 @@ export default function ExplorationSystemPage () {
                   <th className='text-center hidden-small' style={{ width: '2.5rem' }} title='Valuable'>
                     <i className='icon daedalus-terminal-credits' style={{ fontSize: '1.3rem' }} />
                   </th>
-                  <th className='text-right hidden-small' style={{ minWidth: '9rem' }}>Value</th>
-                  <th className='text-center hidden-small' style={{ width: '3rem' }} title='Biological Signals'>
+                  <th className='text-right hidden-small exploration-system__sortable-th' style={{ minWidth: '9rem' }} onClick={() => handleSort('value')}>
+                    Value {sortKey === 'value' && <span className='exploration-system__sort-indicator'>{sortAsc ? '▲' : '▼'}</span>}
+                  </th>
+                  <th className='text-center hidden-small exploration-system__sortable-th' style={{ width: '3rem' }} title='Biological Signals' onClick={() => handleSort('bio')}>
                     <i className='icon daedalus-terminal-plant' style={{ fontSize: '1.3rem' }} />
+                    {sortKey === 'bio' && <span className='exploration-system__sort-indicator'>{sortAsc ? '▲' : '▼'}</span>}
                   </th>
                   <th className='text-center hidden-small' style={{ width: '2.5rem' }} title='First Discovery'>
                     <i className='icon daedalus-terminal-star' style={{ fontSize: '1.3rem' }} />
@@ -321,7 +382,7 @@ export default function ExplorationSystemPage () {
                 </tr>
               </thead>
               <tbody className='fx-fade-in'>
-                {bodies.map(body =>
+                {sortedBodies.map(body =>
                   <BodyRow key={body.name || body.bodyId} body={body} cmdrName={cmdrName} systemName={systemData?.name} />
                 )}
               </tbody>

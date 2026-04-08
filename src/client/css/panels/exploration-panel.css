@@ -80,6 +80,22 @@
   box-shadow: none !important;
 }
 
+/* Sortable table headers */
+.exploration-system__sortable-th {
+  cursor: pointer;
+  user-select: none;
+}
+
+.exploration-system__sortable-th:hover {
+  color: var(--color-secondary);
+}
+
+.exploration-system__sort-indicator {
+  font-size: 0.7em;
+  margin-left: .25rem;
+  opacity: 0.7;
+}
+
 
 
 .exploration-system__body-name {
@@ -179,13 +195,32 @@
   font-weight: bold;
   text-transform: uppercase;
   letter-spacing: .15rem;
-  animation: surveyCompleteAppear 1s ease forwards;
+  animation: surveyCompleteAppear 2.5s ease forwards;
 }
 
 @keyframes surveyCompleteAppear {
   0% { opacity: 0; transform: scale(0.8); }
-  50% { opacity: 0; transform: scale(0.8); }
+  40% { opacity: 0; transform: scale(0.8); }
   100% { opacity: 1; transform: scale(1); }
+}
+
+/* Survey complete fade-out transition for bodies table */
+.exploration-system__fade-out {
+  animation: surveyFadeOut 2s ease forwards;
+}
+
+@keyframes surveyFadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+.exploration-system__hidden {
+  display: none;
+}
+
+/* Valuable credits icon — always green, even on scanned rows */
+.exploration-system__valuable-icon {
+  color: var(--color-success) !important;
 }
 
 .exploration-system__body-row--dim td {

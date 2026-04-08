@@ -592,8 +592,8 @@ class Exploration {
     // Run bio-predictor
     this._addPredictedSpecies(cached.bodies, currentStarPos)
 
-    // Calculate per-body values and build response
-    const bodies = cached.bodies.map(body => {
+    // Calculate per-body values and build response (filter out belt clusters)
+    const bodies = cached.bodies.filter(body => !body.name?.includes('Belt Cluster')).map(body => {
       const bodyType = body.subType || body.type || body.group
       const isTerraformable = (
         body.terraformingState === 'Candidate for terraforming' ||

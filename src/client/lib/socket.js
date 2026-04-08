@@ -103,35 +103,40 @@ function connect (socketState, setSocketState) {
         }
       } catch (e) { console.log('NOTIFICATION_ERROR', e) }
 
-      // Auto-switch exploration pages on FSD charging (via gameStateChange + status flags)
+      // Auto-switch exploration pages on hyperspace jump (via StartJump event)
       try {
-        if (socketOptions.explorationAutoSwitch && name === 'gameStateChange') {
+        if (socketOptions.explorationAutoSwitch && name === 'newLogEntry') {
           const path = window.location.pathname
           if (path.startsWith('/exploration')) {
-            sendEvent('getCmdrStatus').then(cmdrStatus => {
-              const flags = cmdrStatus?.flags || {}
-              const currentPath = window.location.pathname
-              if (!currentPath.startsWith('/exploration')) return
-              if (flags.fsdCharging && !flags.fsdJump) {
-                // FSD is charging — save current page and switch to route view
-                if (!socketOptions._autoSwitchFrom) socketOptions._autoSwitchFrom = currentPath
-                if (currentPath !== '/exploration/route') window.location.href = '/exploration/route'
-              } else if (flags.fsdJump) {
-                // Mid-jump — stay on route
-                socketOptions._autoSwitchJumping = true
-              } else if (!flags.fsdCharging && !flags.fsdJump && socketOptions._autoSwitchFrom) {
-                if (!socketOptions._autoSwitchJumping) {
-                  // FSD charge cancelled — switch back to previous page
-                  const returnTo = socketOptions._autoSwitchFrom
-                  socketOptions._autoSwitchFrom = null
-                  if (currentPath !== returnTo) window.location.href = returnTo
-                }
-                // If jumping was true, FSDJump newLogEntry will handle the switch
-              }
-            }).catch(() => {})
+            if (message.event === 'StartJump' && message.JumpType === 'Hyperspace') {
+              // Hyperspace jump starting — save current page and switch to route view
+              if (!socketOptions._autoSwitchFrom) socketOptions._autoSwitchFrom = path
+              socketOptions._autoSwitchJumping = true
+              if (path !== '/exploration/route') window.location.href = '/exploration/route'
+            }
           }
         }
       } catch (e) { console.log('AUTO_SWITCH_CHARGE_ERROR', e) }
+
+      // Cancel auto-switch when FSD charge cancelled (flags clear without jump completing)
+      try {
+        if (socketOptions.explorationAutoSwitch && name === 'gameStateChange' && socketOptions._autoSwitchFrom) {
+          sendEvent('getCmdrStatus').then(cmdrStatus => {
+            const flags = cmdrStatus?.flags || {}
+            if (!flags.fsdCharging && !flags.fsdJump && socketOptions._autoSwitchFrom) {
+              if (!socketOptions._autoSwitchJumping) {
+                // FSD charge cancelled — switch back to previous page
+                const returnTo = socketOptions._autoSwitchFrom
+                socketOptions._autoSwitchFrom = null
+                const currentPath = window.location.pathname
+                if (currentPath.startsWith('/exploration') && currentPath !== returnTo) {
+                  window.location.href = returnTo
+                }
+              }
+            }
+          }).catch(() => {})
+        }
+      } catch (e) { console.log('AUTO_SWITCH_CANCEL_ERROR', e) }
 
       // Switch to system page when jump completes (FSDJump / Location events)
       try {
