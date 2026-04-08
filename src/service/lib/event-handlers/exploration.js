@@ -484,18 +484,27 @@ class Exploration {
           bodyCount: expectedBodyCount
         })
         if (result) {
-          bodyValue = result.bodyValue
-          bioValue = result.bioValue
           valuableBodies = result.valuableBodies
           valuableBiologicals = result.valuableBiologicals
         }
 
         // Compute extracted values — what the player has already locked in
         // from scanning (stars) and mapping (planets) + confirmed bio species.
-        // Honours the includeNonValuable filter to match the "possible" totals.
+        //
+        // When includeNonValuable is OFF:
+        //   - Scanned non-valuable bodies/species STILL count in both extracted
+        //     AND possible (the player already did the work, so show it)
+        //   - Unscanned non-valuables are excluded from both totals
+        // This requires a route-specific "possible" total that differs from the
+        // generic getSystemValue result when some non-valuables were scanned.
         const minBodyValue = options.minBodyValue ?? 1000000
         const minBioValue = options.minBioValue ?? 7000000
         const includeNonValuable = options.includeNonValuable !== false
+
+        // Reset possible totals — we recompute them here to honour the
+        // "scanned non-valuables always count" rule for route display
+        bodyValue = 0
+        bioValue = 0
 
         for (const body of edsmBodies) {
           const bType = body.subType || body.type || body.group
@@ -511,29 +520,48 @@ class Exploration {
           const bFirstMap = body._isFirstMapped ?? false
 
           // Stars count as extracted if scanned, planets if DSS mapped
-          const isExtracted = bStar ? (body._wasScanned ?? false) : (body._wasMapped ?? false)
-          if (isExtracted) {
-            const val = getBodyValue({
-              bodyType: bType,
-              isTerraformable: bTerraformable,
-              mass: bMass,
-              isFirstDiscoverer: bFirstDisc,
-              isMapped: !bStar,
-              isFirstMapped: bFirstMap,
-              withEfficiencyBonus: true
-            })
-            if (includeNonValuable || val >= minBodyValue) {
-              bodyValueExtracted += val
-            }
+          const isBodyExtracted = bStar ? (body._wasScanned ?? false) : (body._wasMapped ?? false)
+          const val = getBodyValue({
+            bodyType: bType,
+            isTerraformable: bTerraformable,
+            mass: bMass,
+            isFirstDiscoverer: bFirstDisc,
+            isMapped: !bStar,
+            isFirstMapped: bFirstMap,
+            withEfficiencyBonus: true
+          })
+          const isValuableBody = val >= minBodyValue
+
+          // Include in possible total if valuable OR already scanned (always counts)
+          if (includeNonValuable || isValuableBody || isBodyExtracted) {
+            bodyValue += val
+          }
+          if (isBodyExtracted) {
+            // Extracted = the player scanned/mapped it, always counts
+            bodyValueExtracted += val
           }
 
-          // Bio: only fully confirmed (analysed) species count as extracted
-          const knownSpecies = body._knownSpecies ?? []
-          if (knownSpecies.length > 0) {
-            const ffMult = (body._isFirstDiscoverer ?? false) ? 5 : 1
-            const spVal = knownSpecies.reduce((s, sp) => s + sp.reward * ffMult, 0)
-            if (includeNonValuable || spVal >= minBioValue) {
-              bioValueExtracted += spVal
+          // Biological value
+          const bioSignals = body.signals?.biological ?? 0
+          if (bioSignals > 0) {
+            const isFirstFootfall = body._isFirstDiscoverer ?? false
+            const knownSpecies = body._knownSpecies ?? []
+            const predictedSpecies = body._predictedSpecies ?? null
+            const confirmedGenuses = body.biologicalGenuses ?? null
+            const bodyBioValue = getExpectedBioValue(bioSignals, isFirstFootfall, knownSpecies, predictedSpecies, SPECIES_REWARDS, confirmedGenuses)
+
+            const isValuableBio = bodyBioValue >= minBioValue
+            const hasBioExtracted = knownSpecies.length > 0
+
+            // Include in possible total if valuable OR has confirmed species
+            if (includeNonValuable || isValuableBio || hasBioExtracted) {
+              bioValue += bodyBioValue
+            }
+
+            // Extracted bio = only fully confirmed (analysed) species
+            if (hasBioExtracted) {
+              const ffMult = isFirstFootfall ? 5 : 1
+              bioValueExtracted += knownSpecies.reduce((s, sp) => s + sp.reward * ffMult, 0)
             }
           }
         }

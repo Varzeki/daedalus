@@ -303,40 +303,42 @@ export default function ExplorationSystemPage () {
               </>}
             </>}
           </p>}
-        {systemData && bodies.length > 0 &&
+        {systemData && bodies.length > 0 && surveyPhase === 'complete' &&
           <div className='exploration-system__header-stats'>
-            {valuableBodiesList.length > 0 && surveyPhase !== 'complete' &&
-              <div className='exploration-system__kpi'>
-                <span className='exploration-system__kpi-value text-info'>
-                  <i className='icon daedalus-terminal-planet exploration-system__kpi-icon' />
-                  {scannedValuableBodies} / {valuableBodiesList.length}
-                </span>
-                <span className='exploration-system__kpi-label text-info'>Bodies Scanned</span>
-              </div>}
-            {totalValuableBio.length > 0 && surveyPhase !== 'complete' &&
-              <div className='exploration-system__kpi'>
-                <span className='exploration-system__kpi-value text-success'>
-                  <i className='icon daedalus-terminal-plant exploration-system__kpi-icon' />
-                  {scannedValuableBio} / {totalValuableBio.length}
-                </span>
-                <span className='exploration-system__kpi-label text-success'>Biologicals Scanned</span>
-              </div>}
-            {totalTrackable > 0 && !surveyComplete &&
-              <div className='exploration-system__kpi'>
-                <div className='exploration-system__progress-bar' title={`${scannedTrackable} / ${totalTrackable} scanned`}>
-                  <div className='exploration-system__progress-bar-fill' style={{ width: `${progressPct}%` }} />
-                </div>
-              </div>}
-            {surveyPhase === 'complete' &&
-              <div className='exploration-system__kpi'>
-                <span className='exploration-system__survey-complete text-secondary'>
-                  <i className='icon daedalus-terminal-scan' style={{ marginRight: '.5rem' }} />
-                  System Survey Complete
-                </span>
-              </div>}
+            <div className='exploration-system__kpi'>
+              <span className='exploration-system__survey-complete text-secondary'>
+                <i className='icon daedalus-terminal-scan' style={{ marginRight: '.5rem' }} />
+                System Survey Complete
+              </span>
+            </div>
           </div>}
         {bodies.length > 0 &&
-          <div className={`scrollable${surveyPhase === 'fading-out' ? ' exploration-system__fade-out' : ''}${surveyPhase === 'complete' ? ' exploration-system__hidden' : ''}`} style={{ position: 'fixed', top: '14rem', bottom: '2rem', left: '5rem', right: '1rem' }}>
+          <div className={`scrollable${surveyPhase === 'fading-out' ? ' exploration-system__fade-out' : ''}${surveyPhase === 'complete' ? ' exploration-system__hidden' : ''}`} style={{ position: 'fixed', top: surveyPhase === 'complete' ? '14rem' : '10rem', bottom: '2rem', left: '5rem', right: '1rem' }}>
+            {surveyPhase !== 'complete' &&
+              <div className='exploration-system__header-stats'>
+                {valuableBodiesList.length > 0 &&
+                  <div className='exploration-system__kpi'>
+                    <span className='exploration-system__kpi-value text-info'>
+                      <i className='icon daedalus-terminal-planet exploration-system__kpi-icon' />
+                      {scannedValuableBodies} / {valuableBodiesList.length}
+                    </span>
+                    <span className='exploration-system__kpi-label text-info'>Bodies Scanned</span>
+                  </div>}
+                {totalValuableBio.length > 0 &&
+                  <div className='exploration-system__kpi'>
+                    <span className='exploration-system__kpi-value text-success'>
+                      <i className='icon daedalus-terminal-plant exploration-system__kpi-icon' />
+                      {scannedValuableBio} / {totalValuableBio.length}
+                    </span>
+                    <span className='exploration-system__kpi-label text-success'>Biologicals Scanned</span>
+                  </div>}
+                {totalTrackable > 0 && !surveyComplete &&
+                  <div className='exploration-system__kpi'>
+                    <div className='exploration-system__progress-bar' title={`${scannedTrackable} / ${totalTrackable} scanned`}>
+                      <div className='exploration-system__progress-bar-fill' style={{ width: `${progressPct}%` }} />
+                    </div>
+                  </div>}
+              </div>}
             <table className='exploration-system__table table--animated table--interactive'>
               <thead>
                 <tr>

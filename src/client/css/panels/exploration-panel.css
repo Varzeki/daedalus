@@ -125,12 +125,18 @@
   background: rgba(0, 0, 0, 0.25);
 }
 
-/* Prevent interactive hover on species rows — they are detail rows, not clickable.
-   Without this override the generic table hover sticks on WebView2. */
+/* Species rows: use a subtle hover that auto-clears via pointer-events reset.
+   The brief pointer-events:none on the pseudo-transition forces WebView2 to
+   re-evaluate :hover state, preventing the stuck-highlight bug. */
 table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row:hover td {
-  background: rgba(0, 0, 0, 0.25) !important;
-  color: inherit !important;
-  transition: none !important;
+  background: var(--color-primary-dark) !important;
+  color: var(--color-primary) !important;
+  transition: background-color .1s ease, color .1s ease;
+}
+
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row:not(:hover) td {
+  transition: background-color .15s ease, color .15s ease;
+  pointer-events: auto;
 }
 
 
