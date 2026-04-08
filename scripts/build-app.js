@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const { execSync } = require('child_process')
-const changeExe = require('changeexe')
+const ResEdit = require('resedit')
 const UPX = require('upx')({ brute: true })
 const yargs = require('yargs')
 const commandLineArgs = yargs.argv
@@ -66,8 +66,50 @@ async function build () {
   }
 
   // Apply icon and resource changes after optimization
-  await changeExe.icon(APP_OPTIMIZED_BUILD, APP_ICON)
-  await changeExe.versionInfo(APP_OPTIMIZED_BUILD, APP_VERSION_INFO)
+  injectMetadata(APP_OPTIMIZED_BUILD, APP_VERSION_INFO, APP_ICON)
+}
+
+function injectMetadata (exePath, versionInfo, iconPath) {
+  const exeData = fs.readFileSync(exePath)
+  const exe = ResEdit.NtExecutable.from(exeData)
+  const res = ResEdit.NtExecutableResource.from(exe)
+
+  // Inject version info
+  const viList = ResEdit.Resource.VersionInfo.fromEntries(res.entries)
+  const vi = viList.length > 0 ? viList[0] : new ResEdit.Resource.VersionInfo()
+  const [major, minor, patch, build] = versionInfo.FileVersion.split('.').map(Number)
+  const lang = 1033
+  const codepage = 1200
+
+  vi.setFileVersion(major, minor, patch, build || 0, lang)
+  vi.setProductVersion(major, minor, patch, build || 0, lang)
+  vi.setStringValues({ lang, codepage }, {
+    FileDescription: versionInfo.FileDescription,
+    ProductName: versionInfo.ProductName,
+    CompanyName: versionInfo.CompanyName,
+    ProductVersion: versionInfo.ProductVersion,
+    FileVersion: versionInfo.FileVersion,
+    OriginalFilename: versionInfo.OriginalFilename,
+    InternalName: versionInfo.InternalName,
+    LegalCopyright: versionInfo.LegalCopyright
+  })
+  vi.outputToResourceEntries(res.entries)
+
+  // Inject icon
+  if (iconPath && fs.existsSync(iconPath)) {
+    try {
+      const iconData = fs.readFileSync(iconPath)
+      const iconFile = ResEdit.Data.IconFile.from(iconData)
+      ResEdit.Resource.IconGroupEntry.replaceIconsForResource(
+        res.entries, 1, lang, iconFile.icons.map(i => i.data)
+      )
+    } catch (e) {
+      console.log('Warning: Icon injection failed:', e.message)
+    }
+  }
+
+  res.outputResource(exe)
+  fs.writeFileSync(exePath, Buffer.from(exe.generate()))
 }
 
 function copy () {

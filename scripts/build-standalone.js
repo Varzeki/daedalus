@@ -1,11 +1,10 @@
 // The standalone build creates cross platform (Win/Mac/Linux) build of the
-// service with nexe. Unlike the full release, this build does not feature
-// an installer, auto-updating or a native UI and must be configured using
-// command line options.
+// service with @yao-pkg/pkg. Unlike the full release, this build does not
+// feature an installer, auto-updating or a native UI and must be configured
+// using command line options.
 const fs = require('fs')
 const path = require('path')
-const { compile } = require('nexe')
-// const UPX = require('upx')({ brute: false }) // Brute on service seems to hang
+const { exec } = require('@yao-pkg/pkg')
 const yargs = require('yargs')
 const commandLineArgs = yargs.argv
 
@@ -33,55 +32,25 @@ function clean () {
 }
 
 async function build () {
-  await compile({
-    name: 'DAEDALUS Service',
-    ico: SERVICE_ICON,
-    input: ENTRY_POINT,
-    output: SERVICE_STANDALONE_BUILD + '-linux',
-    resources: [
-      path.join(BUILD_DIR, 'web'), // Include web UI
-      'src/service/data' // Include dynamically loaded JSON files
-    ],
-    debug: DEBUG_CONSOLE,
-    target: 'linux-x64-14.15.3',
-    build: false,
-    bundle: true,
-    runtime: {
-      nodeConfigureOpts: ['--fully-static']
+  const targets = [
+    { target: 'node24-linux-x64', suffix: '-linux' },
+    { target: 'node24-macos-x64', suffix: '-mac' },
+    { target: 'node24-win-x64', suffix: '-windows' }
+  ]
+
+  for (const { target, suffix } of targets) {
+    const pkgArgs = [
+      ENTRY_POINT,
+      '--target', target,
+      '--output', SERVICE_STANDALONE_BUILD + suffix,
+      '--compress', 'Brotli'
+    ]
+
+    if (DEBUG_CONSOLE) {
+      pkgArgs.push('--debug')
     }
-  })
-  await compile({
-    name: 'DAEDALUS Service',
-    ico: SERVICE_ICON,
-    input: ENTRY_POINT,
-    output: SERVICE_STANDALONE_BUILD + '-mac',
-    resources: [
-      path.join(BUILD_DIR, 'web'), // Include web UI
-      'src/service/data' // Include dynamically loaded JSON files
-    ],
-    debug: DEBUG_CONSOLE,
-    target: 'mac-x64-14.15.3',
-    build: false,
-    bundle: true,
-    runtime: {
-      nodeConfigureOpts: ['--fully-static']
-    }
-  })
-  await compile({
-    name: 'DAEDALUS Service',
-    ico: SERVICE_ICON,
-    input: ENTRY_POINT,
-    output: SERVICE_STANDALONE_BUILD + '-windows',
-    resources: [
-      path.join(BUILD_DIR, 'web'), // Include web UI
-      'src/service/data' // Include dynamically loaded JSON files
-    ],
-    debug: DEBUG_CONSOLE,
-    target: 'windows-x86-14.15.3',
-    build: false,
-    bundle: true,
-    runtime: {
-      nodeConfigureOpts: ['--fully-static']
-    }
-  })
+
+    console.log(`Building standalone for ${target}...`)
+    await exec(pkgArgs)
+  }
 }

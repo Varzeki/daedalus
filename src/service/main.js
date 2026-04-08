@@ -36,7 +36,7 @@ console.log(`DAEDALUS Terminal Service ${packageJson.version}`)
 // Parse command line arguments
 const PORT = commandLineArgs.port || commandLineArgs.p || 3300 // Port to listen on
 const DEVELOPMENT = commandLineArgs.dev || false // Development mode
-const WEB_DIR = 'build/client'
+const WEB_DIR = path.join(__dirname, '..', '..', 'build', 'client')
 const LOG_DIR = getLogDir()
 
 if (!fs.existsSync(LOG_DIR)) {
