@@ -15,7 +15,6 @@ import (
 	"path/filepath"
 	"syscall"
 	"time"
-	"unsafe"
 )
 
 var dirname = ""
@@ -192,40 +191,36 @@ func createWindow(LAUNCHER_WINDOW_TITLE string, url string, width int32, height 
 	w.Run()
 }
 
-// createNativeWindow() explicitly creates a native window and passes the handle
-// for it to the webview, this allows for greater customisation
-func createNativeWindow(LAUNCHER_WINDOW_TITLE string, url string, width int32, height int32) {
-	// Instance of this executable
-	hInstance := win.GetModuleHandle(nil)
-	if hInstance == 0 {
-		fmt.Println("GetModuleHandle failed:", win.GetLastError())
+// createNativeWindow() creates a webview-managed window with customised
+// appearance (fixed size, centered, with icon)
+func createNativeWindow(title string, url string, width int32, height int32) {
+	webViewInstance = webview.NewWithOptions(webview.WebViewOptions{
+		Debug: DEBUGGER,
+		WindowOptions: webview.WindowOptions{
+			Title:  title,
+			Width:  uint(width),
+			Height: uint(height),
+			Center: true,
+		},
+	})
+	if webViewInstance == nil {
+		dialog.Message("%s", "Failed to initialize WebView2.\n\nPlease ensure Microsoft Edge WebView2 Runtime is installed.").Title("Error").Error()
+		exitApplication(1)
 	}
-
-	// Register window class
-	atom := RegisterClass(hInstance)
-	if atom == 0 {
-		fmt.Println("RegisterClass failed:", win.GetLastError())
-	}
-
-	// Create our own window
-	// We do this manually and pass it to webview so that we can set the window
-	// location (i.e. centered), style, etc before it is displayed.
-	hwndPtr := CreateWin32Window(hInstance, LAUNCHER_WINDOW_TITLE, width, height)
-	if hwndPtr == 0 {
-		fmt.Println("CreateWin32Window failed:", win.GetLastError())
-	}
-
-	// Center window
-	hwnd := win.HWND(hwndPtr)
-	screenWidth := int32(win.GetSystemMetrics(win.SM_CXSCREEN))
-	screenHeight := int32(win.GetSystemMetrics(win.SM_CYSCREEN))
-	windowX := int32((screenWidth / 2) - (width / 2))
-	windowY := int32((screenHeight / 2) - (height / 2))
-	win.MoveWindow(hwnd, windowX, windowY, width, height, false)
-
-	// Pass the pointer to the window as an unsafe reference
-	webViewInstance = webview.NewWindow(DEBUGGER, unsafe.Pointer(&hwndPtr))
 	defer webViewInstance.Destroy()
+
+	hwndPtr := webViewInstance.Window()
+	hwnd := win.HWND(hwndPtr)
+
+	// Set fixed size (no resize/maximize) matching original launcher style
+	webViewInstance.SetSize(int(width), int(height), webview.HintFixed)
+
+	// Set window icon from file
+	hIconSm := win.HICON(win.LoadImage(0, syscall.StringToUTF16Ptr(ICON), win.IMAGE_ICON, 32, 32, win.LR_LOADFROMFILE|win.LR_SHARED|win.LR_LOADTRANSPARENT))
+	hIcon := win.HICON(win.LoadImage(0, syscall.StringToUTF16Ptr(ICON), win.IMAGE_ICON, 64, 64, win.LR_LOADFROMFILE|win.LR_SHARED|win.LR_LOADTRANSPARENT))
+	win.SendMessage(hwnd, win.WM_SETICON, 0, uintptr(hIconSm))
+	win.SendMessage(hwnd, win.WM_SETICON, 1, uintptr(hIcon))
+
 	bindFunctionsToWebView(webViewInstance)
 	webViewInstance.Navigate(LoadUrl(url))
 	webViewInstance.Run()
