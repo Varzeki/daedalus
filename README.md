@@ -1,3 +1,12 @@
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset="resources/images/title-whitetext.png">
+  <img alt="DAEDALUS Terminal" src="resources/images/title.png" height="100" width="auto"/>
+</picture>
+
+![GitHub Version](https://img.shields.io/github/v/release/Varzeki/daedalus?display_name=tag&include_prereleases&sort=semver&color=cf7500&style=for-the-badge)
+![GitHub License](https://img.shields.io/github/license/Varzeki/daedalus?color=cf7500&style=for-the-badge)
+![GitHub Downloads](https://img.shields.io/github/downloads/Varzeki/daedalus/total?color=cf7500&style=for-the-badge)
+
 > **DAEDALUS Terminal** is a fork of [ICARUS Terminal](https://github.com/iaincollins/icarus) by Iain Collins.
 > It adds biological species prediction, exploration value tracking, COVAS voiceover, and landing pad overlays.
 > For the original project, visit [iaincollins/icarus](https://github.com/iaincollins/icarus).
@@ -11,10 +20,12 @@ You can run DAEDALUS Terminal in a native window, on multiple windows/displays, 
 
 ## Screenshots
 
-<img alt="System Map" src="https://user-images.githubusercontent.com/595695/197432007-13726aea-9413-4fcf-88c6-9abc34f2d26c.png" height="auto" width="98.5%"/>
+<img alt="Navigation Map" src="resources/images/screenshots/nav-map.png" height="auto" width="98.5%"/>
 
-<img alt="System List" src="https://user-images.githubusercontent.com/595695/215351117-50282d37-f42f-4eb9-975b-e70d29202cdb.png" height="auto" width="49%"/> <img alt="Ship Status" src="https://user-images.githubusercontent.com/595695/215350062-0f7ad9e4-905c-43ae-b3cf-1dc7944ab744.png" height="auto" width="49%"/>
-<img alt="Blueprint" src="https://user-images.githubusercontent.com/595695/192074945-b47edcbb-6aab-444d-827c-6b6255e8f932.png" height="auto" width="49%"/> <img alt="Navigation Route" src="https://user-images.githubusercontent.com/595695/215350464-88e75eb1-77d8-408c-a0ec-12fd6911e866.png" height="auto" width="49%"/>
+<img alt="Navigation List" src="resources/images/screenshots/nav-list.png" height="auto" width="49%"/> <img alt="Ship Status" src="resources/images/screenshots/ship-status.png" height="auto" width="49%"/>
+<img alt="Exploration System" src="resources/images/screenshots/exploration-system.png" height="auto" width="49%"/> <img alt="Exploration Route" src="resources/images/screenshots/exploration-route.png" height="auto" width="49%"/>
+<img alt="Blueprint" src="resources/images/screenshots/blueprint.png" height="auto" width="49%"/> <img alt="Navigation Route" src="resources/images/screenshots/nav-route.png" height="auto" width="49%"/>
+<img alt="Log" src="resources/images/screenshots/log.png" height="auto" width="49%"/> <img alt="Materials" src="resources/images/screenshots/materials.png" height="auto" width="49%"/>
 
 ## Requirements
 
