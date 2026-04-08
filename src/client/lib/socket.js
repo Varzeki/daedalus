@@ -21,6 +21,16 @@ const socketOptions = {
   landingPadEnabled: false
 }
 
+// Restore persisted toggle states from localStorage
+if (typeof window !== 'undefined') {
+  try {
+    const saved = JSON.parse(window.localStorage.getItem('daedalus-socket-options'))
+    if (saved) {
+      if (typeof saved.explorationAutoSwitch === 'boolean') socketOptions.explorationAutoSwitch = saved.explorationAutoSwitch
+    }
+  } catch (e) { /* ignore */ }
+}
+
 function socketDebugMessage () { /* console.log(...arguments) */ }
 
 function connect (socketState, setSocketState) {
@@ -91,19 +101,49 @@ function connect (socketState, setSocketState) {
         }
       } catch (e) { console.log('NOTIFICATION_ERROR', e) }
 
-      // Auto-switch exploration pages on FSD events
+      // Auto-switch exploration pages on FSD charging (via gameStateChange + status flags)
       try {
-        if (socketOptions.explorationAutoSwitch && name === 'newLogEntry') {
+        if (socketOptions.explorationAutoSwitch && name === 'gameStateChange') {
           const path = window.location.pathname
           if (path.startsWith('/exploration')) {
-            if (message.event === 'StartJump' && message.JumpType === 'Hyperspace') {
-              if (path !== '/exploration/route') window.location.href = '/exploration/route'
-            } else if (message.event === 'FSDJump' || message.event === 'Location') {
-              if (path !== '/exploration/system') window.location.href = '/exploration/system'
+            sendEvent('getCmdrStatus').then(cmdrStatus => {
+              const flags = cmdrStatus?.flags || {}
+              const currentPath = window.location.pathname
+              if (!currentPath.startsWith('/exploration')) return
+              if (flags.fsdCharging && !flags.fsdJump) {
+                // FSD is charging — save current page and switch to route view
+                if (!socketOptions._autoSwitchFrom) socketOptions._autoSwitchFrom = currentPath
+                if (currentPath !== '/exploration/route') window.location.href = '/exploration/route'
+              } else if (flags.fsdJump) {
+                // Mid-jump — stay on route
+                socketOptions._autoSwitchJumping = true
+              } else if (!flags.fsdCharging && !flags.fsdJump && socketOptions._autoSwitchFrom) {
+                if (!socketOptions._autoSwitchJumping) {
+                  // FSD charge cancelled — switch back to previous page
+                  const returnTo = socketOptions._autoSwitchFrom
+                  socketOptions._autoSwitchFrom = null
+                  if (currentPath !== returnTo) window.location.href = returnTo
+                }
+                // If jumping was true, FSDJump newLogEntry will handle the switch
+              }
+            }).catch(() => {})
+          }
+        }
+      } catch (e) { console.log('AUTO_SWITCH_CHARGE_ERROR', e) }
+
+      // Switch to system page when jump completes (FSDJump / Location events)
+      try {
+        if (socketOptions.explorationAutoSwitch && name === 'newLogEntry') {
+          if (message.event === 'FSDJump' || message.event === 'Location') {
+            socketOptions._autoSwitchFrom = null
+            socketOptions._autoSwitchJumping = false
+            const path = window.location.pathname
+            if (path.startsWith('/exploration') && path !== '/exploration/system') {
+              window.location.href = '/exploration/system'
             }
           }
         }
-      } catch (e) { console.log('AUTO_SWITCH_ERROR', e) }
+      } catch (e) { console.log('AUTO_SWITCH_JUMP_ERROR', e) }
     }
     socketDebugMessage('Message received from socket server', requestId, name, message)
   }

@@ -84,8 +84,10 @@ function SpeciesRow ({ species, isFirstDiscoverer, isLast }) {
   )
 }
 
-function BodyRow ({ body, cmdrName }) {
-  const shortName = body.name?.replace(/^.+?\s/, '') || body.name
+function BodyRow ({ body, cmdrName, systemName }) {
+  const shortName = (systemName && body.name?.startsWith(systemName))
+    ? (body.name.slice(systemName.length).trim() || body.name)
+    : body.name
   const isValuableBody = body.mappedValue >= MIN_BODY_VALUE
   const isValuableBio = body.bioValue >= MIN_BIO_VALUE
   const isDim = !isValuableBody && !isValuableBio
@@ -320,7 +322,7 @@ export default function ExplorationSystemPage () {
               </thead>
               <tbody className='fx-fade-in'>
                 {bodies.map(body =>
-                  <BodyRow key={body.name || body.bodyId} body={body} cmdrName={cmdrName} />
+                  <BodyRow key={body.name || body.bodyId} body={body} cmdrName={cmdrName} systemName={systemData?.name} />
                 )}
               </tbody>
             </table>

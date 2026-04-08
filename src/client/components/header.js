@@ -91,6 +91,9 @@ export default function Header ({ connected, active }) {
   function toggleAutoSwitch () {
     socketOptions.explorationAutoSwitch = !autoSwitchEnabled
     setAutoSwitchEnabled(socketOptions.explorationAutoSwitch)
+    try {
+      window.localStorage.setItem('daedalus-socket-options', JSON.stringify({ explorationAutoSwitch: socketOptions.explorationAutoSwitch }))
+    } catch (e) { /* ignore */ }
     document.activeElement.blur()
   }
 

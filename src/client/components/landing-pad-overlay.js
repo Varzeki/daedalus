@@ -143,7 +143,7 @@ function drawStarport (ctx, cx, cy, radius, padNumber, colors) {
   ctx.lineTo(cx + radius, cy + slotHeight - 6)
   ctx.lineTo(cx + slotWidth, cy + slotHeight)
   ctx.lineTo(cx, cy + slotHeight)
-  ctx.strokeStyle = colors.greenSide
+  ctx.strokeStyle = colors.redSide
   ctx.lineWidth = 4
   ctx.stroke()
 
@@ -154,13 +154,16 @@ function drawStarport (ctx, cx, cy, radius, padNumber, colors) {
   ctx.lineTo(cx - radius, cy + slotHeight - 6)
   ctx.lineTo(cx - slotWidth, cy + slotHeight)
   ctx.lineTo(cx, cy + slotHeight)
-  ctx.strokeStyle = colors.redSide
+  ctx.strokeStyle = colors.greenSide
   ctx.lineWidth = 4
   ctx.stroke()
 
   // Highlight assigned pad
+  // Rotate pad position 180° (sector+6 mod 12) to match the entry slot color swap,
+  // giving a full 180° rotation of the station view (matching LandingPad plugin methodology)
   if (padNumber >= 1 && padNumber <= 45) {
-    const { sector, shell } = getStarportPadCoords(padNumber)
+    const { sector: rawSector, shell } = getStarportPadCoords(padNumber)
+    const sector = (rawSector + 6) % 12
     const [dx, dy] = PAD_SECTORS[sector]
     const midScale = (SHELL_SCALE[shell] + SHELL_SCALE[shell + 1]) / 2
     const rt = radius * COS15 * midScale
