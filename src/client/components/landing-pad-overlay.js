@@ -389,6 +389,7 @@ const SWEEP_DURATION = 1200 // ms for circular reveal of canvas content
 
 export default function LandingPadOverlay ({ data, onDismiss }) {
   const canvasRef = useRef(null)
+  const backdropRef = useRef(null)
   const animRef = useRef(null)
   const [fadedIn, setFadedIn] = useState(false)
 
@@ -397,10 +398,86 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
   // Reset fade state when overlay appears
   useEffect(() => {
     if (isVisible) {
-      // Trigger fade-in on next frame so the initial opacity:0 is painted first
       requestAnimationFrame(() => setFadedIn(true))
     } else {
       setFadedIn(false)
+    }
+  }, [isVisible])
+
+  // Draw the Elite-style rectangular vignette backdrop
+  useEffect(() => {
+    if (!isVisible || !backdropRef.current) return
+
+    const canvas = backdropRef.current
+    const ctx = canvas.getContext('2d')
+    const dpr = window.devicePixelRatio || 1
+
+    const w = window.innerWidth
+    const h = window.innerHeight
+    canvas.width = w * dpr
+    canvas.height = h * dpr
+    ctx.scale(dpr, dpr)
+
+    // Draw the rectangular vignette: solid dark center that fades to transparent at edges
+    // The inner rectangle is ~80% of the screen, fully opaque
+    // The fade border is ~10% on each side
+    const innerX = w * 0.08
+    const innerY = h * 0.06
+    const innerW = w * 0.84
+    const innerH = h * 0.88
+    const fadeSize = Math.min(w, h) * 0.12
+
+    // Fill solid center
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.88)'
+    ctx.fillRect(innerX, innerY, innerW, innerH)
+
+    // Draw faded edges using gradients
+    // Top edge
+    const topGrad = ctx.createLinearGradient(0, innerY - fadeSize, 0, innerY)
+    topGrad.addColorStop(0, 'rgba(0, 0, 0, 0)')
+    topGrad.addColorStop(1, 'rgba(0, 0, 0, 0.88)')
+    ctx.fillStyle = topGrad
+    ctx.fillRect(innerX, innerY - fadeSize, innerW, fadeSize)
+
+    // Bottom edge
+    const bottomGrad = ctx.createLinearGradient(0, innerY + innerH, 0, innerY + innerH + fadeSize)
+    bottomGrad.addColorStop(0, 'rgba(0, 0, 0, 0.88)')
+    bottomGrad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    ctx.fillStyle = bottomGrad
+    ctx.fillRect(innerX, innerY + innerH, innerW, fadeSize)
+
+    // Left edge
+    const leftGrad = ctx.createLinearGradient(innerX - fadeSize, 0, innerX, 0)
+    leftGrad.addColorStop(0, 'rgba(0, 0, 0, 0)')
+    leftGrad.addColorStop(1, 'rgba(0, 0, 0, 0.88)')
+    ctx.fillStyle = leftGrad
+    ctx.fillRect(innerX - fadeSize, innerY, fadeSize, innerH)
+
+    // Right edge
+    const rightGrad = ctx.createLinearGradient(innerX + innerW, 0, innerX + innerW + fadeSize, 0)
+    rightGrad.addColorStop(0, 'rgba(0, 0, 0, 0.88)')
+    rightGrad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+    ctx.fillStyle = rightGrad
+    ctx.fillRect(innerX + innerW, innerY, fadeSize, innerH)
+
+    // Corner fades (radial gradients in each corner)
+    const corners = [
+      { cx: innerX, cy: innerY },                     // top-left
+      { cx: innerX + innerW, cy: innerY },             // top-right
+      { cx: innerX, cy: innerY + innerH },             // bottom-left
+      { cx: innerX + innerW, cy: innerY + innerH }     // bottom-right
+    ]
+    for (const corner of corners) {
+      const grad = ctx.createRadialGradient(corner.cx, corner.cy, 0, corner.cx, corner.cy, fadeSize)
+      grad.addColorStop(0, 'rgba(0, 0, 0, 0.88)')
+      grad.addColorStop(1, 'rgba(0, 0, 0, 0)')
+      ctx.fillStyle = grad
+      ctx.beginPath()
+      // Determine which quadrant to fill
+      const sx = corner.cx === innerX ? corner.cx - fadeSize : corner.cx
+      const sy = corner.cy === innerY ? corner.cy - fadeSize : corner.cy
+      ctx.rect(sx, sy, fadeSize, fadeSize)
+      ctx.fill()
     }
   }, [isVisible])
 
@@ -452,18 +529,15 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
       ctx.clearRect(0, 0, rect.width, rect.height)
 
       if (elapsed < 0) {
-        // Still waiting for background fade — draw nothing yet
         animRef.current = requestAnimationFrame(animate)
         return
       }
 
       const progress = Math.min(elapsed / SWEEP_DURATION, 1)
-      // Ease-out for smooth deceleration
       const eased = 1 - Math.pow(1 - progress, 2)
       const sweepAngle = eased * Math.PI * 2
 
       if (progress < 1) {
-        // Clip to a circular sweep starting from 12 o'clock
         ctx.save()
         ctx.beginPath()
         ctx.moveTo(cx, cy)
@@ -474,7 +548,6 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
         ctx.restore()
         animRef.current = requestAnimationFrame(animate)
       } else {
-        // Final frame — draw without clipping
         drawStation()
       }
     }
@@ -499,7 +572,6 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
         right: 0,
         bottom: 0,
         zIndex: 9999,
-        backgroundColor: 'rgba(0, 0, 0, 0.85)',
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
@@ -509,7 +581,18 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
         transition: `opacity ${FADE_DURATION}ms ease-in`
       }}
     >
-      <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+      <canvas
+        ref={backdropRef}
+        style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          width: '100%',
+          height: '100%',
+          pointerEvents: 'none'
+        }}
+      />
+      <div style={{ textAlign: 'center', marginBottom: '1rem', zIndex: 1 }}>
         <p className='text-primary' style={{ fontSize: '1.2rem', margin: '0 0 .25rem 0', opacity: 0.7 }}>
           {data.stationName}
         </p>
@@ -523,10 +606,11 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
           width: '60vmin',
           height: '60vmin',
           maxWidth: '600px',
-          maxHeight: '600px'
+          maxHeight: '600px',
+          zIndex: 1
         }}
       />
-      <p className='text-muted' style={{ fontSize: '.9rem', marginTop: '1rem', opacity: 0.5 }}>
+      <p className='text-muted' style={{ fontSize: '.9rem', marginTop: '1rem', opacity: 0.5, zIndex: 1 }}>
         Click anywhere to dismiss
       </p>
     </div>
