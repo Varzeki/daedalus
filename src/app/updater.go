@@ -47,18 +47,18 @@ func InstallUpdate() {
 func GetCurrentAppVersion() string {
 	pathToExecutable, err := os.Executable()
 	if err != nil {
-		panic("os.Executable() failed")
+		return "0.0.0"
 	}
 
 	size := w32.GetFileVersionInfoSize(pathToExecutable)
 	if size <= 0 {
-		panic("GetFileVersionInfoSize failed")
+		return "0.0.0"
 	}
 
 	info := make([]byte, size)
 	ok := w32.GetFileVersionInfo(pathToExecutable, info)
 	if !ok {
-		panic("GetFileVersionInfo failed")
+		return "0.0.0"
 	}
 
 	/*
@@ -78,16 +78,16 @@ func GetCurrentAppVersion() string {
 
 	translations, ok := w32.VerQueryValueTranslations(info)
 	if !ok {
-		panic("VerQueryValueTranslations failed")
+		return "0.0.0"
 	}
 	if len(translations) == 0 {
-		panic("no translation found")
+		return "0.0.0"
 	}
 	t := translations[0]
 
 	productVersion, ok := w32.VerQueryValueString(info, t, w32.ProductVersion)
 	if !ok {
-		panic("cannot get product version")
+		return "0.0.0"
 	}
 
 	// Convert from version with build number (0.0.0.0) to semver version (0.0.0)

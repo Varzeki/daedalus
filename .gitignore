@@ -9,3 +9,4 @@ TESTER_FEEDBACK.md
 .env
 .next
 *.log
+*.exe
