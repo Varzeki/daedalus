@@ -59,7 +59,10 @@ class CmdrStatus {
       breathableAtmosphere: 65536,
       telepresenceMulticrew: 131072,
       physicalMulticrew: 262144,
-      fsdHyperdriveCharging: 524288
+      fsdHyperdriveCharging: 524288,
+      // Speculative: SCO (Supercruise Overcharge) may be an undocumented flag
+      // Needs live testing to confirm the correct bit
+      fsdSupercruiseOvercharge: 1048576
     }
   }
 

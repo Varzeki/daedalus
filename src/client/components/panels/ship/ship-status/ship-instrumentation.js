@@ -320,7 +320,7 @@ export default function ShipInstrumentation ({ ship, cmdrStatus, toggleSwitches,
               <td>
                 {(() => {
                   const inSupercruise = ship.onBoard && cmdrStatus?.flags?.supercruise && !cmdrStatus?.flags?.fsdJump
-                  const isSCO = inSupercruise && cmdrStatus?.flags?.fsdCharging && !cmdrStatus?.flags?.fsdHyperdriveCharging
+                  const isSCO = inSupercruise && (cmdrStatus?.flags?.fsdSupercruiseOvercharge || (cmdrStatus?.flags?.fsdCharging && !cmdrStatus?.flags?.fsdHyperdriveCharging))
                   const className = isSCO ? 'ship-panel__light--danger' : (inSupercruise ? 'ship-panel__light--on' : 'ship-panel__light--off')
                   return (
                     <span className={className}>

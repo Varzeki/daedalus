@@ -21,6 +21,7 @@ const CmdrStatus = require('./event-handlers/cmdr-status')
 const NavRoute = require('./event-handlers/nav-route')
 const Exploration = require('./event-handlers/exploration')
 const TextToSpeech = require('./event-handlers/text-to-speech')
+const covasPlayer = require('./covas-player')
 
 class EventHandlers {
   constructor ({ eliteLog, eliteJson }) {
@@ -94,6 +95,10 @@ class EventHandlers {
         },
         detectVoicepackDir: () => detectVoicepackDir(),
         validateVoicepackDir: ({ dir }) => validateVoicepackDir(dir),
+        testAudio: async () => {
+          await covasPlayer.queuePlay('confirmed.wav')
+          return { success: true }
+        },
         testMessage: ({name, message}) => {
           // Method to simulate messages, intended for developers
           if (name !== 'testMessage') broadcastEvent(name, message)

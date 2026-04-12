@@ -104,9 +104,12 @@
   line-height: 4rem;
   background: var(--color-primary-dark);
   color: var(--color-primary);
-  border-left: .25rem solid var(--color-primary);
+  border-top: .25rem solid var(--color-primary);
+  border-right: .25rem solid var(--color-primary);
+  border-bottom: .25rem solid var(--color-primary);
+  border-left: none;
   border-radius: 0 0.25rem 0.25rem 0;
-  box-shadow: 0 0 1rem black, 0 0 2rem black;
+  box-shadow: .5rem 0 1rem black;
   filter: var(--filter-active-element);
   opacity: 0;
   pointer-events: none;

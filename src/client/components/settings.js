@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment, useRef } from 'react'
+import { useState, useEffect, Fragment } from 'react'
 import { sendEvent, eventListener } from 'lib/socket'
 import { SettingsNavItems } from 'lib/navigation-items'
 import packageJson from '../../../package.json'
@@ -171,16 +171,15 @@ function SoundSettings ({ visible }) {
 
 function TestAudioButton () {
   const [status, setStatus] = useState(null) // null | 'playing' | 'ok' | 'error'
-  const audioRef = useRef(null)
 
-  const handleTest = () => {
-    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
+  const handleTest = async () => {
     setStatus('playing')
-    const audio = new Audio('/voicelines/confirmed.wav')
-    audioRef.current = audio
-    audio.onended = () => { setStatus('ok'); audioRef.current = null }
-    audio.onerror = () => { setStatus('error'); audioRef.current = null }
-    audio.play().catch(() => { setStatus('error'); audioRef.current = null })
+    try {
+      await sendEvent('testAudio')
+      setStatus('ok')
+    } catch {
+      setStatus('error')
+    }
   }
 
   return (
