@@ -10,3 +10,10 @@
   width: 100%;
   min-width: initial;
 }
+
+#primaryNavigation button {
+  padding-left: .45rem;
+  padding-right: .45rem;
+  font-size: clamp(.95rem, 1.8vw, 1.5rem);
+  line-height: 1.1;
+}

@@ -27,7 +27,6 @@ export default function PrimaryNavigation () {
           disabled={button.path === currentPath}
           className={button.path === currentPath ? 'button--active' : ''}
           onClick={() => router.push(button.path)}
-          style={{ fontSize: '1.5rem' }}
         >
           <span className='visible-small'>{button.abbr}</span>
           <span className='hidden-small'>{button.name}</span>
