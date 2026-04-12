@@ -127,7 +127,8 @@ export default function ExplorationRoutePage () {
   }), [])
 
   const route = explorationRoute?.route ?? []
-  const cmdrName = explorationRoute?.cmdrName
+  const fuelRunOutSystem = explorationRoute?.fuelRunOutSystem
+  const routeTableTop = fuelRunOutSystem ? '11.75rem' : '10rem'
 
   return (
     <Layout connected={connected} active={active} ready={ready} loader={!componentReady}>
@@ -167,7 +168,12 @@ export default function ExplorationRoutePage () {
         </table>
         {route.length > 0 &&
           <>
-            <div className='scrollable' style={{ position: 'fixed', top: '10rem', bottom: '4.5rem', left: '5rem', right: '1rem' }}>
+            {fuelRunOutSystem &&
+              <div className='text-danger' style={{ marginBottom: '1rem', fontSize: '1.05rem' }}>
+                <i className='icon daedalus-terminal-warning' style={{ position: 'relative', top: '.2rem', marginRight: '.4rem' }} />
+                Refuel before leaving <CopyOnClick>{fuelRunOutSystem}</CopyOnClick> or this route will strand the ship.
+              </div>}
+            <div className='scrollable' style={{ position: 'fixed', top: routeTableTop, bottom: '4.5rem', left: '5rem', right: '1rem' }}>
               <table className='exploration-route__table table--animated table--interactive'>
                 <thead>
                   <tr>
@@ -210,6 +216,11 @@ export default function ExplorationRoutePage () {
                           <CopyOnClick>
                             <span className={isPast ? 'text-muted' : 'text-info'}>{entry.system}</span>
                           </CopyOnClick>
+                          {entry.fuelRunsOutHere &&
+                            <div className='text-danger text-no-wrap' style={{ marginTop: '.25rem', fontSize: '.95rem' }}>
+                              <i className='icon daedalus-terminal-warning' style={{ position: 'relative', top: '.2rem', marginRight: '.35rem' }} />
+                              Refuel here
+                            </div>}
                         </td>
 
                         {/* Star class + scoopable icon */}

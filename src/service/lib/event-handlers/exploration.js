@@ -116,11 +116,71 @@ async function fetchBodiesForSystems (systemNames) {
   return results
 }
 
+function getJumpFuelUse (hopDistance, shipMass, jumpProfile) {
+  if (!Number.isFinite(hopDistance) || hopDistance <= 0) return 0
+  return jumpProfile.fuelMultiplier * Math.pow((hopDistance * shipMass) / jumpProfile.optimalMass, jumpProfile.fuelPower)
+}
+
+function projectRouteFuel (route, jumpProfile, currentSystemName) {
+  if (!jumpProfile || route.length === 0) {
+    return { route, fuelRunOutSystem: null }
+  }
+
+  let remainingFuel = jumpProfile.availableFuel
+  let currentMass = jumpProfile.currentMass
+  let fuelRunOutSystem = null
+  let fuelRunOutIndex = null
+
+  const currentIndex = route.findIndex(entry => entry.isCurrentSystem)
+  const projectedRoute = route.map((entry, index) => {
+    if (index !== currentIndex) return entry
+    return {
+      ...entry,
+      fuelRemaining: parseFloat(remainingFuel.toFixed(2))
+    }
+  })
+
+  for (let index = currentIndex === -1 ? 0 : currentIndex + 1; index < projectedRoute.length; index++) {
+    const entry = projectedRoute[index]
+    const fuelRequired = getJumpFuelUse(entry.hopDistance, currentMass, jumpProfile)
+    const canReach =
+      Number.isFinite(fuelRequired) &&
+      fuelRequired <= jumpProfile.maxFuelPerJump + 1e-6 &&
+      fuelRequired <= remainingFuel + 1e-6
+
+    if (!canReach) {
+      fuelRunOutSystem = index === 0
+        ? currentSystemName
+        : projectedRoute[index - 1]?.system ?? currentSystemName
+      fuelRunOutIndex = index === 0 ? null : index - 1
+      break
+    }
+
+    remainingFuel = Math.max(remainingFuel - fuelRequired, 0)
+    currentMass = jumpProfile.dryMass + remainingFuel
+    projectedRoute[index] = {
+      ...entry,
+      fuelRequiredFromPrevious: parseFloat(fuelRequired.toFixed(2)),
+      fuelRemaining: parseFloat(remainingFuel.toFixed(2))
+    }
+  }
+
+  if (fuelRunOutIndex != null) {
+    projectedRoute[fuelRunOutIndex] = {
+      ...projectedRoute[fuelRunOutIndex],
+      fuelRunsOutHere: true
+    }
+  }
+
+  return { route: projectedRoute, fuelRunOutSystem }
+}
+
 class Exploration {
-  constructor ({ eliteLog, eliteJson, system }) {
+  constructor ({ eliteLog, eliteJson, system, shipStatus }) {
     this.eliteLog = eliteLog
     this.eliteJson = eliteJson
     this.system = system
+    this.shipStatus = shipStatus
   }
 
   // For the current system, merge journal data onto EDSM bodies to get
@@ -454,6 +514,8 @@ class Exploration {
     for (let index = 0; index < navRouteData.length; index++) {
       const system = navRouteData[index]
       const distanceToHop = currentPosition ? distance(currentPosition, system.StarPos) : null
+      const previousPosition = index > 0 ? navRouteData[index - 1]?.StarPos : currentPosition
+      const hopDistance = previousPosition ? distance(previousPosition, system.StarPos) : null
       const isCurrentSystem = (system?.StarSystem?.toLowerCase() === currentSystemName?.toLowerCase())
 
       if (isCurrentSystem) {
@@ -615,6 +677,7 @@ class Exploration {
         starClass: system.StarClass,
         isScoopable,
         distance: distanceToHop,
+        hopDistance,
         isCurrentSystem,
         bodyStatus,
         bodyStatusText,
@@ -633,13 +696,16 @@ class Exploration {
       })
     }
 
+    const fuelProjection = projectRouteFuel(route, await this.shipStatus?.getJumpProfile(), currentSystemName)
+
     return {
       currentSystem: { name: currentSystemName, position: currentPosition },
       cmdrName,
       destination: route?.[route.length - 1] ?? null,
       jumpsToDestination,
-      route,
-      inSystemOnRoute
+      route: fuelProjection.route,
+      inSystemOnRoute,
+      fuelRunOutSystem: fuelProjection.fuelRunOutSystem
     }
   }
 

@@ -1,11 +1,13 @@
 import App from 'next/app'
+import dynamic from 'next/dynamic'
 import { Toaster } from 'react-hot-toast'
 import { SocketProvider, eventListener } from 'lib/socket'
-import Header from 'components/header'
 import { loadColorSettings, saveColorSettings } from 'components/settings'
 import 'lib/performance-profiler'
 import '../public/fonts/daedalus-terminal/daedalus-terminal.css'
 import '../css/main.css'
+
+const Header = dynamic(() => import('components/header'), { ssr: false })
 
 const LAUNCHER_PATHS = ['/launcher']
 

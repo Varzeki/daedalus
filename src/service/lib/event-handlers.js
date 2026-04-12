@@ -39,7 +39,7 @@ class EventHandlers {
     // These handlers depend on calls to other handlers
     this.blueprints = this._register(new Blueprints({ engineers: this.engineers, materials: this.materials, shipStatus: this.shipStatus }))
     this.navRoute = this._register(new NavRoute({ eliteLog, eliteJson, system: this.system }))
-    this.exploration = this._register(new Exploration({ eliteLog, eliteJson, system: this.system }))
+    this.exploration = this._register(new Exploration({ eliteLog, eliteJson, system: this.system, shipStatus: this.shipStatus }))
     this.textToSpeech = new TextToSpeech({ eliteLog, eliteJson, cmdrStatus: this.cmdrStatus, shipStatus: this.shipStatus })
   }
 

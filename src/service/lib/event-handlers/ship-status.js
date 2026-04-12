@@ -8,6 +8,75 @@ const { UNKNOWN_VALUE } = require('../../../shared/consts')
 
 let lastKnownShipState = null
 
+function toNumber (value) {
+  const parsed = typeof value === 'number' ? value : parseFloat(value)
+  return Number.isFinite(parsed) ? parsed : null
+}
+
+function getGuardianBoosterRange (modules) {
+  return Object.values(modules).reduce((rangeBonus, module) => {
+    if (!module?.symbol?.toLowerCase().includes('guardianfsdbooster')) return rangeBonus
+    return rangeBonus + (toNumber(module.range) ?? 0)
+  }, 0)
+}
+
+function buildJumpProfile ({ modules, mass, fuelLevel, fuelReservoir, fuelCapacity, maxJumpRange }) {
+  const frameShiftDrive = modules?.FrameShiftDrive
+  if (!frameShiftDrive) return null
+
+  const currentFuel = toNumber(fuelLevel) ?? 0
+  const reservoirFuel = toNumber(fuelReservoir) ?? 0
+  const availableFuel = currentFuel + reservoirFuel
+  const currentMass = (toNumber(mass) ?? 0) + reservoirFuel
+  const dryMass = currentMass - availableFuel
+  const totalFuelCapacity = toNumber(fuelCapacity)
+  const totalMaxJumpRange = toNumber(maxJumpRange)
+  const fuelMultiplier = toNumber(frameShiftDrive.fsdFuelMultiplier)
+  const fuelPower = toNumber(frameShiftDrive.fsdFuelPower)
+  const maxFuelPerJump = toNumber(frameShiftDrive.fsdMaxFuelPerJump)
+  const guardianBoosterRange = getGuardianBoosterRange(modules)
+  const fsdOnlyMaxJumpRange = totalMaxJumpRange != null
+    ? Math.max(totalMaxJumpRange - guardianBoosterRange, 0)
+    : null
+
+  let optimalMass = toNumber(frameShiftDrive.fsdOptimalMass)
+  if (
+    !optimalMass &&
+    fsdOnlyMaxJumpRange &&
+    dryMass > 0 &&
+    totalFuelCapacity > 0 &&
+    fuelMultiplier > 0 &&
+    fuelPower > 0 &&
+    maxFuelPerJump > 0
+  ) {
+    const fullTankMass = dryMass + totalFuelCapacity
+    optimalMass = fsdOnlyMaxJumpRange * fullTankMass / Math.pow(maxFuelPerJump / fuelMultiplier, 1 / fuelPower)
+  }
+
+  if (
+    !(dryMass > 0) ||
+    !(availableFuel > 0) ||
+    !(fuelMultiplier > 0) ||
+    !(fuelPower > 0) ||
+    !(maxFuelPerJump > 0) ||
+    !(optimalMass > 0)
+  ) {
+    return null
+  }
+
+  return {
+    currentMass: parseFloat(currentMass.toFixed(2)),
+    dryMass: parseFloat(dryMass.toFixed(2)),
+    availableFuel: parseFloat(availableFuel.toFixed(2)),
+    fuelCapacity: totalFuelCapacity,
+    fuelMultiplier,
+    fuelPower,
+    maxFuelPerJump,
+    optimalMass: parseFloat(optimalMass.toFixed(2)),
+    guardianBoosterRange: parseFloat(guardianBoosterRange.toFixed(2))
+  }
+}
+
 class ShipStatus {
   constructor ({ eliteLog, eliteJson }) {
     this.eliteLog = eliteLog
@@ -70,6 +139,13 @@ class ShipStatus {
       }
 
       if (module?.Engineering) {
+        if (slot === 'FrameShiftDrive') {
+          const optimalMassModifier = module.Engineering.Modifiers.find(mod => /optimal[ _]*mass/i.test(mod.Label))
+          const maxFuelModifier = module.Engineering.Modifiers.find(mod => /max[ _]*fuel/i.test(mod.Label))
+          if (optimalMassModifier?.Value) modules[slot].fsdOptimalMass = optimalMassModifier.Value
+          if (maxFuelModifier?.Value) modules[slot].fsdMaxFuelPerJump = maxFuelModifier.Value
+        }
+
         // Enrich engineering data as we add it
         const blueprint = await CoriolisBlueprints.getBySymbol(module.Engineering.BlueprintName)
 
@@ -203,6 +279,16 @@ class ShipStatus {
           module.fuelCapacity = parseInt(coriolisModule.fuel)
           totalFuelCapacity += module.fuelCapacity
         }
+        if (module.slot === 'FrameShiftDrive') {
+          if (!module.fsdOptimalMass && coriolisModule.properties?.['Optimal Mass']) {
+            module.fsdOptimalMass = coriolisModule.properties['Optimal Mass']
+          }
+          if (!module.fsdMaxFuelPerJump && coriolisModule.maxfuel) {
+            module.fsdMaxFuelPerJump = coriolisModule.maxfuel
+          }
+          if (coriolisModule.fuelmul) module.fsdFuelMultiplier = coriolisModule.fuelmul
+          if (coriolisModule.fuelpower) module.fsdFuelPower = coriolisModule.fuelpower
+        }
       }
 
       // Keep running total of total power draw
@@ -242,6 +328,19 @@ class ShipStatus {
     // Include fuel in mass
     if (Json?.Status?.Fuel?.FuelMain) totalMass += Json?.Status?.Fuel?.FuelMain
 
+    const shipMass = totalMass
+    const maxJumpRange = Loadout?.MaxJumpRange ? parseFloat((Loadout.MaxJumpRange).toFixed(2)) : null
+    const fuelLevel = Json?.Status?.Fuel?.FuelMain ? parseFloat((Json.Status.Fuel.FuelMain).toFixed(2)) : null
+    const fuelReservoir = Json?.Status?.Fuel?.FuelReservoir ? parseFloat((Json.Status.Fuel.FuelReservoir).toFixed(2)) : null
+    const jumpProfile = buildJumpProfile({
+      modules,
+      mass: shipMass,
+      fuelLevel,
+      fuelReservoir,
+      fuelCapacity: totalFuelCapacity,
+      maxJumpRange
+    })
+
     // Format power draw and mass
     totalModulePowerDraw = totalModulePowerDraw?.toFixed(2)?.replace(/\.00$/, '')
     totalMass = totalMass?.toFixed(2)?.replace(/\.00$/, '')
@@ -259,12 +358,13 @@ class ShipStatus {
         weapons: onBoard ? Json?.Status?.Pips?.[2] ?? UNKNOWN_VALUE : UNKNOWN_VALUE
       },
       // Using parseFloat with toFixed
-      maxJumpRange: Loadout?.MaxJumpRange ? parseFloat((Loadout.MaxJumpRange).toFixed(2)) : null,
-      fuelLevel: Json?.Status?.Fuel?.FuelMain ? parseFloat((Json.Status.Fuel.FuelMain).toFixed(2)) : null,
-      fuelReservoir: Json?.Status?.Fuel?.FuelReservoir ? parseFloat((Json.Status.Fuel.FuelReservoir).toFixed(2)) : null,
+      maxJumpRange,
+      fuelLevel,
+      fuelReservoir,
       fuelCapacity: totalFuelCapacity,
       modulePowerDraw: totalModulePowerDraw,
       mass: totalMass,
+      jumpProfile,
       rebuy: Loadout?.Rebuy ?? UNKNOWN_VALUE,
       armour,
       cargo: {
@@ -283,6 +383,10 @@ class ShipStatus {
     if (shipState.type !== UNKNOWN_VALUE) lastKnownShipState = shipState
 
     return shipState
+  }
+
+  async getJumpProfile () {
+    return (await this.getShipStatus())?.jumpProfile ?? null
   }
 
   getHandlers () {
