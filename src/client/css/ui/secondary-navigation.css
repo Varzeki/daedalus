@@ -73,6 +73,16 @@
   box-shadow: none;
 }
 
+/* When the active (selected) nav button is hovered, keep the dark accent style —
+   the label slides out as a dark extension rather than an orange overlay */
+.secondary-navigation button.button--icon.button--active .secondary-navigation__label,
+.secondary-navigation .button.button--icon.button--active .secondary-navigation__label {
+  background: var(--color-primary-dark);
+  color: var(--color-primary);
+  text-shadow: none;
+  border-right: .5rem solid var(--color-primary);
+}
+
 #secondary-navigation__search-form {
   position: absolute;
   top: 0;

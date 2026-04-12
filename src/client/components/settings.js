@@ -39,6 +39,113 @@ function Settings ({ visible, toggleVisible = () => {}, defaultActiveSettingsPan
   )
 }
 
+const SOUND_EFFECTS = [
+  {
+    category: 'FSD & Travel',
+    sounds: [
+      { label: 'FSD Charging', file: 'frameshift_drive_charging', mapped: true },
+      { label: 'Route Plotted', file: 'route_plotted', mapped: true },
+      { label: 'Jet Cone Supercharge', file: 'frameshift_drive_supercharged', mapped: true },
+      { label: 'Interdiction', file: 'frameshift_anomaly_detected', mapped: true },
+      { label: 'Carrier Jump Detected', file: 'massive_frameshift_surge_detected', mapped: true },
+      { label: 'Dangerous System', file: 'warning_target_system_safety_risk', mapped: false }
+    ]
+  },
+  {
+    category: 'Docking',
+    sounds: [
+      { label: 'Docking Granted', file: 'docking_request_granted', mapped: true },
+      { label: 'Docking Denied', file: 'docking_request_denied', mapped: true },
+      { label: 'Docked', file: 'docking_successful_engines_disengaged', mapped: true },
+      { label: 'Undocked', file: 'ship_released_engines_engaged', mapped: true }
+    ]
+  },
+  {
+    category: 'Combat & Damage',
+    sounds: [
+      { label: 'Under Attack', file: 'under_attack', mapped: true },
+      { label: 'Taking Damage', file: 'taking_damage', mapped: true },
+      { label: 'Hull Integrity Compromised', file: 'hull_integrity_compromised', mapped: true },
+      { label: 'Hull Integrity Critical', file: 'hull_integrity_critical', mapped: true },
+      { label: 'Heat Warning', file: 'warning_taking_heat_damage', mapped: true },
+      { label: 'Temperature Critical', file: 'warning_temperature_critical', mapped: true },
+      { label: 'Cockpit Breach', file: 'canopy_compromised', mapped: true },
+      { label: 'Bounty Incurred', file: 'bounty_incurred', mapped: true },
+      { label: 'Target Destroyed', file: 'target_destroyed', mapped: true },
+      { label: 'Fighter Destroyed', file: 'fighter_destroyed', mapped: true },
+      { label: 'SRV Destroyed', file: 'critical_alert', mapped: true },
+      { label: 'Caustic Damage', file: 'caustic_damage_detected', mapped: false }
+    ]
+  },
+  {
+    category: 'Ship Systems',
+    sounds: [
+      { label: 'Cargo Scoop Deployed', file: 'cargo_scoop_deployed', mapped: true },
+      { label: 'Cargo Scoop Retracted', file: 'cargo_scoop_retracted', mapped: true },
+      { label: 'Landing Gear Down', file: 'landing_gear_deployed', mapped: true },
+      { label: 'Landing Gear Up', file: 'landing_gear_retracted', mapped: true },
+      { label: 'Silent Running On', file: 'silent_running', mapped: true },
+      { label: 'Silent Running Off', file: 'thermal_signature_restored', mapped: true },
+      { label: 'Cargo Full', file: 'cargo_hold_at_maximum_capacity', mapped: true },
+      { label: 'Fuel Scooping', file: 'fuel_scooping', mapped: true },
+      { label: 'Fuel Replenished', file: 'fuel_replenished', mapped: true },
+      { label: 'System Reboot', file: 'system_reboot_sequence_initiated', mapped: true },
+      { label: 'AFMU Repair', file: 'diagnostic_repair_sequence_initiated', mapped: true },
+      { label: 'Repair Complete', file: 'repair_complete', mapped: true },
+      { label: 'Low Fuel', file: 'main_fuel_tank_low', mapped: false },
+      { label: 'Last Chance to Refuel', file: 'warning_last_chance_to_refuel_on_current_route', mapped: false },
+      { label: 'FSD Beyond Safety Limits', file: 'warning_frameshift_drive_operating_beyond_safety_limits', mapped: false },
+      { label: 'Power Plant Exceeded', file: 'power_plant_capacity_exceeded', mapped: false }
+    ]
+  },
+  {
+    category: 'Scanning & Exploration',
+    sounds: [
+      { label: 'System Scan Complete (Honk)', file: 'system_scan_complete', mapped: true },
+      { label: 'All Bodies Found', file: 'all_system_bodies_located', mapped: true },
+      { label: 'Surface Scan Complete', file: 'surface_scan_complete', mapped: true },
+      { label: 'Scan Detected', file: 'scan_detected', mapped: true },
+      { label: 'Codex Entry', file: 'new_codex_entry', mapped: true },
+      { label: 'Approach Body', file: 'engage', mapped: true },
+      { label: 'Approach Settlement', file: 'incoming_signal', mapped: true },
+      { label: 'Valuable Body Discovered', file: 'new_discovery', mapped: false },
+      { label: 'Notable Stellar Phenomena', file: 'unknown_anomaly_detected', mapped: false },
+      { label: 'High Gravity Warning', file: 'high_gravity_warning', mapped: false }
+    ]
+  },
+  {
+    category: 'Support Craft',
+    sounds: [
+      { label: 'Fighter Deployed', file: 'fighter_deployed', mapped: true },
+      { label: 'Fighter Docking', file: 'fighter_docking_sequence_initiated', mapped: true },
+      { label: 'SRV Deployed', file: 'deployment_sequence_complete', mapped: true },
+      { label: 'Limpet Programmed', file: 'programming_limpet_drone', mapped: true },
+      { label: 'Prospector Limpet', file: 'prospector_limpet_engaged', mapped: true }
+    ]
+  },
+  {
+    category: 'Communications & Missions',
+    sounds: [
+      { label: 'Incoming Message', file: 'incoming_message', mapped: true },
+      { label: 'Mission Failed', file: 'mission_failed', mapped: true }
+    ]
+  },
+  {
+    category: 'Emergencies',
+    sounds: [
+      { label: 'Ejected', file: 'eject', mapped: true },
+      { label: 'Oxygen Low', file: 'warning_oxygen_low', mapped: true },
+      { label: 'Oxygen Critical', file: 'warning_oxygen_critical', mapped: true },
+      { label: 'Self Destruct', file: 'selfdestruct_sequence_initiated', mapped: true },
+      { label: 'Hazardous Environment', file: 'warning_hazardous_environment', mapped: false },
+      { label: 'Security Forces Detected', file: 'security_forces_detected', mapped: false },
+      { label: 'Capital Ship Detected', file: 'warning_capital_class_signature_detected', mapped: false },
+      { label: 'Alien Discovery', file: 'alien_civilization_discovery', mapped: false },
+      { label: 'Energy Surge', file: 'energy_surge_detected', mapped: false }
+    ]
+  }
+]
+
 function SoundSettings ({ visible }) {
   const [preferences, setPreferences] = useState()
   const [voicepackDir, setVoicepackDir] = useState('')
@@ -142,6 +249,41 @@ function SoundSettings ({ visible }) {
         />
         Enable extended voice alerts
       </label>
+      <details style={{ marginTop: '1rem' }}>
+        <summary style={{ cursor: 'pointer', fontFamily: 'Jura, sans-serif', fontWeight: 900, textTransform: 'uppercase', fontSize: '1rem', letterSpacing: '0.05rem', color: 'var(--color-primary)', listStyle: 'none', display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+          <i className='icon daedalus-terminal-sound' style={{ fontSize: '1.5rem', position: 'relative', top: '.15rem' }} />
+          Individual Sound Toggles
+        </summary>
+        <p style={{ marginTop: '.5rem', fontSize: '.9rem' }}>
+          Enable or disable individual voice effects. Greyed out effects are not yet triggered by the game and are coming soon.
+        </p>
+        {SOUND_EFFECTS.map(({ category, sounds }) => (
+          <div key={category} style={{ marginTop: '.75rem' }}>
+            <div style={{ color: 'var(--color-info)', fontSize: '.85rem', fontWeight: 900, textTransform: 'uppercase', letterSpacing: '0.05rem', marginBottom: '.4rem' }}>{category}</div>
+            <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(18rem, 1fr))', gap: '.25rem .75rem' }}>
+              {sounds.map(({ label, file, mapped }) => (
+                <label
+                  key={file}
+                  style={{ display: 'flex', alignItems: 'center', gap: '.4rem', cursor: mapped ? 'pointer' : 'default', opacity: mapped ? 1 : 0.4 }}
+                >
+                  <input
+                    type='checkbox'
+                    checked={preferences?.soundsEnabled?.[file] !== false}
+                    disabled={!preferences || !mapped}
+                    onChange={async (e) => {
+                      const newPreferences = JSON.parse(JSON.stringify(preferences || {}))
+                      if (!newPreferences.soundsEnabled) newPreferences.soundsEnabled = {}
+                      newPreferences.soundsEnabled[file] = e.target.checked
+                      setPreferences(await sendEvent('setPreferences', newPreferences))
+                    }}
+                  />
+                  <span>{label}{!mapped && <span className='text-muted' style={{ marginLeft: '.35rem', fontSize: '.8rem' }}>(Coming Soon)</span>}</span>
+                </label>
+              ))}
+            </div>
+          </div>
+        ))}
+      </details>
       <hr style={{ margin: '1rem 0' }} />
       <h4 className='text-primary'>HCS Voicepack</h4>
       <p>

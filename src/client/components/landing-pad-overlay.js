@@ -794,7 +794,7 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
       ctx.scale(dpr, dpr)
 
       // Keep the vignette large but with visible padding on all sides.
-      const edgeInset = Math.max(Math.min(w, h) * 0.05, 40)
+      const edgeInset = Math.max(Math.min(w, h) * 0.035, 28)
       const innerX = edgeInset
       const innerY = edgeInset
       const innerW = w - edgeInset * 2

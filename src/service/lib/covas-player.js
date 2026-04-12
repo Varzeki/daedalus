@@ -236,24 +236,31 @@ async function queuePlay (wavFile) {
 }
 
 /**
+ * Check if an individual sound file is enabled in preferences.
+ * Defaults to enabled if no preference is set.
+ */
+function isSoundFileEnabled (wavFile) {
+  const prefs = getPreferencesCached()
+  if (!prefs?.soundsEnabled) return true
+  const key = wavFile.replace(/\.wav$/i, '')
+  return prefs.soundsEnabled[key] !== false
+}
+
+/**
  * Broadcast a voiceover event to all connected clients.
  * Only broadcasts if voiceover is enabled in settings — each client decides
  * whether to play based on its own audio toggle (header button).
  */
 function voicelinePlay (wavFile) {
-  if (isVoiceoverEnabled()) broadcastVoiceline(wavFile)
+  if (isVoiceoverEnabled() && isSoundFileEnabled(wavFile)) broadcastVoiceline(wavFile)
 }
 
 /**
  * Handle FSD charging start — fires when the fsdCharging status flag first becomes true.
- * For hyperspace charges also broadcasts the countdown sequence.
+ * Plays the charging clip only. Countdown fires later on StartJump when jump actually begins.
  */
-function handleFsdCharging (isHyperspace) {
+function handleFsdCharging () {
   voicelinePlay('frameshift_drive_charging.wav')
-  if (isHyperspace) {
-    const sequence = covasEventMap.voiceover.countdownSequence
-    if (sequence && isVoiceoverEnabled()) broadcastSequence(sequence, 400)
-  }
 }
 
 /**
@@ -261,7 +268,7 @@ function handleFsdCharging (isHyperspace) {
  * Only broadcasts if extended alerts are enabled in settings.
  */
 function extendedPlay (wavFile) {
-  if (isExtendedEnabled()) broadcastVoiceline(wavFile)
+  if (isExtendedEnabled() && isSoundFileEnabled(wavFile)) broadcastVoiceline(wavFile)
 }
 
 /**
@@ -303,9 +310,15 @@ function handleLogEvent (logEvent) {
   const eventName = logEvent.event
   if (!eventName) return
 
-  // --- StartJump: audio now fires on fsdCharging status flag change (see handleFsdCharging).
-  // Skip audio here to avoid double-playing. Route/autoswitch logic listens to this event elsewhere.
-  if (eventName === 'StartJump') return
+  // --- StartJump: charging wav fires on fsdCharging flag (see handleFsdCharging).
+  // Countdown fires here when the hyperspace jump actually begins.
+  if (eventName === 'StartJump') {
+    if (logEvent.JumpType === 'Hyperspace' && isVoiceoverEnabled() && isSoundFileEnabled('frameshift_drive_charging.wav')) {
+      const sequence = covasEventMap.voiceover.countdownSequence
+      if (sequence) broadcastSequence(sequence, 400)
+    }
+    return
+  }
 
   // --- Hull damage: debounce + threshold alerts ---
   if (eventName === 'HullDamage') {

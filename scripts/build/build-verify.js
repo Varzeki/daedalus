@@ -1,6 +1,8 @@
 const { execSync, spawn } = require('child_process')
 const path = require('path')
 const http = require('http')
+const fs = require('fs')
+const os = require('os')
 
 const {
   APP_FINAL_BUILD,
@@ -29,8 +31,15 @@ async function verifyApp () {
     return 0
   }
 
+  // Run the smoke test on a temp copy of the binary so that the kernel section
+  // object Windows creates for UPX-compressed executables is associated with
+  // the temp file rather than build/bin/. Without this, the section object
+  // outlives the process and causes EBUSY on the next build's clean step.
+  const tmpExe = path.join(os.tmpdir(), `~daedalus_smoke_${Date.now()}.exe`)
+  fs.copyFileSync(APP_FINAL_BUILD, tmpExe)
+
   try {
-    const output = execSync(`"${APP_FINAL_BUILD}" --smoke-test`, {
+    const output = execSync(`"${tmpExe}" --smoke-test`, {
       timeout: TIMEOUT_MS,
       encoding: 'utf8',
       stdio: ['ignore', 'pipe', 'pipe']
@@ -44,6 +53,8 @@ async function verifyApp () {
   } catch (e) {
     console.error('✗ App binary failed:', e.stderr || e.message)
     return 1
+  } finally {
+    try { fs.unlinkSync(tmpExe) } catch (_) {}
   }
 }
 

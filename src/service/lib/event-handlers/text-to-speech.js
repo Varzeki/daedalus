@@ -34,10 +34,9 @@ class TextToSpeech {
         covasPlayer.handleStatusChange('silentRunning', this.currentCmdrStatus?.flags?.silentRunning)
       }
 
-      // FSD charging — fire audio on charge start, not on FSD engage
+      // FSD charging — fire charging wav on charge start; countdown fires on StartJump journal event
       if (this.currentCmdrStatus?.flags?.fsdCharging && !previousCmdStatus?.flags?.fsdCharging) {
-        const isHyperspace = this.currentCmdrStatus?.flags?.fsdHyperdriveCharging === true
-        covasPlayer.handleFsdCharging(isHyperspace)
+        covasPlayer.handleFsdCharging()
       }
 
       // Monitor cargo capacity (cargo full alert)
