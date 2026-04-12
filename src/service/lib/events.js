@@ -22,12 +22,38 @@ const eventHandlers = _eventHandlers.getEventHandlers()
 const logEventHandler = (logEvent) => _eventHandlers.logEventHandler(logEvent)
 const gameStateChangeHandler = () => _eventHandlers.gameStateChangeHandler()
 
+function isIPv4Family (family) {
+  return family === 'IPv4' || family === 4
+}
+
+function getHostAddressScore ({ address = '', name = '' }) {
+  let score = 0
+
+  if (/^192\.168\./.test(address)) score += 400
+  else if (/^10\./.test(address)) score += 300
+  else if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(address)) score += 200
+  else score += 100
+
+  if (/(wi-?fi|wireless|wlan|ethernet)/i.test(name)) score += 50
+  if (/(vmware|virtualbox|hyper-v|vethernet|docker|wsl|tailscale|zerotier|hamachi|wireguard|vpn|bluetooth)/i.test(name)) score -= 250
+
+  return score
+}
+
 // Extend game logic related event handlers with app logic related handlers
 eventHandlers.hostInfo = () => {
-  const urls = Object.values(os.networkInterfaces())
-    .flat()
-    .filter(({ family, internal }) => family === 'IPv4' && !internal)
+  const urls = Object.entries(os.networkInterfaces())
+    .flatMap(([name, addresses = []]) => addresses.map(addressInfo => ({ ...addressInfo, name })))
+    .filter(({ family, internal, address }) => isIPv4Family(family) && !internal && Boolean(address))
+    .sort((left, right) => {
+      const scoreDiff = getHostAddressScore(right) - getHostAddressScore(left)
+      if (scoreDiff !== 0) return scoreDiff
+      const nameDiff = left.name.localeCompare(right.name)
+      if (nameDiff !== 0) return nameDiff
+      return left.address.localeCompare(right.address)
+    })
     .map(({ address }) => `http://${address}:${PORT}`)
+    .filter((url, index, allUrls) => allUrls.indexOf(url) === index)
   return { urls }
 }
 eventHandlers.getLoadingStatus = () => getLoadingStatus()

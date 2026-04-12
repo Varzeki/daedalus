@@ -388,8 +388,8 @@ function getClockwiseAngleFromTop (dx, dy) {
   return (Math.atan2(dy, dx) + Math.PI / 2 + Math.PI * 2) % (Math.PI * 2)
 }
 
-function createTimedStep (draw, phase = 0, angle = 0, order = 0) {
-  return { draw, phase, angle, order }
+function createTimedStep (draw, phase = 0, angle = 0, order = 0, flashGroup = null) {
+  return { draw, phase, angle, order, flashGroup }
 }
 
 function drawStep (step) {
@@ -406,6 +406,34 @@ function sortTimedSteps (steps) {
     if (left.angle !== right.angle) return left.angle - right.angle
     return left.order - right.order
   })
+}
+
+function getFlashStages (stationType) {
+  if (STARPORT_TYPES.has(stationType)) {
+    return [
+      { group: 'front', flashes: 3 },
+      { group: 'pad', flashes: 2 }
+    ]
+  }
+
+  return [{ group: 'pad', flashes: 2 }]
+}
+
+function getHiddenFlashGroups (stages, elapsed, interval) {
+  const hiddenGroups = new Set()
+  let remaining = elapsed
+
+  for (const stage of stages) {
+    const stageDuration = stage.flashes * interval * 2
+    if (remaining < stageDuration) {
+      const segment = Math.floor(remaining / interval)
+      if (segment % 2 === 0) hiddenGroups.add(stage.group)
+      return hiddenGroups
+    }
+    remaining -= stageDuration
+  }
+
+  return hiddenGroups
 }
 
 function getStarportSteps (ctx, cx, cy, radius, padNumber, colors) {
@@ -463,7 +491,7 @@ function getStarportSteps (ctx, cx, cy, radius, padNumber, colors) {
     ctx.strokeStyle = colors.redSide
     ctx.lineWidth = 4
     ctx.stroke()
-  }, 2, getClockwiseAngleFromTop(1, 0), 0))
+  }, 2, getClockwiseAngleFromTop(1, 0), 0, 'front'))
 
   // Entry slot — green side
   steps.push(createTimedStep(() => {
@@ -477,7 +505,7 @@ function getStarportSteps (ctx, cx, cy, radius, padNumber, colors) {
     ctx.strokeStyle = colors.greenSide
     ctx.lineWidth = 4
     ctx.stroke()
-  }, 2, getClockwiseAngleFromTop(-1, 0), 1))
+  }, 2, getClockwiseAngleFromTop(-1, 0), 1, 'front'))
 
   // Pad highlight
   if (padNumber >= 1 && padNumber <= 45) {
@@ -501,7 +529,7 @@ function getStarportSteps (ctx, cx, cy, radius, padNumber, colors) {
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(String(padNumber), px, py)
-    }, 3, getClockwiseAngleFromTop(padDx, padDy), 0))
+    }, 3, getClockwiseAngleFromTop(padDx, padDy), 0, 'pad'))
   }
 
   return sortTimedSteps(steps)
@@ -526,7 +554,7 @@ function getCarrierSteps (ctx, cx, cy, size, padNumber, colors) {
   }
 
   if (padNumber >= 1 && padNumber <= 16) {
-    steps.push(() => {
+    steps.push(createTimedStep(() => {
       const p = FC_PADS[padNumber - 1]
       const x = cx + p.x * unit
       const y = cy + p.y * unit
@@ -539,7 +567,7 @@ function getCarrierSteps (ctx, cx, cy, size, padNumber, colors) {
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(String(padNumber), x + w / 2, y + h / 2)
-    })
+    }, 1, 0, 0, 'pad'))
   }
 
   return steps
@@ -557,23 +585,35 @@ function getOutpostSteps (ctx, cx, cy, size, padNumber, colors) {
       const y = cy - padSize / 2
       const w = padSize * 0.8
       const h = padSize
-      const isActive = (pi + 1) === padNumber
 
       ctx.strokeStyle = colors.station
       ctx.lineWidth = 1.5
       ctx.strokeRect(x, y, w, h)
 
-      if (isActive) {
-        ctx.fillStyle = colors.pad
-        ctx.fillRect(x, y, w, h)
-      }
-
       ctx.font = `bold ${Math.max(10, w * 0.5)}px monospace`
-      ctx.fillStyle = isActive ? colors.padLabel : colors.station
+      ctx.fillStyle = colors.station
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(String(pi + 1), x + w / 2, y + h / 2)
     })
+  }
+
+  if (padNumber >= 1 && padNumber <= padCount) {
+    steps.push(createTimedStep(() => {
+      const x = cx - (padCount * padSize) / 2 + (padNumber - 1) * padSize + padSize * 0.1
+      const y = cy - padSize / 2
+      const w = padSize * 0.8
+      const h = padSize
+
+      ctx.fillStyle = colors.pad
+      ctx.fillRect(x, y, w, h)
+
+      ctx.font = `bold ${Math.max(10, w * 0.5)}px monospace`
+      ctx.fillStyle = colors.padLabel
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(String(padNumber), x + w / 2, y + h / 2)
+    }, 1, 0, 0, 'pad'))
   }
 
   return steps
@@ -622,7 +662,6 @@ function getSettlementSteps (ctx, cx, cy, size, padNumber, economy, colors) {
       const py = cy + (p.y - centerY) * scale
       const pw = PAD_HALF * 2 * scale
       const ph = PAD_HALF * 2.5 * scale
-      const isActive = (pi + 1) === padNumber
 
       ctx.strokeStyle = colors.station
       ctx.lineWidth = 1.5
@@ -636,22 +675,40 @@ function getSettlementSteps (ctx, cx, cy, size, padNumber, economy, colors) {
       ctx.fillStyle = colors.station
       ctx.fill()
 
-      if (isActive) {
-        ctx.fillStyle = colors.pad
-        ctx.fillRect(px - pw / 2, py - ph / 2, pw, ph)
-      }
-
       const fontSize = Math.max(12, Math.min(pw, ph) * 0.4)
       ctx.font = `bold ${fontSize}px monospace`
-      ctx.fillStyle = isActive ? colors.padLabel : colors.station
+      ctx.fillStyle = colors.station
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(String(pi + 1), px, py)
 
       ctx.font = `${Math.max(9, fontSize * 0.6)}px monospace`
-      ctx.fillStyle = isActive ? colors.padLabel : 'rgba(255, 147, 0, 0.4)'
+      ctx.fillStyle = 'rgba(255, 147, 0, 0.4)'
       ctx.fillText('L', px, py + fontSize * 0.6)
     })
+  }
+
+  if (padNumber >= 1 && padNumber <= pads.length) {
+    steps.push(createTimedStep(() => {
+      const p = pads[padNumber - 1]
+      const px = cx + (p.x - centerX) * scale
+      const py = cy + (p.y - centerY) * scale
+      const pw = PAD_HALF * 2 * scale
+      const ph = PAD_HALF * 2.5 * scale
+      const fontSize = Math.max(12, Math.min(pw, ph) * 0.4)
+
+      ctx.fillStyle = colors.pad
+      ctx.fillRect(px - pw / 2, py - ph / 2, pw, ph)
+
+      ctx.font = `bold ${fontSize}px monospace`
+      ctx.fillStyle = colors.padLabel
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(String(padNumber), px, py)
+
+      ctx.font = `${Math.max(9, fontSize * 0.6)}px monospace`
+      ctx.fillText('L', px, py + fontSize * 0.6)
+    }, 1, 0, 0, 'pad'))
   }
 
   // Template name
@@ -671,6 +728,7 @@ function getSettlementSteps (ctx, cx, cy, size, padNumber, economy, colors) {
 const FADE_DURATION = 600   // ms for background fade-in
 const ENTER_STEP_DELAY = 80       // ms between each element appearing
 const EXIT_REVERSE_DURATION = 2400 // ms to undo visible geometry before fading out
+const FLASH_TOGGLE_INTERVAL = 220
 
 export default function LandingPadOverlay ({ data, onDismiss }) {
   const canvasRef = useRef(null)
@@ -735,22 +793,12 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
       canvas.height = h * dpr
       ctx.scale(dpr, dpr)
 
-      // Measure content area and add padding, or fall back to viewport percentages
-      const PADDING = Math.min(w, h) * 0.06
-      let innerX, innerY, innerW, innerH
-
-      if (contentRef.current) {
-        const rect = contentRef.current.getBoundingClientRect()
-        innerX = rect.left - PADDING
-        innerY = rect.top - PADDING
-        innerW = rect.width + PADDING * 2
-        innerH = rect.height + PADDING * 2
-      } else {
-        innerX = w * 0.08
-        innerY = h * 0.15
-        innerW = w * 0.84
-        innerH = h * 0.70
-      }
+      // Keep the vignette nearly full-screen so it doesn't snap tightly to the pad artwork.
+      const edgeInset = Math.max(Math.min(w, h) * 0.025, 16)
+      const innerX = edgeInset
+      const innerY = edgeInset
+      const innerW = w - edgeInset * 2
+      const innerH = h - edgeInset * 2
 
       const fadeSize = Math.min(w, h) * 0.12
 
@@ -850,6 +898,10 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
       steps = getOutpostSteps(ctx, cx, cy, drawSize, displayData.pad, colors)
     }
 
+    const flashStages = getFlashStages(stationType)
+    const enterDuration = ENTER_STEP_DELAY * Math.max(steps.length - 1, 0)
+    const flashDuration = flashStages.reduce((total, stage) => total + (stage.flashes * FLASH_TOGGLE_INTERVAL * 2), 0)
+
     const exitStepDelay = EXIT_REVERSE_DURATION / Math.max(steps.length, 1)
     const exitStartCount = currentVisibleCountRef.current
     const startTime = performance.now()
@@ -859,6 +911,7 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
       ctx.clearRect(0, 0, rect.width, rect.height)
 
       let visibleCount = steps.length
+      let hiddenFlashGroups = new Set()
 
       if (animationState === 'entering') {
         const elapsed = now - startTime - FADE_DURATION
@@ -866,6 +919,10 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
           visibleCount = 0
         } else {
           visibleCount = Math.min(Math.floor(elapsed / ENTER_STEP_DELAY) + 1, steps.length)
+          if (visibleCount >= steps.length && flashDuration > 0) {
+            const flashElapsed = Math.max(elapsed - enterDuration, 0)
+            hiddenFlashGroups = getHiddenFlashGroups(flashStages, flashElapsed, FLASH_TOGGLE_INTERVAL)
+          }
         }
       } else if (animationState === 'exiting') {
         const elapsed = now - startTime
@@ -873,9 +930,15 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
       }
 
       currentVisibleCountRef.current = visibleCount
-      for (let i = 0; i < visibleCount; i++) drawStep(steps[i])
+      for (let i = 0; i < visibleCount; i++) {
+        const step = steps[i]
+        if (typeof step !== 'function' && step.flashGroup && hiddenFlashGroups.has(step.flashGroup)) continue
+        drawStep(step)
+      }
 
       if (animationState === 'entering' && visibleCount < steps.length) {
+        animRef.current = requestAnimationFrame(animate)
+      } else if (animationState === 'entering' && flashDuration > 0 && (now - startTime - FADE_DURATION) < (enterDuration + flashDuration)) {
         animRef.current = requestAnimationFrame(animate)
       } else if (animationState === 'entering') {
         animationStateRef.current = 'visible'

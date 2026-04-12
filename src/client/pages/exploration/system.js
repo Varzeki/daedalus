@@ -313,11 +313,7 @@ export default function ExplorationSystemPage () {
                 <span className='text-success'>{systemValue.bioValue.toLocaleString()} Cr bio</span>
               </>}
               {(systemValue.mainStarBonus > 0 || systemValue.fullScanBonus > 0 || systemValue.fullMapBonus > 0) && <>
-                <span className='text-muted'> (incl. </span>
-                {systemValue.mainStarBonus > 0 && <span className='text-muted'>{systemValue.mainStarBonus.toLocaleString()} honk</span>}
-                {systemValue.fullScanBonus > 0 && <span className='text-muted'>{systemValue.mainStarBonus > 0 ? ' + ' : ''}{systemValue.fullScanBonus.toLocaleString()} scan</span>}
-                {systemValue.fullMapBonus > 0 && <span className='text-muted'>{(systemValue.mainStarBonus > 0 || systemValue.fullScanBonus > 0) ? ' + ' : ''}{systemValue.fullMapBonus.toLocaleString()} map</span>}
-                <span className='text-muted'> bonus)</span>
+                <span className='text-muted'> (including bonuses)</span>
               </>}
             </>}
           </p>}

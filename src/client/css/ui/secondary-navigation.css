@@ -4,10 +4,35 @@
   left: 0;
   width: 4rem;
   bottom: 0;
+  display: flex;
+  flex-direction: column;
   z-index: 10;
 }
 
+.secondary-navigation__items {
+  position: relative;
+  flex: 1 1 auto;
+  min-height: 0;
+}
+
+.secondary-navigation__items-scroll {
+  position: absolute;
+  top: 0;
+  left: 0;
+  bottom: 0;
+  width: 20rem;
+  overflow-y: auto;
+  overflow-x: hidden;
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+.secondary-navigation__items-scroll::-webkit-scrollbar {
+  display: none;
+}
+
 .secondary-navigation button.button--icon {
+  display: block;
   width: 4rem;
   height: 4rem;
   margin-bottom: .5rem;
@@ -21,18 +46,11 @@
 }
 
 .secondary-navigation__exit-button {
-  position: absolute !important;
+  position: relative !important;
   z-index: 9;
-  bottom: -.5rem;
+  bottom: 0;
   left: 0;
-  margin: 0;
-}
-
-@media only screen and (orientation: portrait), (max-width: 599px) {
-  .secondary-navigation__exit-button {
-    position: relative !important;
-    bottom: 0;
-  }
+  margin: .5rem 0 0 0;
 }
 
 .secondary-navigation button.button--icon.button--active,
@@ -92,7 +110,7 @@
 
 .secondary-navigation__label {
   position: absolute;
-  left: 100%;
+  left: 0;
   top: 0;
   z-index: -1;
   display: inline-flex;
@@ -103,17 +121,14 @@
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: 0.05rem;
-  padding: .25rem 0;
+  padding: .25rem 0 .25rem 4rem;
   height: 4rem;
   background: var(--color-primary-dark);
   color: var(--color-primary);
-  border-top: .25rem solid var(--color-primary);
-  border-right: .25rem solid var(--color-primary);
-  border-bottom: .25rem solid var(--color-primary);
-  border-left: none;
+  border: none;
   border-radius: 0;
-  box-shadow: 0 0 1rem black, 0 0 2rem black;
-  filter: var(--filter-active-element);
+  box-shadow: none;
+  filter: none;
   opacity: 0;
   pointer-events: none;
   max-width: 0;
@@ -126,7 +141,7 @@
 .secondary-navigation__has-label:focus .secondary-navigation__label {
   opacity: 1;
   max-width: 16rem;
-  padding: .25rem 1rem;
+  padding: .25rem 1rem .25rem 5rem;
   transform: translateX(0);
 }
 

@@ -86,6 +86,8 @@ SetOutPath "$INSTDIR"
 File "..\..\build\bin\DAEDALUS Service.exe"
 File "..\..\build\bin\DAEDALUS Terminal.exe"
 File "..\assets\icon.ico"
+SetOutPath "$INSTDIR\game_voicelines"
+File /r "..\..\game_voicelines\verity"
 Call installWebView2
 SectionEnd
 
@@ -140,6 +142,8 @@ Delete "$INSTDIR\uninstall.exe"
 !ifdef WEB_SITE
 Delete "$INSTDIR\${APP_NAME} website.url"
 !endif
+
+RmDir /r "$INSTDIR\game_voicelines"
 
 RmDir "$INSTDIR"
 

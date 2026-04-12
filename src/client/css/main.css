@@ -62,20 +62,33 @@ html {
   -moz-osx-font-smoothing: grayscale;
 }
 
+html,
+body,
+.scrollable {
+  scrollbar-color: var(--color-primary) transparent;
+}
+
 .scrollable {
   overflow-x: hidden !important;
 }
 
+html::-webkit-scrollbar,
+body::-webkit-scrollbar,
 .scrollable::-webkit-scrollbar {
   width: 16px;
+  height: 16px;
 }
 
+html::-webkit-scrollbar-thumb,
+body::-webkit-scrollbar-thumb,
 .scrollable::-webkit-scrollbar-thumb {
   background: var(--color-primary);
   min-height: 4rem;
   box-shadow: 0 0 10px var(--color-primary-dark);
 }
 
+html::-webkit-scrollbar-track,
+body::-webkit-scrollbar-track,
 .scrollable::-webkit-scrollbar-track {
   background-image: linear-gradient(90deg, transparent 41.67%, var(--color-primary) 41.67%, var(--color-primary) 50%, transparent 50%, transparent 91.67%, var(--color-primary) 91.67%, var(--color-primary) 100%);
   background-size: 48.00px 48.00px;

@@ -7,8 +7,7 @@ const covasEventMap = require('./data/covas-event-map.json')
 const PREFERENCES_DIR = path.join(os.homedir(), 'AppData', 'Local', 'DAEDALUS Terminal')
 const PREFERENCES_FILE = path.join(PREFERENCES_DIR, 'Preferences.json')
 
-// Default voicelines directory (relative to the service lib directory)
-const BUNDLED_VOICELINES_DIR = path.join(__dirname, '..', '..', '..', 'game_voicelines', 'verity')
+const DEV_BUNDLED_VOICELINES_DIR = path.join(__dirname, '..', '..', '..', 'game_voicelines', 'verity')
 
 const QUEUE_GAP_MS = 500
 
@@ -89,9 +88,19 @@ function isExtendedEnabled () {
   return prefs?.covasExtendedEnabled === true
 }
 
+function getBundledVoicelinesDir () {
+  const candidateDirs = [
+    path.join(path.dirname(process.execPath), 'game_voicelines', 'verity'),
+    path.join(process.cwd(), 'game_voicelines', 'verity'),
+    DEV_BUNDLED_VOICELINES_DIR
+  ]
+
+  return candidateDirs.find(candidateDir => fs.existsSync(candidateDir)) || candidateDirs[0]
+}
+
 function getVoicelinesDir () {
   const prefs = getPreferencesCached()
-  return prefs?.covasDir || BUNDLED_VOICELINES_DIR
+  return prefs?.covasDir || getBundledVoicelinesDir()
 }
 
 function runPowerShellWavTest (filePath) {

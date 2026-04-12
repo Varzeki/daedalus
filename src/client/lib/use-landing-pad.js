@@ -19,7 +19,7 @@ export default function useLandingPad () {
   }
 
   useEffect(() => {
-    const DISMISS_EVENTS = ['Docked', 'DockingCancelled', 'DockingTimeout', 'StartJump', 'Shutdown', 'Undocked']
+    const DISMISS_EVENTS = ['Docked', 'DockingCancelled', 'DockingTimeout', 'StartJump', 'Shutdown', 'Undocked', 'Touchdown', 'Location']
     return eventListener('newLogEntry', (message) => {
       if (message.event === 'ApproachSettlement' && message.StationEconomy) {
         const raw = message.StationEconomy

@@ -19,6 +19,8 @@ const {
 
 const DEBUG_CONSOLE = commandLineArgs.debug || DEBUG_CONSOLE_DEFAULT
 const ENTRY_POINT = path.join(__dirname, '..', '..', 'src', 'service', 'main.js')
+const GAME_VOICELINES_DIR = path.join(__dirname, '..', '..', 'game_voicelines')
+const STANDALONE_VOICELINES_DIR = path.join(DIST_DIR, 'game_voicelines')
 
 ;(async () => {
   clean()
@@ -53,4 +55,6 @@ async function build () {
     console.log(`Building standalone for ${target}...`)
     await exec(pkgArgs)
   }
+
+  fs.cpSync(GAME_VOICELINES_DIR, STANDALONE_VOICELINES_DIR, { recursive: true })
 }
