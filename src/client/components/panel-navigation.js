@@ -72,7 +72,7 @@ export default function PanelNavigation ({ items = [], search = () => {}, exit }
             <button
               tabIndex='2'
               data-secondary-navigation={i+1}
-              className={`button--icon ${item.active ? 'button--active' : ''}`}
+              className={`button--icon secondary-navigation__has-label ${item.active ? 'button--active' : ''}`}
               onClick={
                 item.onClick
                   ? item.onClick
@@ -80,6 +80,7 @@ export default function PanelNavigation ({ items = [], search = () => {}, exit }
               }
             >
               <i className={`icon daedalus-terminal-${item.icon}`} />
+              {item.name && <span className='secondary-navigation__label'>{item.name}</span>}
             </button>}
         </Fragment>
       )}

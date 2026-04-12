@@ -5,7 +5,7 @@
  */
 const path = require('path')
 const fs = require('fs')
-const { predictSpecies } = require('../src/service/lib/bio-predictor')
+const { predictSpecies } = require('../../src/service/lib/bio-predictor')
 
 const CACHE_PATH = path.join(__dirname, '.comparison-cache.json')
 const cache = JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'))

@@ -8,7 +8,7 @@ const PREFERENCES_DIR = path.join(os.homedir(), 'AppData', 'Local', 'DAEDALUS Te
 const PREFERENCES_FILE = path.join(PREFERENCES_DIR, 'Preferences.json')
 
 // Default voicelines directory (relative to the service lib directory)
-const BUNDLED_VOICELINES_DIR = path.join(__dirname, '..', '..', '..', '..', 'game_voicelines', 'verity')
+const BUNDLED_VOICELINES_DIR = path.join(__dirname, '..', '..', '..', 'game_voicelines', 'verity')
 
 const QUEUE_GAP_MS = 500
 
@@ -130,10 +130,16 @@ function playWav (filePath) {
 
 /**
  * Queue a voiceline for playback. Plays sequentially with a gap to avoid overlaps.
+ * Also broadcasts the voiceline filename to all connected clients.
  */
 async function queuePlay (wavFile) {
   const voicelinesDir = getVoicelinesDir()
   const filePath = path.join(voicelinesDir, wavFile)
+
+  // Broadcast to clients so they can play audio independently
+  if (global.BROADCAST_EVENT) {
+    global.BROADCAST_EVENT('playVoiceline', { file: wavFile })
+  }
 
   if (!fs.existsSync(filePath)) return
 
@@ -165,10 +171,16 @@ function isDebounced (eventName, debounceMs) {
 /**
  * Play the FSD hyperspace countdown: 5... 4... 3... 2... 1... Engage
  * Each clip is spaced ~1 second apart to match the in-game countdown.
+ * Broadcasts the full sequence to clients so they can play it independently.
  */
 async function playCountdown () {
   const sequence = covasEventMap.voiceover.countdownSequence
   if (!sequence) return
+
+  // Broadcast full countdown sequence to clients
+  if (global.BROADCAST_EVENT) {
+    global.BROADCAST_EVENT('playVoicelineSequence', { files: sequence, gap: 400 })
+  }
 
   const voicelinesDir = getVoicelinesDir()
   for (let i = 0; i < sequence.length; i++) {
@@ -371,6 +383,7 @@ module.exports = {
   invalidatePreferencesCache,
   isVoiceoverEnabled,
   isExtendedEnabled,
+  getVoicelinesDir,
   stop,
   queuePlay
 }

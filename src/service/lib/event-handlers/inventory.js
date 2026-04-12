@@ -3,102 +3,52 @@ class Inventory {
   constructor ({ eliteLog, eliteJson }) {
     this.eliteLog = eliteLog
     this.eliteJson = eliteJson
-    return this
   }
 
   async getInventory () {
     const shipLocker = (await this.eliteJson.json()).ShipLocker
     if (!shipLocker) return []
 
-    const inventoryItems = []
+    const inventoryByName = new Map()
 
-    shipLocker.Consumables.forEach(item => {
-      let itemInInventory = inventoryItems.filter(i => i.name === (item?.Name_Localised ?? item.Name))[0]
-      if (!itemInInventory) {
-        itemInInventory = {
-          name: item?.Name_Localised ?? item.Name,
-          type: 'Consumable',
-          mission: 0,
-          stolen: 0,
-          count: 0
+    const addItems = (items, type) => {
+      for (const item of items) {
+        const name = item?.Name_Localised ?? item.Name
+        let entry = inventoryByName.get(name)
+        if (!entry) {
+          entry = { name, type, mission: 0, stolen: 0, count: 0 }
+          inventoryByName.set(name, entry)
         }
-        inventoryItems.push(itemInInventory)
+        entry.count += item.Count
+        if (item.MissionID) entry.mission += item.Count
+        if (item.OwnerID > 0) entry.stolen += item.Count
       }
-
-      itemInInventory.count += item.Count
-      if (item.MissionID) itemInInventory.mission += item.Count
-      if (item.OwnerID > 0) itemInInventory.stolen += item.Count
-    })
-
-    shipLocker.Items.forEach(item => {
-      let itemInInventory = inventoryItems.filter(i => i.name === (item?.Name_Localised ?? item.Name))[0]
-      if (!itemInInventory) {
-        itemInInventory = {
-          name: item?.Name_Localised ?? item.Name,
-          type: 'Goods',
-          mission: 0,
-          stolen: 0,
-          count: 0
-        }
-        inventoryItems.push(itemInInventory)
-      }
-
-      itemInInventory.count += item.Count
-      if (item.MissionID) itemInInventory.mission += item.Count
-      if (item.OwnerID > 0) itemInInventory.stolen += item.Count
-    })
-
-    shipLocker.Components.forEach(item => {
-      let itemInInventory = inventoryItems.filter(i => i.name === (item?.Name_Localised ?? item.Name))[0]
-      if (!itemInInventory) {
-        itemInInventory = {
-          name: item?.Name_Localised ?? item.Name,
-          type: 'Component',
-          mission: 0,
-          stolen: 0,
-          count: 0
-        }
-        inventoryItems.push(itemInInventory)
-      }
-
-      itemInInventory.count += item.Count
-      if (item.MissionID) itemInInventory.mission += item.Count
-      if (item.OwnerID > 0) itemInInventory.stolen += item.Count
-    })
-
-    shipLocker.Data.forEach(item => {
-      let itemInInventory = inventoryItems.filter(i => i.name === (item?.Name_Localised ?? item.Name))[0]
-      if (!itemInInventory) {
-        itemInInventory = {
-          name: item?.Name_Localised ?? item.Name,
-          type: 'Data',
-          mission: 0,
-          stolen: 0,
-          count: 0
-        }
-        inventoryItems.push(itemInInventory)
-      }
-
-      itemInInventory.count += item.Count
-      if (item.MissionID) itemInInventory.mission += item.Count
-      if (item.OwnerID > 0) itemInInventory.stolen += item.Count
-    })
-
-    inventoryItems.sort((a, b) => a.name.localeCompare(b.name))
-
-    const counts = {
-      goods: 0,
-      components: 0,
-      data: 0
     }
 
-    inventoryItems.filter(i => i.type === 'Goods').forEach(item => { counts.goods += item.count })
-    inventoryItems.filter(i => i.type === 'Component').forEach(item => { counts.components += item.count })
-    inventoryItems.filter(i => i.type === 'Data').forEach(item => { counts.data += item.count })
+    addItems(shipLocker.Consumables ?? [], 'Consumable')
+    addItems(shipLocker.Items ?? [], 'Goods')
+    addItems(shipLocker.Components ?? [], 'Component')
+    addItems(shipLocker.Data ?? [], 'Data')
+
+    const inventoryItems = [...inventoryByName.values()]
+      .sort((a, b) => a.name.localeCompare(b.name))
+
+    let goods = 0; let components = 0; let data = 0
+    for (const item of inventoryItems) {
+      if (item.type === 'Goods') goods += item.count
+      else if (item.type === 'Component') components += item.count
+      else if (item.type === 'Data') data += item.count
+    }
 
     return {
-      counts,
+      counts: { goods, components, data },
       items: inventoryItems
+    }
+  }
+
+  getHandlers () {
+    return {
+      getInventory: (args) => this.getInventory(args)
     }
   }
 }

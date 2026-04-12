@@ -6,7 +6,6 @@ class Engineers {
   constructor ({ eliteLog, eliteJson }) {
     this.eliteLog = eliteLog
     this.eliteJson = eliteJson
-    return this
   }
 
   async getEngineers () {
@@ -65,6 +64,12 @@ class Engineers {
     engineers.sort((a, b) => a.name.localeCompare(b.name))
 
     return engineers
+  }
+
+  getHandlers () {
+    return {
+      getEngineers: (args) => this.getEngineers(args)
+    }
   }
 }
 

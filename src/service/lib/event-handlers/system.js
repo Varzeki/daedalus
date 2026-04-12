@@ -6,7 +6,6 @@ const distance = require('../../../shared/distance')
 class System {
   constructor ({ eliteLog }) {
     this.eliteLog = eliteLog
-    return this
   }
 
   async getCurrentLocation () {
@@ -52,7 +51,7 @@ class System {
     // System information
     if (event.SystemAllegiance) currentLocation.allegiance = event.SystemAllegiance
     if (event.SystemGovernment_Localised || event.SystemGovernment) currentLocation.government = event.SystemGovernment_Localised || event.SystemGovernment
-    if (event.SystemSecurity_Localised || event.SystemSecurity) currentLocation.government = event.SystemSecurity_Localised || event.SystemSecurity
+    if (event.SystemSecurity_Localised || event.SystemSecurity) currentLocation.security = event.SystemSecurity_Localised || event.SystemSecurity
     if (event.Population) currentLocation.population = event.Population
     if (event?.SystemFaction?.Name) currentLocation.faction = event.SystemFaction.Name
     if (event?.SystemFaction?.FactionState) currentLocation.state = event.SystemFaction.FactionState
@@ -105,65 +104,68 @@ class System {
 
       // Merge in local scan data with information about the body
       if (system?.bodies) {
+        const bodyNames = system.bodies.map(b => b.name)
+        const inhabitedSystem = (system?.population > 0 || system?.stations?.length > 0 || system?.ports?.length > 0 || system?.megaships?.length > 0 || system?.settlements?.length > 0)
+
+        // Batch-fetch all relevant journal events for all bodies at once
+        const [allFSSBodySignals, allSAASignalsFound, allScans, allSAAScanComplete] = await Promise.all([
+          this.eliteLog._query({ event: 'FSSBodySignals', BodyName: { $in: bodyNames } }),
+          this.eliteLog._query({ event: 'SAASignalsFound', BodyName: { $in: bodyNames } }),
+          inhabitedSystem ? Promise.resolve([]) : this.eliteLog._query({ event: 'Scan', BodyName: { $in: bodyNames } }),
+          inhabitedSystem ? Promise.resolve([]) : this.eliteLog._query({ event: 'SAAScanComplete', BodyName: { $in: bodyNames } })
+        ])
+
+        // Build lookup maps keyed by body name
+        const fssMap = {}
+        for (const e of allFSSBodySignals) { fssMap[e.BodyName] = e }
+        const saaMap = {}
+        for (const e of allSAASignalsFound) { saaMap[e.BodyName] = e }
+        const scanMap = {}
+        for (const e of allScans) { scanMap[e.BodyName] = e }
+        const saaScanCompleteSet = new Set(allSAAScanComplete.map(e => e.BodyName))
+
         for (const body of system.bodies) {
           body.signals = {
             geological: 0,
             biological: 0,
             human: 0
           }
-          
+
           // Merge in body signal scan data
-          const FSSBodySignals = await this.eliteLog._query({ event: 'FSSBodySignals', BodyName: body.name }, 1)
-          if (FSSBodySignals[0]?.Signals) {
-            ;(FSSBodySignals[0]?.Signals).map(signal => {
-              if (signal?.Type === '$SAA_SignalType_Geological;') {
-                body.signals.geological = signal?.Count ?? 0
-              }
-              if (signal?.Type === '$SAA_SignalType_Biological;') {
-                body.signals.biological = signal?.Count ?? 0
-              }
-              if (signal?.Type === '$SAA_SignalType_Human;') {
-                body.signals.human = signal?.Count ?? 0
-              }
-            })
+          const fssEntry = fssMap[body.name]
+          if (fssEntry?.Signals) {
+            for (const signal of fssEntry.Signals) {
+              if (signal?.Type === '$SAA_SignalType_Geological;') body.signals.geological = signal?.Count ?? 0
+              if (signal?.Type === '$SAA_SignalType_Biological;') body.signals.biological = signal?.Count ?? 0
+              if (signal?.Type === '$SAA_SignalType_Human;') body.signals.human = signal?.Count ?? 0
+            }
           }
 
           // Merge in surface scan data
-          const SAASignalsFound = await this.eliteLog._query({ event: 'SAASignalsFound', BodyName: body.name }, 1)
-          if (SAASignalsFound[0]?.Signals) {
-            ;(SAASignalsFound[0]?.Signals).map(signal => {
-              if (signal?.Type === '$SAA_SignalType_Geological;') {
-                body.signals.geological = signal?.Count ?? 0
-              }
-              if (signal?.Type === '$SAA_SignalType_Biological;') {
-                body.signals.biological = signal?.Count ?? 0
-              }
-              if (signal?.Type === '$SAA_SignalType_Human;') {
-                body.signals.human = signal?.Count ?? 0
-              }
-            })
+          const saaEntry = saaMap[body.name]
+          if (saaEntry?.Signals) {
+            for (const signal of saaEntry.Signals) {
+              if (signal?.Type === '$SAA_SignalType_Geological;') body.signals.geological = signal?.Count ?? 0
+              if (signal?.Type === '$SAA_SignalType_Biological;') body.signals.biological = signal?.Count ?? 0
+              if (signal?.Type === '$SAA_SignalType_Human;') body.signals.human = signal?.Count ?? 0
+            }
           }
 
           // If we have data from a surface scan about the plants, merge it
-          if (body.signals.biological > 0 && SAASignalsFound[0]?.Genuses) {
-            body.biologicalGenuses = []
-            ;(SAASignalsFound[0]?.Genuses).map(biologicalSamples => {
-              body.biologicalGenuses.push(biologicalSamples.Genus_Localised)
-            })
+          if (body.signals.biological > 0 && saaEntry?.Genuses) {
+            body.biologicalGenuses = saaEntry.Genuses.map(g => g.Genus_Localised)
           }
 
-          // Only log discovered / mapped if in an unhabited system
+          // Only log discovered / mapped if in an uninhabited system
           // FIXME Suspect this logic isn't entirely correct
-          const inhabitedSystem = (system?.population > 0 || system?.stations?.length > 0 || system?.ports?.length > 0 || system?.megaships?.length > 0 || system?.settlements?.length > 0)
           if (!inhabitedSystem) {
-            const Scan = await this.eliteLog._query({ event: 'Scan', BodyName: body.name }, 1)
-            body.discovered = Scan[0]?.WasDiscovered ?? false
-            body.mapped = Scan[0]?.WasMapped ?? false
+            const scanEntry = scanMap[body.name]
+            body.discovered = scanEntry?.WasDiscovered ?? false
+            body.mapped = scanEntry?.WasMapped ?? false
 
             // If there is an SAAScanComplete entry for the body, it has been scanned
             // (even if the Scan entry says it has not, because it's old data)
-            const SAAScanComplete = await this.eliteLog._query({ event: 'SAAScanComplete', BodyName: body.name }, 1)
-            if (SAAScanComplete[0]?.BodyName) body.mapped = true
+            if (saaScanCompleteSet.has(body.name)) body.mapped = true
           }
         }
       }
@@ -238,6 +240,12 @@ class System {
         scanPercentComplete,
         _cacheTimestamp: new Date().toISOString()
       }
+    }
+  }
+
+  getHandlers () {
+    return {
+      getSystem: (args) => this.getSystem(args)
     }
   }
 }

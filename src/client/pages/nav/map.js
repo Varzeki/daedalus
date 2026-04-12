@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
 import { useSocket, sendEvent, eventListener } from 'lib/socket'
 import { NavPanelNavItems } from 'lib/navigation-items'
@@ -14,6 +14,10 @@ export default function NavMapPage () {
   const [componentReady, setComponentReady] = useState(false)
   const [system, setSystem] = useState()
   const [systemObject, setSystemObject] = useState()
+  const systemRef = useRef(system)
+  const systemObjectRef = useRef(systemObject)
+  systemRef.current = system
+  systemObjectRef.current = systemObject
   const [cmdrStatus, setCmdrStatus] = useState()
   const [rescanInProgress, setRescanInProgress] = useState(false)
   const [systemLoading, setSystemLoading] = useState(false)
@@ -54,34 +58,36 @@ export default function NavMapPage () {
     }
   }
 
-  useEffect(async () => {
+  useEffect(() => {
     if (!connected || !router.isReady) return
+    let mounted = true
 
-    setCmdrStatus(await sendEvent('getCmdrStatus'))
+    ;(async () => {
+      const status = await sendEvent('getCmdrStatus')
+      if (!mounted) return
+      setCmdrStatus(status)
 
-    setSystemLoading(true)
-    const newSystem = await sendEvent('getSystem', query.system ? { name: query.system, useCache: true } : { useCache: true })
-    setSystemLoading(false)
+      setSystemLoading(true)
+      const newSystem = await sendEvent('getSystem', query.system ? { name: query.system, useCache: true } : { useCache: true })
+      if (!mounted) return
+      setSystemLoading(false)
 
-    if (newSystem) {
-      setSystem(newSystem)
-    } else {
-      // If system lookup fails (i.e. no game data), fallback to Sol system
-      setSystem(await sendEvent('getSystem', { name: 'Sol', useCache: true }))
-    }
+      if (newSystem) {
+        setSystem(newSystem)
+      } else {
+        // If system lookup fails (i.e. no game data), fallback to Sol system
+        setSystem(await sendEvent('getSystem', { name: 'Sol', useCache: true }))
+      }
 
-    if (query.selected) {
-      const newSystemObject = newSystem.objectsInSystem.filter(child => child.name.toLowerCase() === query.selected.toLowerCase())[0]
-      if (!newSystemObject) return
-      setSystemObject(newSystemObject)
-      // TODO Highlight body on map (or, if ground facility, the nearest planet)
-      // setTimeout(() => {
-      //   const el = document.querySelector(`[data-system-object-name="${newSystemObject?.name}" i]`)
-      //   if (el) el.focus()
-      // }, 750) // Delay to allow map to render
-    }
+      if (query.selected && newSystem) {
+        const newSystemObject = newSystem.objectsInSystem.filter(child => child.name.toLowerCase() === query.selected.toLowerCase())[0]
+        if (!newSystemObject) return
+        setSystemObject(newSystemObject)
+      }
 
-    setComponentReady(true)
+      setComponentReady(true)
+    })()
+    return () => { mounted = false }
   }, [connected, ready, router.isReady])
 
   useEffect(() => eventListener('newLogEntry', async (log) => {
@@ -93,22 +99,17 @@ export default function NavMapPage () {
       setSystem(newSystem)
     }
     if (['FSSDiscoveryScan', 'FSSAllBodiesFound', 'SAASignalsFound', 'FSSBodySignals', 'Scan'].includes(log.event)) {
-      const newSystem = await sendEvent('getSystem', { name: system?.name, useCache: false })
+      const newSystem = await sendEvent('getSystem', { name: systemRef.current?.name, useCache: false })
       // Update system object so NavigationInspectorPanel is also updated
       if (newSystem) {
-        if (systemObject?.name) {
-          const newSystemObject = newSystem.objectsInSystem.filter(child => child.name.toLowerCase() === systemObject.name?.toLowerCase())[0]
+        if (systemObjectRef.current?.name) {
+          const newSystemObject = newSystem.objectsInSystem.filter(child => child.name.toLowerCase() === systemObjectRef.current.name?.toLowerCase())[0]
           setSystemObject(newSystemObject)
         }
         setSystem(newSystem)
       }
     }
-  }), [system, systemObject])
-
-  useEffect(() => eventListener('gameStateChange', async (log) => {
-    //setCmdrStatus(await sendEvent('getCmdrStatus'))
-  }))
-  
+  }), [])
 
   useEffect(() => {
     if (!router.isReady) return

@@ -29,7 +29,6 @@ class Materials {
   constructor ({ eliteLog, eliteJson }) {
     this.eliteLog = eliteLog
     this.eliteJson = eliteJson
-    return this
   }
 
   async getMaterials () {
@@ -76,26 +75,26 @@ class Materials {
     // by modifying the material manifest recorded at startup (increasing,
     // decreasing or adding new materials as they are collected or discarded)
     const materialEvents = materialsCollected.concat(materialsDiscarded).concat(materialTrades).concat(engineeringCrafted)
-    materialEvents.sort((a, b) => Date.parse(a.timestamp) < Date.parse(b.timestamp) ? 1 : -1).reverse()
+    materialEvents.sort((a, b) => Date.parse(a.timestamp) - Date.parse(b.timestamp))
 
     for (const materialEvent of materialEvents) {
       try {
         if (materialEvent.event === 'MaterialCollected') {
-          const material = materials.filter(m => m.symbol.toLowerCase() === materialEvent.Name.toLowerCase())[0]
-          material.count += materialEvent.Count
+          const material = materials.find(m => m.symbol.toLowerCase() === materialEvent.Name.toLowerCase())
+          if (material) material.count += materialEvent.Count
         } else if (materialEvent.event === 'MaterialDiscarded') {
-          const material = materials.filter(m => m.symbol.toLowerCase() === materialEvent.Name.toLowerCase())[0]
-          material.count -= materialEvent.Count
+          const material = materials.find(m => m.symbol.toLowerCase() === materialEvent.Name.toLowerCase())
+          if (material) material.count -= materialEvent.Count
         } else if (materialEvent.event === 'EngineerCraft') {
-          materialEvent.Ingredients.forEach(ingredient => {
-            const craftingMaterial = materials.filter(m => m.symbol.toLowerCase() === ingredient.Name.toLowerCase())[0]
-            craftingMaterial.count -= ingredient.Count
-          })
+          for (const ingredient of materialEvent.Ingredients) {
+            const craftingMaterial = materials.find(m => m.symbol.toLowerCase() === ingredient.Name.toLowerCase())
+            if (craftingMaterial) craftingMaterial.count -= ingredient.Count
+          }
         } else if (materialEvent.event === 'MaterialTrade') {
-          const materialTradePaid = materials.filter(m => m.symbol.toLowerCase() === materialEvent.Paid.Material.toLowerCase())[0]
-          materialTradePaid.count -= materialEvent.Paid.Quantity
-          const materialTradeReceived = materials.filter(m => m.symbol.toLowerCase() === materialEvent.Received.Material.toLowerCase())[0]
-          materialTradeReceived.count += materialEvent.Received.Quantity
+          const materialTradePaid = materials.find(m => m.symbol.toLowerCase() === materialEvent.Paid.Material.toLowerCase())
+          if (materialTradePaid) materialTradePaid.count -= materialEvent.Paid.Quantity
+          const materialTradeReceived = materials.find(m => m.symbol.toLowerCase() === materialEvent.Received.Material.toLowerCase())
+          if (materialTradeReceived) materialTradeReceived.count += materialEvent.Received.Quantity
         }
       } catch (err) {
         console.log('Error handling material event', err, materialEvent)
@@ -106,6 +105,12 @@ class Materials {
     materials.sort((a, b) => a.name.localeCompare(b.name))
 
     return materials
+  }
+
+  getHandlers () {
+    return {
+      getMaterials: (args) => this.getMaterials(args)
+    }
   }
 }
 

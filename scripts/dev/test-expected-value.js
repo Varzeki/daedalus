@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-const { getExpectedBioValue } = require('../src/service/lib/exploration-value')
+const { getExpectedBioValue } = require('../../src/service/lib/exploration-value')
 
 const SPECIES_REWARDS = {
   'Bacterium Cerbrus': 1689800,

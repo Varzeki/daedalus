@@ -13,7 +13,6 @@ class ShipStatus {
     this.eliteLog = eliteLog
     this.eliteJson = eliteJson
     this.cmdrStatus = new CmdrStatus({ eliteLog, eliteJson })
-    return this
   }
 
   async getShipStatus () {
@@ -47,7 +46,7 @@ class ShipStatus {
       }
     }
 
-    loadoutModules.forEach(async module => {
+    for (const module of loadoutModules) {
       const slot = module.Slot
       if (!modules[slot]) modules[slot] = {}
       modules[slot].slot = module.Slot
@@ -76,7 +75,7 @@ class ShipStatus {
 
         if (!blueprint) {
           console.log(`Error! Unknown blueprint "${module.Engineering.BlueprintName}"`)
-          return
+          continue
         }
 
         const [first, second] = blueprint?.symbol.split('_') ?? UNKNOWN_VALUE
@@ -127,7 +126,7 @@ class ShipStatus {
       } else {
         modules[slot].engineering = false
       }
-    })
+    }
 
     let armour = UNKNOWN_VALUE
     let totalMass = Loadout?.UnladenMass ?? 0
@@ -145,8 +144,10 @@ class ShipStatus {
         .replace(/_/g, ' ')
 
       // Populate additional metadata for module by looking it up
-      const outfittingModule = await EDCDOutfitting.getBySymbol(module.symbol)
-      const coriolisModule = await CoriolisModules.getBySymbol(module.symbol)
+      const [outfittingModule, coriolisModule] = await Promise.all([
+        EDCDOutfitting.getBySymbol(module.symbol),
+        CoriolisModules.getBySymbol(module.symbol)
+      ])
 
       // Enrich module info with metadata, if we have it
       if (outfittingModule) {
@@ -218,7 +219,7 @@ class ShipStatus {
     }
 
     const inventory = (Json?.Cargo?.Inventory)
-      ? await Promise.all(await Json.Cargo.Inventory.map(async (item) => {
+      ? await Promise.all(Json.Cargo.Inventory.map(async (item) => {
           const commodity = await EDCDCommodity.getBySymbol(item?.Name)
           let description = commodity?.category?.replace(/_/g, ' ')?.replace(/([a-z])([A-Z])/g, '$1 $2')?.trim() ?? ''
           if (item?.Name === 'drones') description = 'Limpet drones'
@@ -282,6 +283,12 @@ class ShipStatus {
     if (shipState.type !== UNKNOWN_VALUE) lastKnownShipState = shipState
 
     return shipState
+  }
+
+  getHandlers () {
+    return {
+      getShipStatus: (args) => this.getShipStatus(args)
+    }
   }
 }
 

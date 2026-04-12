@@ -9,8 +9,6 @@ const exec = require('child_process').exec
 const connect = require('connect')
 const serveStatic = require('serve-static')
 const http = require('http')
-const httpProxy = require('http-proxy')
-const proxy = httpProxy.createProxyServer({})
 const WebSocket = require('ws')
 const yargs = require('yargs')
 const packageJson = require('../../package.json')
@@ -131,22 +129,58 @@ global.CACHE = {
 // Don't load events till globals are set
 const { eventHandlers, init } = require('./lib/events')
 
+// Middleware to serve voiceline WAV files at /voicelines/ for client-side audio playback
+const covasPlayer = require('./lib/covas-player')
+function voicelinesMiddleware (req, res, next) {
+  if (req.url && req.url.startsWith('/voicelines/')) {
+    const fileName = path.basename(decodeURIComponent(req.url.slice('/voicelines/'.length)))
+    // Only serve .wav files, sanitize to prevent path traversal
+    if (!fileName || fileName.includes('..') || !fileName.toLowerCase().endsWith('.wav')) {
+      res.writeHead(400)
+      return res.end()
+    }
+    const voicelinesDir = covasPlayer.getVoicelinesDir()
+    const filePath = path.join(voicelinesDir, fileName)
+    if (fs.existsSync(filePath)) {
+      const stat = fs.statSync(filePath)
+      res.writeHead(200, {
+        'Content-Type': 'audio/wav',
+        'Content-Length': stat.size,
+        'Cache-Control': 'public, max-age=86400'
+      })
+      fs.createReadStream(filePath).pipe(res)
+    } else {
+      res.writeHead(404)
+      res.end()
+    }
+    return
+  }
+  next()
+}
+
 let httpServer
 if (DEVELOPMENT) {
   // If DEVELOPMENT is specified then HTTP requests other than web socket
   // requests will be forwarded to a web server which is started on localhost
   // to allow UI changes to be tested without rebuilding the app.
-  exec('npx next src/client')
+  const devServer = exec('npx next src/client')
+  devServer.on('error', (err) => console.error('Dev server error:', err))
+  devServer.stderr?.on('data', (data) => console.error('Dev server:', data.toString()))
+  process.on('exit', () => devServer.kill())
+  const httpProxy = require('http-proxy')
+  const proxy = httpProxy.createProxyServer({})
   proxy.on('error', (err, req, res) => {
     if (res.writeHead) res.writeHead(502, { 'Content-Type': 'text/plain' })
     if (res.end) res.end('Waiting for Next.js dev server...')
   })
-  httpServer = http.createServer((req, res) => proxy.web(req, res, { target: 'http://localhost:3000' }))
+  httpServer = http.createServer((req, res) => {
+    voicelinesMiddleware(req, res, () => proxy.web(req, res, { target: 'http://localhost:3000' }))
+  })
 } else {
   // The default behaviour (i.e. production) is to serve static assets. When the
   // application is compiled to a native executable these assets will be bundled
   // with the executable in a virtual file system.
-  const webServer = connect().use(serveStatic(WEB_DIR, { extensions: ['html'] }))
+  const webServer = connect().use(voicelinesMiddleware).use(serveStatic(WEB_DIR, { extensions: ['html'] }))
   httpServer = http.createServer(webServer)
 }
 
@@ -172,6 +206,12 @@ webSocketServer.on('connection', socket => {
       socket.send(JSON.stringify({ requestId, name, message: data }))
     } catch (e) {
       console.error('WebSocket message error:', e.message)
+      try {
+        const { requestId } = JSON.parse(event.toString())
+        if (requestId) {
+          socket.send(JSON.stringify({ requestId, error: e.message }))
+        }
+      } catch (_) { /* unable to respond */ }
     }
   })
 })
@@ -200,7 +240,7 @@ function broadcastEvent (name, message) {
   }
 }
 
-webSocketServer.on('error', function (error) {
+httpServer.on('error', function (error) {
   if (error.code && error.code === 'EADDRINUSE') {
     console.error(`Failed to start service, port ${PORT} already in use.`)
     process.exit(1)
@@ -230,4 +270,7 @@ if (PARENT_PID) {
 }
 
 // Initialize app - start parsing data and watching for game state changes
-setTimeout(() => init(), 500)
+setTimeout(() => init().catch(e => {
+  console.error('Fatal: init failed', e)
+  process.exit(1)
+}), 500)

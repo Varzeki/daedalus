@@ -62,7 +62,7 @@ class EliteJson {
     return response
   }
 
-  async #watchFile(file, callback) {
+  #watchFile(file, callback) {
     let debounce
     return fs.watch(file.name, async (event, filename) => {
       try {
@@ -81,7 +81,10 @@ class EliteJson {
   #getFiles() {
     return new Promise(resolve => {
       glob(`${this.dir}/*.json`, {}, async (error, files) => {
-        if (error) return console.error(error)
+        if (error) {
+          console.error(error)
+          return resolve([])
+        }
 
         const response = files.map(name => {
           const { size, mtime: lastModified } = fs.statSync(name)

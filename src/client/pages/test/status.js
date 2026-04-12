@@ -4,15 +4,17 @@ import { sendEvent, eventListener } from 'lib/socket'
 export default function StatusPage () {
   const [cmdrStatus, setCmdrStatus] = useState()
 
-  useEffect(async () => {
-    setCmdrStatus(await sendEvent('getCmdrStatus'))
+  useEffect(() => {
+    ;(async () => {
+      setCmdrStatus(await sendEvent('getCmdrStatus'))
+    })()
   }, [])
 
   useEffect(() => eventListener('newLogEntry', async (log) => {
     if (['Location', 'FSDJump'].includes(log.event)) {
       setCmdrStatus(await sendEvent('getCmdrStatus'))
     }
-  }))
+  }), [])
 
   useEffect(() => eventListener('gameStateChange', async (log) => {
     setCmdrStatus(await sendEvent('getCmdrStatus'))

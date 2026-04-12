@@ -31,15 +31,17 @@ export default function NavListPage () {
     router.push({ pathname: '/nav/map', query: { system: searchInput.toLowerCase() } })
   }
 
-  useEffect(async () => {
-    if (!connected || !router.isReady) return
-    const [newSystem, newNavRoute] = await Promise.all([
-      sendEvent('getSystem', query.system ? { name: query.system, useCache: true } : null),
-      sendEvent('getNavRoute')
-    ])
-    if (newSystem) setSystem(newSystem)
-    if (newNavRoute) setNavRoute(newNavRoute)
-    setComponentReady(true)
+  useEffect(() => {
+    ;(async () => {
+      if (!connected || !router.isReady) return
+      const [newSystem, newNavRoute] = await Promise.all([
+        sendEvent('getSystem', query.system ? { name: query.system, useCache: true } : null),
+        sendEvent('getNavRoute')
+      ])
+      if (newSystem) setSystem(newSystem)
+      if (newNavRoute) setNavRoute(newNavRoute)
+      setComponentReady(true)
+    })()
   }, [connected, ready, router.isReady])
 
   useEffect(() => eventListener('newLogEntry', async (log) => {

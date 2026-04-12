@@ -1,5 +1,5 @@
 /* global WebSocket, CustomEvent */
-import { createContext, useState, useContext } from 'react'
+import { createContext, useState, useContext, useEffect } from 'react'
 import notification from 'lib/notification'
 
 let socket = null// Store socket connection (defaults to null)
@@ -21,14 +21,29 @@ const socketOptions = {
   landingPadEnabled: false
 }
 
+const PERSISTED_OPTIONS = ['notifications', 'explorationAutoSwitch', 'landingPadEnabled', 'audioEnabled']
+const STORAGE_KEY = 'daedalus-socket-options'
+
+function setSocketOption (key, value) {
+  socketOptions[key] = value
+  if (typeof window !== 'undefined' && PERSISTED_OPTIONS.includes(key)) {
+    try {
+      const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY) || '{}')
+      saved[key] = value
+      window.localStorage.setItem(STORAGE_KEY, JSON.stringify(saved))
+    } catch (e) { /* ignore */ }
+  }
+}
+
 // Restore persisted toggle states from localStorage
 if (typeof window !== 'undefined') {
   try {
-    const saved = JSON.parse(window.localStorage.getItem('daedalus-socket-options'))
+    const saved = JSON.parse(window.localStorage.getItem(STORAGE_KEY))
     if (saved) {
       if (typeof saved.explorationAutoSwitch === 'boolean') socketOptions.explorationAutoSwitch = saved.explorationAutoSwitch
       if (typeof saved.notifications === 'boolean') socketOptions.notifications = saved.notifications
       if (typeof saved.landingPadEnabled === 'boolean') socketOptions.landingPadEnabled = saved.landingPadEnabled
+      if (typeof saved.audioEnabled === 'boolean') socketOptions.audioEnabled = saved.audioEnabled
     }
   } catch (e) { /* ignore */ }
 }
@@ -41,10 +56,21 @@ function connect (socketState, setSocketState) {
   // Reset on reconnect
   callbackHandlers = {}
   deferredEventQueue = []
+  if (broadcastActivityTimeout) {
+    clearTimeout(broadcastActivityTimeout)
+    broadcastActivityTimeout = null
+  }
+  recentBroadcastEvents = 0
 
   socket = new WebSocket('ws://' + window.location.host)
   socket.onmessage = (event) => {
-    const { requestId, name, message } = JSON.parse(event.data)
+    let requestId, name, message
+    try {
+      ({ requestId, name, message } = JSON.parse(event.data))
+    } catch (e) {
+      console.error('Failed to parse socket message:', e)
+      return
+    }
     // Invoke callback to handler (if there is one)
     if (requestId && callbackHandlers[requestId]) callbackHandlers[requestId](event, setSocketState)
 
@@ -129,8 +155,8 @@ function connect (socketState, setSocketState) {
               const flags = cmdrStatus?.flags || {}
               const currentPath = window.location.pathname
               if (!currentPath.startsWith('/exploration')) return
-              if (flags.fsdCharging && flags.supercruise && !socketOptions._autoSwitchFrom) {
-                // FSD charging in supercruise — must be hyperspace, switch early
+              if (flags.fsdCharging && flags.supercruise && flags.fsdHyperdriveCharging && !socketOptions._autoSwitchFrom) {
+                // FSD charging for hyperspace in supercruise — switch early
                 socketOptions._autoSwitchFrom = currentPath
                 if (currentPath !== '/exploration/route') window.location.href = '/exploration/route'
               }
@@ -239,9 +265,11 @@ const SocketContext = createContext()
 function SocketProvider ({ children }) {
   const [socketState, setSocketState] = useState(defaultSocketState)
 
-  if (typeof window !== 'undefined' && typeof WebSocket !== 'undefined' && socketState.connected !== true) {
-    connect(socketState, setSocketState)
-  }
+  useEffect(() => {
+    if (typeof window !== 'undefined' && typeof WebSocket !== 'undefined') {
+      connect(socketState, setSocketState)
+    }
+  }, [])
 
   return (
     <SocketContext.Provider value={socketState}>
@@ -252,10 +280,12 @@ function SocketProvider ({ children }) {
 
 function useSocket () { return useContext(SocketContext) }
 
-function sendEvent (name, message = null) {
+function sendEvent (name, message = null, timeout = 30000) {
   return new Promise((resolve, reject) => {
     const requestId = generateUuid()
+    let timer = null
     callbackHandlers[requestId] = (event, setSocketState) => {
+      if (timer) clearTimeout(timer)
       const { message } = JSON.parse(event.data)
       delete callbackHandlers[requestId]
       setSocketState(prevState => ({
@@ -263,6 +293,12 @@ function sendEvent (name, message = null) {
         active: socketRequestsPending()
       }))
       resolve(message)
+    }
+    if (timeout > 0) {
+      timer = setTimeout(() => {
+        delete callbackHandlers[requestId]
+        reject(new Error(`sendEvent '${name}' timed out after ${timeout}ms`))
+      }, timeout)
     }
     if (socket && socket.readyState === WebSocket.OPEN) {
       socket.send(JSON.stringify({ requestId, name, message }))
@@ -291,5 +327,6 @@ module.exports = {
   useSocket,
   sendEvent,
   eventListener,
-  socketOptions
+  socketOptions,
+  setSocketOption
 }

@@ -20,8 +20,8 @@ const https = require('https')
 
 // ─── Config ───────────────────────────────────────────────────────────
 
-const CODEX_REF_PATH = path.resolve(__dirname, '../../SrvSurvey/docs/codexRef.json')
-const BIO_CRITERIA_PATH = path.resolve(__dirname, '../src/service/lib/data/bio-criteria.json')
+const CODEX_REF_PATH = path.resolve(__dirname, '../../../SrvSurvey/docs/codexRef.json')
+const BIO_CRITERIA_PATH = path.resolve(__dirname, '../../src/service/lib/data/bio-criteria.json')
 const CONCURRENCY = 15 // parallel HTTP requests
 const DRY_RUN = process.argv.includes('--dry-run')
 

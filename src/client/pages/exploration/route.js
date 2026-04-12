@@ -82,22 +82,25 @@ export default function ExplorationRoutePage () {
     }
   }, [explorationRoute])
 
-  useEffect(async () => {
+  useEffect(() => {
     if (!connected || !router.isReady) return
     setLoadError(false)
     const timeout = setTimeout(() => {
       setLoadError(true)
       setComponentReady(true)
     }, 30000)
-    try {
-      const data = await fetchRoute()
-      clearTimeout(timeout)
-      if (data) setExplorationRoute(data)
-    } catch (e) {
-      clearTimeout(timeout)
-      setLoadError(true)
-    }
-    setComponentReady(true)
+    ;(async () => {
+      try {
+        const data = await fetchRoute()
+        clearTimeout(timeout)
+        if (data) setExplorationRoute(data)
+      } catch (e) {
+        clearTimeout(timeout)
+        setLoadError(true)
+      }
+      setComponentReady(true)
+    })()
+    return () => clearTimeout(timeout)
   }, [connected, ready, router.isReady])
 
   useEffect(() => eventListener('newLogEntry', async (log) => {

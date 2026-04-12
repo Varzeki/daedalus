@@ -84,6 +84,40 @@
   to { width: 15rem; }
 }
 
+/* Slide-out label for navigation buttons */
+.secondary-navigation__has-label {
+  position: relative;
+  overflow: visible !important;
+}
+
+.secondary-navigation__label {
+  position: absolute;
+  left: 100%;
+  top: 50%;
+  transform: translateY(-50%);
+  white-space: nowrap;
+  font-size: 0.85rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05rem;
+  padding: 0.3rem 0.75rem;
+  background: var(--color-primary-dark);
+  color: var(--color-primary);
+  border-radius: 0 0.25rem 0.25rem 0;
+  box-shadow: 0 0 1rem black;
+  opacity: 0;
+  pointer-events: none;
+  max-width: 0;
+  overflow: hidden;
+  transition: opacity 0.2s ease, max-width 0.25s ease;
+}
+
+.secondary-navigation__has-label:hover .secondary-navigation__label,
+.secondary-navigation__has-label:focus .secondary-navigation__label {
+  opacity: 1;
+  pointer-events: auto;
+  max-width: 12rem;
+}
+
 
 /*
  box-shadow: 0 0 2rem black; 

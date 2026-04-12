@@ -6,7 +6,6 @@ class Blueprints {
     this.engineers = engineers
     this.materials = materials
     this.shipStatus = shipStatus
-    return this
   }
 
   async getBlueprints () {
@@ -18,6 +17,7 @@ class Blueprints {
       const name = `${second} ${first}`.replace(/([a-z])([A-Z])/g, '$1 $2').replace('Misc', 'Utility').trim()
 
       // FIXME Could do with optimising (not urgent)
+      const enrichedEngineers = {}
       for (const engineerName in blueprint.engineers) {
         const engineer = engineers?.filter(e => e.name.toLowerCase().trim() === engineerName.toLowerCase().trim())?.[0]
 
@@ -27,7 +27,7 @@ class Blueprints {
           continue
         }
 
-        blueprint.engineers[engineerName] = {
+        enrichedEngineers[engineerName] = {
           ...blueprint.engineers[engineerName],
           system: engineer.system.name,
           location: engineer.system.position,
@@ -59,13 +59,19 @@ class Blueprints {
         }),
         modules: blueprint.modulename,
         appliedToModules: Object.values(ship?.modules ?? []).filter(module => module?.engineering?.symbol === blueprint?.symbol),
-        engineers: blueprint.engineers
+        engineers: enrichedEngineers
       }
     })
 
     blueprints.sort((a, b) => a.name.localeCompare(b.name))
 
     return blueprints
+  }
+
+  getHandlers () {
+    return {
+      getBlueprints: (args) => this.getBlueprints(args)
+    }
   }
 }
 

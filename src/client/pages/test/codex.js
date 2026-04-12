@@ -10,19 +10,21 @@ export default function CodexPage () {
   const [codexEntries, setCodexEntries] = useState()
   const [codexEntry, setCodexEntry] = useState()
 
-  useEffect(async () => {
-    if (!connected || !router.isReady) return
+  useEffect(() => {
+    ;(async () => {
+      if (!connected || !router.isReady) return
 
-    if (query.name) {
-      const newCodexEntry = await sendEvent('getCodexEntry', { name: query.name })
-      setCodexEntry(newCodexEntry || null)
-    } else {
-      setCodexEntry(null)
-    }
+      if (query.name) {
+        const newCodexEntry = await sendEvent('getCodexEntry', { name: query.name })
+        setCodexEntry(newCodexEntry || null)
+      } else {
+        setCodexEntry(null)
+      }
 
-    if (!codexEntries) {
-      setCodexEntries(await sendEvent('getCodexEntries'))
-    }
+      if (!codexEntries) {
+        setCodexEntries(await sendEvent('getCodexEntries'))
+      }
+    })()
   }, [connected, router.isReady, query])
 
   if (codexEntry) {

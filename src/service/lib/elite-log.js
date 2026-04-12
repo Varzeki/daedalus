@@ -155,7 +155,7 @@ class EliteLog {
     }
   }
 
-  async getFromTimestamp(timestamp = new Date().toUTCString, count = 100) {
+  async getFromTimestamp(timestamp = new Date().toUTCString(), count = 100) {
     return await db.find({ "timestamp": { $gt: timestamp } }).sort({ timestamp: -1 }).limit(count)
   }
 
@@ -234,13 +234,14 @@ class EliteLog {
       }
 
       // Remove any previously bound listeners from other files
-      for (const file in this.files) {
-        if (file.watch && file.name !== activeLogFile.name) {
+      for (const fileName in this.files) {
+        const file = this.files[fileName]
+        if (file.watch && fileName !== activeLogFile.name) {
           // Check for any logs we might have missed during log rotation
           const logs = await this.load({file})
           if (callback) logs.map(log => callback(log))
           // Remove watch from file
-          fs.unwatchFile(file.name, file.watch)
+          fs.unwatchFile(fileName, file.watch)
           file.watch = false
         }
       }
@@ -253,7 +254,7 @@ class EliteLog {
     this.watchFilesInterval = setInterval(() => { watchFiles() }, 10 * 1000)
   }
 
-  async #watchFile(file, callback) {
+  #watchFile(file, callback) {
     // fs.watch is proving to not be reliable and is not picking up changes
     // to game logs on Windows at all so falling back to the older
     // fs.watchFile, which uses polling rather than file system events.
@@ -405,7 +406,10 @@ class EliteLog {
       // Note: Journal.*.log excludes files like JournalAlpha.*.log so that
       // alpha / beta test data doesn't get included by mistake.
       glob(`${this.dir}/Journal.*.log`, {}, async (error, globFiles) => {
-        if (error) return console.error(error)
+        if (error) {
+          console.error(error)
+          return resolve([])
+        }
 
         const files = globFiles.map(name => {
           const { size, mtime: lastModified } = fs.statSync(name)

@@ -10,11 +10,11 @@
  */
 
 const path = require('path')
-const { predictSpecies, buildBodyProps } = require('../src/service/lib/bio-predictor')
+const { predictSpecies, buildBodyProps } = require('../../src/service/lib/bio-predictor')
 
 // Load ExplorationBuddy gc.dat
 const fs = require('fs')
-const gcDatPath = path.join(__dirname, '..', '..', 'Elite Dangerous Exploration Buddy', 'gc.dat')
+const gcDatPath = path.join((__dirname, '..', '..'), '..', 'Elite Dangerous Exploration Buddy', 'gc.dat')
 const gcData = JSON.parse(Buffer.from(fs.readFileSync(gcDatPath, 'utf8').trim(), 'base64').toString('utf8'))
 
 // ─── ExplorationBuddy predictor (reimplemented from GeneraIndexProvider) ──

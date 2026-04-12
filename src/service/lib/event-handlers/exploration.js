@@ -121,8 +121,6 @@ class Exploration {
     this.eliteLog = eliteLog
     this.eliteJson = eliteJson
     this.system = system
-
-    return this
   }
 
   // For the current system, merge journal data onto EDSM bodies to get
@@ -133,94 +131,111 @@ class Exploration {
     // Build a set of known body names for quick lookup
     const knownBodies = new Set(bodies.map(b => b.name?.toLowerCase()))
 
-    // Enrich existing EDSM bodies with journal data
+    // --- Phase 1: Batch-fetch all journal events we need ---
+    // Get all journal scans for the system first (needed for both enrichment and journal-only bodies)
+    const journalScans = await this.eliteLog._query({ event: 'Scan', StarSystem: systemName })
+
+    // Build a scan lookup by body name (most recent scan per body)
+    const scanByName = {}
+    for (const scan of journalScans) {
+      if (scan.BodyName) scanByName[scan.BodyName] = scan
+    }
+
+    // Collect ALL body names (EDSM + journal-only) for batch queries
+    const allBodyNames = [...new Set([
+      ...bodies.map(b => b.name).filter(Boolean),
+      ...journalScans.map(s => s.BodyName).filter(Boolean)
+    ])]
+
+    // Batch-fetch signal and mapping data for all bodies at once
+    const [allFSSBodySignals, allSAASignalsFound, allSAAScanComplete, allScanOrganic] = await Promise.all([
+      this.eliteLog._query({ event: 'FSSBodySignals', BodyName: { $in: allBodyNames } }),
+      this.eliteLog._query({ event: 'SAASignalsFound', BodyName: { $in: allBodyNames } }),
+      this.eliteLog._query({ event: 'SAAScanComplete', BodyName: { $in: allBodyNames } }),
+      this.eliteLog._query({ event: 'ScanOrganic' })
+    ])
+
+    // Build lookup maps
+    const fssMap = {}
+    for (const e of allFSSBodySignals) { fssMap[e.BodyName] = e }
+    const saaMap = {}
+    for (const e of allSAASignalsFound) { saaMap[e.BodyName] = e }
+    const saaScanCompleteSet = new Set(allSAAScanComplete.map(e => e.BodyName))
+    const organicByBody = {}
+    for (const e of allScanOrganic) {
+      if (!organicByBody[e.Body]) organicByBody[e.Body] = []
+      organicByBody[e.Body].push(e)
+    }
+
+    // --- Phase 2: Enrich existing EDSM bodies with journal data ---
     for (const body of bodies) {
-      // Initialize signals
       if (!body.signals) {
         body.signals = { geological: 0, biological: 0, human: 0 }
       }
 
-      // Default discovery status: assume NOT first discoverer/mapper
-      // Only set true when journal Scan confirms WasDiscovered===false
       body._isFirstDiscoverer = false
       body._isFirstMapped = false
 
-      // Look up journal Scan for this body — more accurate mass/type
-      const Scan = await this.eliteLog._query({ event: 'Scan', BodyName: body.name }, 1)
-      body._wasScanned = !!Scan[0]
-      if (Scan[0]) {
-        // Update mass from journal (more precise than EDSM)
-        if (Scan[0].MassEM > 0) body.earthMasses = Scan[0].MassEM
-        if (Scan[0].StellarMass > 0) body.solarMasses = Scan[0].StellarMass
+      const scan = scanByName[body.name]
+      body._wasScanned = !!scan
+      if (scan) {
+        if (scan.MassEM > 0) body.earthMasses = scan.MassEM
+        if (scan.StellarMass > 0) body.solarMasses = scan.StellarMass
 
-        // WasDiscovered=false means WE are the first discoverer
-        // WasMapped=false means WE can get first-mapped bonus
-        // Ignore NavBeaconDetail scans — bodies are already known from the
-        // nav beacon so showing first-discovery is misleading
-        const isNavBeacon = Scan[0].ScanType === 'NavBeaconDetail'
-        body._isFirstDiscoverer = !isNavBeacon && Scan[0].WasDiscovered === false
-        body._isFirstMapped = !isNavBeacon && Scan[0].WasMapped === false
+        const isNavBeacon = scan.ScanType === 'NavBeaconDetail'
+        body._isFirstDiscoverer = !isNavBeacon && scan.WasDiscovered === false
+        body._isFirstMapped = !isNavBeacon && scan.WasMapped === false
 
-        // Enrich with journal body properties needed by bio-predictor
-        // Journal data is more authoritative when present
-        if (Scan[0].SurfaceGravity) body.gravity = Scan[0].SurfaceGravity / 9.81
-        if (Scan[0].SurfaceTemperature) body.surfaceTemperature = Scan[0].SurfaceTemperature
-        if (Scan[0].SurfacePressure != null) body.surfacePressure = Scan[0].SurfacePressure / 101325
-        if (Scan[0].AtmosphereType) body.atmosphereType = Scan[0].AtmosphereType
-        else if (Scan[0].Atmosphere) body.atmosphereType = Scan[0].Atmosphere.replace(/ atmosphere$/i, '')
-        if (Scan[0].Volcanism) body.volcanismType = Scan[0].Volcanism || 'No volcanism'
-        if (Scan[0].AtmosphereComposition) {
+        if (scan.SurfaceGravity) body.gravity = scan.SurfaceGravity / 9.81
+        if (scan.SurfaceTemperature) body.surfaceTemperature = scan.SurfaceTemperature
+        if (scan.SurfacePressure != null) body.surfacePressure = scan.SurfacePressure / 101325
+        if (scan.AtmosphereType) body.atmosphereType = scan.AtmosphereType
+        else if (scan.Atmosphere) body.atmosphereType = scan.Atmosphere.replace(/ atmosphere$/i, '')
+        if (scan.Volcanism) body.volcanismType = scan.Volcanism || 'No volcanism'
+        if (scan.AtmosphereComposition) {
           body.atmosphereComposition = Object.fromEntries(
-            Scan[0].AtmosphereComposition.map(c => [c.Name, c.Percent])
+            scan.AtmosphereComposition.map(c => [c.Name, c.Percent])
           )
         }
-        if (Scan[0].Materials) {
+        if (scan.Materials) {
           body.materials = Object.fromEntries(
-            Scan[0].Materials.map(m => [m.Name, m.Percent])
+            scan.Materials.map(m => [m.Name, m.Percent])
           )
         }
-        if (Scan[0].Parents) body.parents = Scan[0].Parents
-        // SemiMajorAxis: journal provides in meters, convert to AU
-        if (Scan[0].SemiMajorAxis != null) body.semiMajorAxis = Scan[0].SemiMajorAxis / 149597870700
+        if (scan.Parents) body.parents = scan.Parents
+        if (scan.SemiMajorAxis != null) body.semiMajorAxis = scan.SemiMajorAxis / 149597870700
       }
 
       // Merge FSSBodySignals (honk-level signal data)
-      const FSSBodySignals = await this.eliteLog._query({ event: 'FSSBodySignals', BodyName: body.name }, 1)
-      if (FSSBodySignals[0]?.Signals) {
-        for (const signal of FSSBodySignals[0].Signals) {
+      const fssEntry = fssMap[body.name]
+      if (fssEntry?.Signals) {
+        for (const signal of fssEntry.Signals) {
           if (signal?.Type === '$SAA_SignalType_Biological;') body.signals.biological = signal?.Count ?? 0
           if (signal?.Type === '$SAA_SignalType_Geological;') body.signals.geological = signal?.Count ?? 0
         }
       }
 
       // Merge SAASignalsFound (DSS-level signal data, more detailed)
-      const SAASignalsFound = await this.eliteLog._query({ event: 'SAASignalsFound', BodyName: body.name }, 1)
-      body._wasMapped = !!SAASignalsFound[0]
-      // Fallback: SAAScanComplete also confirms DSS mapping even if SAASignalsFound is missing
-      if (!body._wasMapped) {
-        const SAAScanComplete = await this.eliteLog._query({ event: 'SAAScanComplete', BodyName: body.name }, 1)
-        if (SAAScanComplete[0]) body._wasMapped = true
-      }
-      if (SAASignalsFound[0]?.Signals) {
-        for (const signal of SAASignalsFound[0].Signals) {
+      const saaEntry = saaMap[body.name]
+      body._wasMapped = !!saaEntry
+      if (!body._wasMapped && saaScanCompleteSet.has(body.name)) body._wasMapped = true
+      if (saaEntry?.Signals) {
+        for (const signal of saaEntry.Signals) {
           if (signal?.Type === '$SAA_SignalType_Biological;') body.signals.biological = signal?.Count ?? 0
           if (signal?.Type === '$SAA_SignalType_Geological;') body.signals.geological = signal?.Count ?? 0
         }
       }
-      // Extract DSS-confirmed genus names (e.g., [{Genus: "$Codex_...", Genus_Localised: "Bacterium"}, ...])
-      if (SAASignalsFound[0]?.Genuses?.length > 0) {
-        body.biologicalGenuses = SAASignalsFound[0].Genuses
+      if (saaEntry?.Genuses?.length > 0) {
+        body.biologicalGenuses = saaEntry.Genuses
           .map(g => g.Genus_Localised || g.Genus)
           .filter(Boolean)
       }
 
       // Check for confirmed biological species (ScanOrganic with Analyse scan type)
-      await this._addKnownSpecies(body)
+      this._addKnownSpecies(body, organicByBody)
     }
 
-    // Add bodies found in journal Scan events but not in EDSM
-    // This handles the case where we've FSS'd a body that nobody has uploaded to EDSM yet
-    const journalScans = await this.eliteLog._query({ event: 'Scan', StarSystem: systemName })
+    // --- Phase 3: Add bodies found in journal Scan events but not in EDSM ---
     for (const scan of journalScans) {
       if (!scan.BodyName || knownBodies.has(scan.BodyName.toLowerCase())) continue
       knownBodies.add(scan.BodyName.toLowerCase())
@@ -240,7 +255,6 @@ class Exploration {
         _isFirstMapped: !isNavBeacon && scan.WasMapped === false,
         _wasScanned: true,
         signals: { geological: 0, biological: 0, human: 0 },
-        // Journal provides richer body data needed by bio-predictor
         gravity: scan.SurfaceGravity ? scan.SurfaceGravity / 9.81 : undefined,
         surfaceTemperature: scan.SurfaceTemperature,
         surfacePressure: scan.SurfacePressure ? scan.SurfacePressure / 101325 : undefined,
@@ -256,36 +270,31 @@ class Exploration {
         semiMajorAxis: scan.SemiMajorAxis != null ? scan.SemiMajorAxis / 149597870700 : null
       }
 
-      // Check for signals on this journal-only body
-      const FSSBodySignals = await this.eliteLog._query({ event: 'FSSBodySignals', BodyName: scan.BodyName }, 1)
-      if (FSSBodySignals[0]?.Signals) {
-        for (const signal of FSSBodySignals[0].Signals) {
+      // Use pre-fetched signal data (already batch-queried above)
+      const fssEntry = fssMap[scan.BodyName]
+      if (fssEntry?.Signals) {
+        for (const signal of fssEntry.Signals) {
           if (signal?.Type === '$SAA_SignalType_Biological;') journalBody.signals.biological = signal?.Count ?? 0
           if (signal?.Type === '$SAA_SignalType_Geological;') journalBody.signals.geological = signal?.Count ?? 0
         }
       }
 
-      // Check for DSS-confirmed genus names on this journal-only body
-      const SAASignals = await this.eliteLog._query({ event: 'SAASignalsFound', BodyName: scan.BodyName }, 1)
-      journalBody._wasMapped = !!SAASignals[0]
-      if (!journalBody._wasMapped) {
-        const SAAScanComplete = await this.eliteLog._query({ event: 'SAAScanComplete', BodyName: scan.BodyName }, 1)
-        if (SAAScanComplete[0]) journalBody._wasMapped = true
-      }
-      if (SAASignals[0]?.Signals) {
-        for (const signal of SAASignals[0].Signals) {
+      const saaEntry = saaMap[scan.BodyName]
+      journalBody._wasMapped = !!saaEntry
+      if (!journalBody._wasMapped && saaScanCompleteSet.has(scan.BodyName)) journalBody._wasMapped = true
+      if (saaEntry?.Signals) {
+        for (const signal of saaEntry.Signals) {
           if (signal?.Type === '$SAA_SignalType_Biological;') journalBody.signals.biological = signal?.Count ?? 0
           if (signal?.Type === '$SAA_SignalType_Geological;') journalBody.signals.geological = signal?.Count ?? 0
         }
       }
-      if (SAASignals[0]?.Genuses?.length > 0) {
-        journalBody.biologicalGenuses = SAASignals[0].Genuses
+      if (saaEntry?.Genuses?.length > 0) {
+        journalBody.biologicalGenuses = saaEntry.Genuses
           .map(g => g.Genus_Localised || g.Genus)
           .filter(Boolean)
       }
 
-      // Check for confirmed biological species
-      await this._addKnownSpecies(journalBody)
+      this._addKnownSpecies(journalBody, organicByBody)
 
       bodies.push(journalBody)
     }
@@ -339,9 +348,9 @@ class Exploration {
     }
   }
 
-  // Look up confirmed biological species on a body from journal ScanOrganic events
-  async _addKnownSpecies (body) {
-    const scans = await this.eliteLog._query({ event: 'ScanOrganic', Body: body.bodyId })
+  // Look up confirmed biological species on a body from pre-fetched ScanOrganic events
+  _addKnownSpecies (body, organicByBody) {
+    const scans = organicByBody[body.bodyId]
     if (!scans || scans.length === 0) return
 
     const knownSpecies = []
@@ -365,10 +374,8 @@ class Exploration {
       if (!speciesName || seenSpecies.has(speciesName)) continue
       seenSpecies.add(speciesName)
 
-      const reward = SPECIES_REWARDS[speciesName] ?? 0
-      if (reward > 0) {
-        knownSpecies.push({ genus, species: speciesName, reward })
-      }
+      const reward = SPECIES_REWARDS[speciesName] ?? UNKNOWN_VALUE
+      knownSpecies.push({ genus, species: speciesName, reward })
     }
 
     if (knownSpecies.length > 0) body._knownSpecies = knownSpecies
@@ -849,7 +856,16 @@ class Exploration {
       bodyCount,
       bodiesFound: cached.bodies.length,
       bodies,
-      systemValue
+      systemValue,
+      minBodyValue: options.minBodyValue ?? 1000000,
+      minBioValue: options.minBioValue ?? 7000000
+    }
+  }
+
+  getHandlers () {
+    return {
+      getExplorationRoute: (args) => this.getExplorationRoute(args),
+      getExplorationSystem: (args) => this.getExplorationSystem(args)
     }
   }
 }

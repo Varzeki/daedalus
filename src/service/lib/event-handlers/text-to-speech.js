@@ -9,8 +9,6 @@ class TextToSpeech {
 
     this.currentCmdrStatus = null
     this.voiceAlertDebounce = null
-
-    return this
   }
 
   logEventHandler (logEvent) {

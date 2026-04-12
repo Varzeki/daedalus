@@ -25,10 +25,12 @@ export default function ShipStatusPage () {
     hardpoints: false
   })
 
-  useEffect(async () => {
-    if (!connected) return
-    setShip(await sendEvent('getShipStatus'))
-    setCmdrStatus(await sendEvent('getCmdrStatus'))
+  useEffect(() => {
+    ;(async () => {
+      if (!connected) return
+      setShip(await sendEvent('getShipStatus'))
+      setCmdrStatus(await sendEvent('getCmdrStatus'))
+    })()
   }, [connected, ready])
 
   const toggleSwitch = async (switchName) => {
@@ -44,7 +46,7 @@ export default function ShipStatusPage () {
     */
   }
 
-  useEffect(async () => {
+  useEffect(() => {
     setToggleSwitches({
       lights: cmdrStatus?.flags?.lightsOn ?? false,
       nightVision: cmdrStatus?.flags?.nightVision ?? false,
@@ -55,15 +57,24 @@ export default function ShipStatusPage () {
   }, [cmdrStatus])
 
   useEffect(() => eventListener('gameStateChange', async () => {
-    setShip(await sendEvent('getShipStatus'))
-    setCmdrStatus(await sendEvent('getCmdrStatus'))
+    try {
+      setShip(await sendEvent('getShipStatus'))
+      setCmdrStatus(await sendEvent('getCmdrStatus'))
+    } catch (e) { /* timeout or disconnect — will retry on next event */ }
   }), [])
 
   useEffect(() => eventListener('newLogEntry', async (log) => {
-    setShip(await sendEvent('getShipStatus'))
-    if (['Location', 'FSDJump'].includes(log.event)) {
-      setCmdrStatus(await sendEvent('getCmdrStatus'))
-    }
+    try {
+      if (['Loadout', 'ModuleBuy', 'ModuleSell', 'ModuleSwap', 'ModuleStore',
+        'ModuleRetrieve', 'FuelScoop', 'RepairAll', 'RefuelAll', 'ShieldState',
+        'HullDamage', 'DockingGranted', 'Undocked', 'Location', 'FSDJump',
+        'Cargo', 'EngineerCraft'].includes(log.event)) {
+        setShip(await sendEvent('getShipStatus'))
+      }
+      if (['Location', 'FSDJump'].includes(log.event)) {
+        setCmdrStatus(await sendEvent('getCmdrStatus'))
+      }
+    } catch (e) { /* timeout or disconnect — will retry on next event */ }
   }), [])
 
   return (

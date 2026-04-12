@@ -23,28 +23,32 @@ export default function EngineeringMaterialsPage () {
 
   useEffect(animateTableEffect)
   
-  useEffect(async () => {
-    if (!connected || !router.isReady) return
+  useEffect(() => {
+    ;(async () => {
+      if (!connected || !router.isReady) return
 
-    if (!blueprints) {
-      const newBlueprints = await sendEvent('getBlueprints')
-      setBlueprints(newBlueprints)
-      setBlueprintsApplied(newBlueprints.filter(b => b.appliedToModules.length > 0))
-      setBlueprintsNotApplied(newBlueprints.filter(b => b.appliedToModules.length === 0))
-    }
-    const newSystem = await sendEvent('getSystem')
-    if (newSystem?.address) setCurrentSystem(newSystem)
-    setComponentReady(true)
+      if (!blueprints) {
+        const newBlueprints = await sendEvent('getBlueprints')
+        setBlueprints(newBlueprints)
+        setBlueprintsApplied(newBlueprints.filter(b => b.appliedToModules.length > 0))
+        setBlueprintsNotApplied(newBlueprints.filter(b => b.appliedToModules.length === 0))
+      }
+      const newSystem = await sendEvent('getSystem')
+      if (newSystem?.address) setCurrentSystem(newSystem)
+      setComponentReady(true)
+    })()
   }, [connected, router.isReady, query])
 
-  useEffect(async () => {
-    if (!blueprints) return
-    const newSelectedBlueprint = (query?.symbol && query?.symbol.trim() !== '')
-      ? blueprints?.filter(blueprint => query?.symbol.toLowerCase() === blueprint.symbol.toLowerCase())?.[0] ?? null
-      : null
-    setSelectedBlueprint(newSelectedBlueprint)
-    const newSystem = await sendEvent('getSystem')
-    if (newSystem?.address) setCurrentSystem(newSystem)
+  useEffect(() => {
+    ;(async () => {
+      if (!blueprints) return
+      const newSelectedBlueprint = (query?.symbol && query?.symbol.trim() !== '')
+        ? blueprints?.filter(blueprint => query?.symbol.toLowerCase() === blueprint.symbol.toLowerCase())?.[0] ?? null
+        : null
+      setSelectedBlueprint(newSelectedBlueprint)
+      const newSystem = await sendEvent('getSystem')
+      if (newSystem?.address) setCurrentSystem(newSystem)
+    })()
   }, [blueprints, query])
 
   useEffect(() => eventListener('newLogEntry', async (log) => {

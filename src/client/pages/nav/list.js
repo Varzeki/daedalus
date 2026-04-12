@@ -44,25 +44,27 @@ export default function NavListPage () {
     }
   }
 
-  useEffect(async () => {
-    if (!connected || !router.isReady) return
+  useEffect(() => {
+    ;(async () => {
+      if (!connected || !router.isReady) return
 
-    const newSystem = await sendEvent('getSystem', query.system ? { name: query.system, useCache: true } : null)
-    if (newSystem) {
-      setSystem(newSystem)
-    } else {
-      // If system lookup fails (i.e. no game data), fallback to Sol system
-      setSystem(await sendEvent('getSystem', { name: 'Sol', useCache: true }))
-    }
-
-    if (query.selected) {
-      const newSystemObject = newSystem.objectsInSystem.filter(child => child.name.toLowerCase() === query.selected.toLowerCase())[0]
-      if (newSystemObject) {
-        const el = document.querySelector(`[data-system-object-name="${newSystemObject.name}" i]`)
-        if (el) el.focus()
+      const newSystem = await sendEvent('getSystem', query.system ? { name: query.system, useCache: true } : null)
+      if (newSystem) {
+        setSystem(newSystem)
+      } else {
+        // If system lookup fails (i.e. no game data), fallback to Sol system
+        setSystem(await sendEvent('getSystem', { name: 'Sol', useCache: true }))
       }
-    }
-    setComponentReady(true)
+
+      if (query.selected) {
+        const newSystemObject = newSystem.objectsInSystem.filter(child => child.name.toLowerCase() === query.selected.toLowerCase())[0]
+        if (newSystemObject) {
+          const el = document.querySelector(`[data-system-object-name="${newSystemObject.name}" i]`)
+          if (el) el.focus()
+        }
+      }
+      setComponentReady(true)
+    })()
   }, [connected, ready, router.isReady])
 
   useEffect(() => eventListener('newLogEntry', async (log) => {

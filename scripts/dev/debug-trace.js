@@ -24,7 +24,7 @@ console.log('starPos:', starPos)
 console.log()
 
 // Now trace through bio-predictor manually
-const { predictSpecies } = require('../src/service/lib/bio-predictor')
+const { predictSpecies } = require('../../src/service/lib/bio-predictor')
 
 // Monkey-patch to trace
 const origPredictSpecies = predictSpecies
@@ -34,7 +34,7 @@ console.log()
 
 // Check what buildBodyProps returns
 // We need to access the internal function - let me use a modification
-const bioPredictor = require('../src/service/lib/bio-predictor')
+const bioPredictor = require('../../src/service/lib/bio-predictor')
 console.log('Available exports:', Object.keys(bioPredictor))
 
 // Let's just verify the body type

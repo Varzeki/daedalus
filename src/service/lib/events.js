@@ -92,10 +92,10 @@ const logEventCallback = (log) => {
     // thousands of messages in a few seconds, which slows loading)
     if (!loadingInProgress) {
       // Fire off all DAEDALUS_EVENTS that depend on this game event
-      GAME_EVENT_TO_DAEDALUS_EVENT_MAP[eventName].map(async (daedalusEventName) => {
+      Promise.all(GAME_EVENT_TO_DAEDALUS_EVENT_MAP[eventName].map(async (daedalusEventName) => {
         const message = await DAEDALUS_EVENTS[daedalusEventName].handler()
         broadcastEvent(daedalusEventName, message)
-      })
+      })).catch(e => console.error(`Error handling event ${eventName}:`, e))
     }
   } else {
     // Keep track of all event types seen (and how many of each type)

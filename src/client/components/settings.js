@@ -45,22 +45,25 @@ function SoundSettings ({ visible }) {
   const [voicepackStatus, setVoicepackStatus] = useState(null)
   const [voicepackDetecting, setVoicepackDetecting] = useState(false)
 
-  useEffect(async () => {
-    const prefs = await sendEvent('getPreferences')
-    setPreferences(prefs)
-    // Initialize voicepack dir from preferences or auto-detect
-    if (prefs?.voicepackDir) {
-      setVoicepackDir(prefs.voicepackDir)
-      setVoicepackStatus(await sendEvent('validateVoicepackDir', { dir: prefs.voicepackDir }))
-    } else {
-      setVoicepackDetecting(true)
-      const detected = await sendEvent('detectVoicepackDir')
-      if (detected?.detected) {
-        setVoicepackDir(detected.dir)
-        setVoicepackStatus({ valid: true, name: detected.dir.split(/[\\/]/).pop().replace(/^hcspack-/i, '') })
+  useEffect(() => {
+    if (!visible) return
+    ;(async () => {
+      const prefs = await sendEvent('getPreferences')
+      setPreferences(prefs)
+      // Initialize voicepack dir from preferences or auto-detect
+      if (prefs?.voicepackDir) {
+        setVoicepackDir(prefs.voicepackDir)
+        setVoicepackStatus(await sendEvent('validateVoicepackDir', { dir: prefs.voicepackDir }))
+      } else {
+        setVoicepackDetecting(true)
+        const detected = await sendEvent('detectVoicepackDir')
+        if (detected?.detected) {
+          setVoicepackDir(detected.dir)
+          setVoicepackStatus({ valid: true, name: detected.dir.split(/[\\/]/).pop().replace(/^hcspack-/i, '') })
       }
       setVoicepackDetecting(false)
     }
+    })()
   }, [visible])
 
   // Listen for changes to preferences triggered by other terminals
@@ -202,8 +205,10 @@ function CreditInput ({ value, disabled, onChange }) {
 function ExplorationSettings ({ visible }) {
   const [preferences, setPreferences] = useState()
 
-  useEffect(async () => {
-    setPreferences(await sendEvent('getPreferences'))
+  useEffect(() => {
+    ;(async () => {
+      setPreferences(await sendEvent('getPreferences'))
+    })()
   }, [visible])
 
   useEffect(() => eventListener('syncMessage', async (event) => {
@@ -294,7 +299,7 @@ function ThemeSettings () {
     }
   }
 
-  useEffect(async () => {
+  useEffect(() => {
     window.addEventListener('storage', storageEventHandler)
     return () => window.removeEventListener('storage', storageEventHandler)
   }, [])

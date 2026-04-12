@@ -282,6 +282,7 @@ func bindFunctionsToWebView(w webview.WebView) {
 	var isFullScreen = false
 	var isPinned = false
 	var preFullScreenRect win.RECT
+	var wasMaximised = false
 	defaultWindowStyle := win.GetWindowLong(hwnd, win.GWL_STYLE)
 
 	w.Bind("daedalusTerminal_version", func() string {
@@ -345,18 +346,23 @@ func bindFunctionsToWebView(w webview.WebView) {
 
 	w.Bind("daedalusTerminal_toggleFullScreen", func() bool {
 		if isFullScreen {
-			// Restore to pre-fullscreen window position and size
+			// Restore to pre-fullscreen window style
 			win.SetWindowLong(hwnd, win.GWL_STYLE, defaultWindowStyle)
-			win.MoveWindow(hwnd,
-				preFullScreenRect.Left,
-				preFullScreenRect.Top,
-				preFullScreenRect.Right-preFullScreenRect.Left,
-				preFullScreenRect.Bottom-preFullScreenRect.Top,
-				true)
+			if wasMaximised {
+				win.ShowWindow(hwnd, win.SW_SHOWMAXIMIZED)
+			} else {
+				win.MoveWindow(hwnd,
+					preFullScreenRect.Left,
+					preFullScreenRect.Top,
+					preFullScreenRect.Right-preFullScreenRect.Left,
+					preFullScreenRect.Bottom-preFullScreenRect.Top,
+					true)
+			}
 			isFullScreen = false
 		} else {
-			// Save current window position before going fullscreen
+			// Save current window position and maximised state before going fullscreen
 			win.GetWindowRect(hwnd, &preFullScreenRect)
+			wasMaximised = (win.GetWindowLong(hwnd, win.GWL_STYLE) & win.WS_MAXIMIZE) != 0
 
 			// Get the bounds of the monitor the window is currently on
 			monitorRect := getMonitorRect(hwnd)

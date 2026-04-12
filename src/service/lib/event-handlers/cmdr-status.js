@@ -16,10 +16,10 @@ class CmdrStatus {
       inWing: 128,
       lightsOn: 256,
       cargoScoopDeployed: 512,
-      slientRunning: 1024,
+      silentRunning: 1024,
       scoopingFuel: 2048,
       srvHandbrake: 4096,
-      srvUsignTurrentView: 8192,
+      srvUsingTurretView: 8192,
       srvTurretRetracted: 16384,
       srvDriveAssist: 32768,
       fsdMassLocked: 65536,
@@ -56,9 +56,11 @@ class CmdrStatus {
       onFootInHanger: 8192,
       onFootSocialSpace: 16384,
       onFootExterior: 32768,
-      breathableAtmosphere: 65536
+      breathableAtmosphere: 65536,
+      telepresenceMulticrew: 131072,
+      physicalMulticrew: 262144,
+      fsdHyperdriveCharging: 524288
     }
-    return this
   }
 
   getFlag (flags, flag) {
@@ -124,11 +126,23 @@ class CmdrStatus {
     // By default we want "Body Name > [Station Name|Settlement|etc]"
     if (cmdrStatus?.bodyname) location.push(cmdrStatus.bodyname)
 
-    const locationEvent = await this.eliteLog.getEvent('Location')
-    const dockedEvent = await this.eliteLog.getEvent('Docked')
-    const embarkEvent = await this.eliteLog.getEvent('Embark')
-    const touchdownEvent = await this.eliteLog.getEvent('Touchdown')
-    const supercruiseExitEvent = await this.eliteLog.getEvent('SupercruiseExit')
+    const [locationEvent, dockedEvent, embarkEvent, touchdownEvent, supercruiseExitEvent] = await Promise.all([
+      this.eliteLog.getEvent('Location'),
+      this.eliteLog.getEvent('Docked'),
+      this.eliteLog.getEvent('Embark'),
+      this.eliteLog.getEvent('Touchdown'),
+      this.eliteLog.getEvent('SupercruiseExit')
+    ])
+
+    // Cache parsed timestamps to avoid repeated Date.parse() calls
+    const dockedTime = dockedEvent?.timestamp ? Date.parse(dockedEvent.timestamp) : 0
+    const embarkTime = embarkEvent?.timestamp ? Date.parse(embarkEvent.timestamp) : 0
+    const touchdownTime = touchdownEvent?.timestamp ? Date.parse(touchdownEvent.timestamp) : 0
+
+    // Helper to format station name with Fleet Carrier prefix
+    const formatStation = (event) => event?.StationType === 'FleetCarrier'
+      ? `Carrier ${event.StationName}`
+      : event?.StationName
 
     if (cmdrStatus?.flags?.onFoot) {
       if (cmdrStatus?.flags?.onFootSocialSpace) {
@@ -146,11 +160,7 @@ class CmdrStatus {
         // are edge cases to the logic.
         if ((dockedEvent && dockedEvent.StationName && dockedEvent?.StarSystem === currentSystem?.name)
            || locationEvent?.StarSystem === currentSystem?.name) {
-          if (dockedEvent?.StationType === 'FleetCarrier') {
-            location.push(`Carrier ${dockedEvent.StationName}`)
-          } else {
-            location.push(dockedEvent.StationName)
-          }
+          location.push(formatStation(dockedEvent))
         }
 
         // Either in a hanger, or not in a hanger
@@ -169,7 +179,7 @@ class CmdrStatus {
         // are not Docked (e.g. have landed just outside a station) then we can
         // look up the nearest station to the touchdown point (if there is one)
         if (dockedEvent && dockedEvent.StationName && dockedEvent?.StarSystem === currentSystem?.name) {
-          if (touchdownEvent && Date.parse(touchdownEvent?.timestamp) > Date.parse(dockedEvent?.timestamp)) {
+          if (touchdownEvent && touchdownTime > dockedTime) {
             if (touchdownEvent?.NearestDestination) location.push(touchdownEvent.NearestDestination)
           } else {
             location.push(dockedEvent.StationName)
@@ -186,37 +196,25 @@ class CmdrStatus {
       if (!dockedEvent && embarkEvent?.StationName) {
         location.push(embarkEvent.StationName) 
       } else if (!embarkEvent && dockedEvent?.StationName) {
-        if (dockedEvent?.StationType === 'FleetCarrier') {
-          location.push(`Carrier ${dockedEvent.StationName}`)
-        } else {
-          location.push(dockedEvent.StationName)
-        }
+        location.push(formatStation(dockedEvent))
       } else if (!embarkEvent && !dockedEvent && touchdownEvent?.NearestDestination) {
         location.push(touchdownEvent.NearestDestination)
       } else if (locationEvent?.StationName) {
-        if (locationEvent?.StationType === 'FleetCarrier') {
-          location.push(`Carrier ${locationEvent.StationName}`)
-        } else {
-          location.push(locationEvent.StationName)
-        }
+        location.push(formatStation(locationEvent))
         if (locationEvent?.Docked === true) location.push('Docked')
       }
 
       if (dockedEvent && embarkEvent) {
         if (touchdownEvent &&
-            Date.parse(touchdownEvent?.timestamp) > Date.parse(dockedEvent?.timestamp) &&
-            Date.parse(touchdownEvent?.timestamp) > Date.parse(embarkEvent?.timestamp)
+            touchdownTime > dockedTime &&
+            touchdownTime > embarkTime
         ) {
           if (touchdownEvent?.NearestDestination) location.push(touchdownEvent.NearestDestination)
         } else if (embarkEvent?.StationName && dockedEvent?.StationName) {
           // If we have both a Docked event and an Embark event with a station
           // name, use the newest value
-          if (Date.parse(dockedEvent?.timestamp) > Date.parse(embarkEvent?.timestamp)) {
-            if (dockedEvent?.StationType === 'FleetCarrier') {
-              location.push(`Carrier ${dockedEvent.StationName}`)
-            } else {
-              location.push(dockedEvent.StationName)
-            }
+          if (dockedTime > embarkTime) {
+            location.push(formatStation(dockedEvent))
           } else {
             location.push(embarkEvent.StationName)
           }
@@ -228,11 +226,7 @@ class CmdrStatus {
           // FIXME As a simple sanity check, we at least verify the event was
           // triggered in the same system (crude, but hopefully good enough).
           if (dockedEvent?.StarSystem === currentSystem?.name) {
-            if (dockedEvent?.StationType === 'FleetCarrier') {
-              location.push(`Carrier ${dockedEvent.StationName}`)
-            } else {
-              location.push(dockedEvent.StationName)
-            }
+            location.push(formatStation(dockedEvent))
             location.push('Docked')
           }
         }
@@ -289,6 +283,12 @@ class CmdrStatus {
     cmdrStatus._location = location
 
     return cmdrStatus
+  }
+
+  getHandlers () {
+    return {
+      getCmdrStatus: (args) => this.getCmdrStatus(args)
+    }
   }
 }
 

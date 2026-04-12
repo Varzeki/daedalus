@@ -23,19 +23,21 @@ export default function IndexPage () {
   const [loadingProgress, setLoadingProgress] = useState(defaultloadingStats)
 
   // Display URL (IP address/port) to connect from a browser
-  useEffect(async () => setHostInfo(await sendEvent('hostInfo')), [])
+  useEffect(() => { sendEvent('hostInfo').then(setHostInfo) }, [])
 
-  useEffect(async () => {
-    const message = await sendEvent('getLoadingStatus')
-    setLoadingProgress(message)
-    if (message?.loadingComplete === true) {
-      document.getElementById('loadingProgressBar').style.opacity = 0
-    }
+  useEffect(() => {
+    ;(async () => {
+      const message = await sendEvent('getLoadingStatus')
+      setLoadingProgress(message)
+      if (message?.loadingComplete === true) {
+        document.getElementById('loadingProgressBar').style.opacity = 0
+      }
 
-    setTimeout(async () => {
-      const update = await checkForUpdate()
-      setUpdate(update)
-    }, 3000)
+      setTimeout(async () => {
+        const update = await checkForUpdate()
+        setUpdate(update)
+      }, 3000)
+    })()
   }, [connected])
 
   useEffect(() => eventListener('loadingProgress', (message) => {

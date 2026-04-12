@@ -8,8 +8,6 @@ import Panel from 'components/panel'
 import CopyOnClick from 'components/copy-on-click'
 
 const HIGH_GRAVITY_THRESHOLD = 2.7
-const MIN_BODY_VALUE = 1000000
-const MIN_BIO_VALUE = 7000000
 
 function BodyIcon ({ body }) {
   const { subType, isStar, isLandable, atmosphereComposition } = body
@@ -53,8 +51,8 @@ function DiscovererCell ({ body, cmdrName }) {
   return <td className='hidden-small hidden-medium'><span className='text-muted'>—</span></td>
 }
 
-function SpeciesRow ({ species, isFirstDiscoverer, isLast }) {
-  const isDim = species.reward < MIN_BIO_VALUE
+function SpeciesRow ({ species, isFirstDiscoverer, isLast, minBioValue }) {
+  const isDim = species.reward < minBioValue
   const isScanned = species.isConfirmed
   const rowClass = `exploration-system__species-row${isDim ? ' exploration-system__species-row--dim' : ''}${isScanned ? ' exploration-system__species-row--scanned' : ''}`
   return (
@@ -84,12 +82,12 @@ function SpeciesRow ({ species, isFirstDiscoverer, isLast }) {
   )
 }
 
-function BodyRow ({ body, cmdrName, systemName }) {
+function BodyRow ({ body, cmdrName, systemName, minBodyValue, minBioValue }) {
   const shortName = (systemName && body.name?.startsWith(systemName))
     ? (body.name.slice(systemName.length).trim() || body.name)
     : body.name
-  const isValuableBody = body.mappedValue >= MIN_BODY_VALUE
-  const isValuableBio = body.bioValue >= MIN_BIO_VALUE
+  const isValuableBody = body.mappedValue >= minBodyValue
+  const isValuableBio = body.bioValue >= minBioValue
   const isDim = !isValuableBody && !isValuableBio
   const isScanned = body.wasMapped || body.isStar
 
@@ -155,7 +153,7 @@ function BodyRow ({ body, cmdrName, systemName }) {
         <DiscovererCell body={body} cmdrName={cmdrName} />
       </tr>
       {body.speciesDetail && body.speciesDetail.map((sp, i) =>
-        <SpeciesRow key={`${body.name}_sp_${i}`} species={sp} isFirstDiscoverer={body.isFirstDiscoverer} isLast={i === body.speciesDetail.length - 1} />
+        <SpeciesRow key={`${body.name}_sp_${i}`} species={sp} isFirstDiscoverer={body.isFirstDiscoverer} isLast={i === body.speciesDetail.length - 1} minBioValue={minBioValue} />
       )}
     </>
   )
@@ -192,22 +190,25 @@ export default function ExplorationSystemPage () {
   // Re-run table row animation whenever data changes
   useEffect(animateTableEffect, [systemData])
 
-  useEffect(async () => {
+  useEffect(() => {
     if (!connected || !router.isReady) return
     setLoadError(false)
     const timeout = setTimeout(() => {
       setLoadError(true)
       setComponentReady(true)
     }, 30000)
-    try {
-      const data = await fetchSystem()
-      clearTimeout(timeout)
-      if (data) setSystemData(data)
-    } catch (e) {
-      clearTimeout(timeout)
-      setLoadError(true)
-    }
-    setComponentReady(true)
+    ;(async () => {
+      try {
+        const data = await fetchSystem()
+        clearTimeout(timeout)
+        if (data) setSystemData(data)
+      } catch (e) {
+        clearTimeout(timeout)
+        setLoadError(true)
+      }
+      setComponentReady(true)
+    })()
+    return () => clearTimeout(timeout)
   }, [connected, ready, router.isReady])
 
   useEffect(() => eventListener('newLogEntry', async (log) => {
@@ -233,6 +234,8 @@ export default function ExplorationSystemPage () {
   const bodies = systemData?.bodies ?? []
   const cmdrName = systemData?.cmdrName
   const systemValue = systemData?.systemValue
+  const minBodyValue = systemData?.minBodyValue ?? 1000000
+  const minBioValue = systemData?.minBioValue ?? 7000000
 
   // Sort bodies by selected column (default = server order: stars first, then distance)
   const sortedBodies = sortKey
@@ -252,14 +255,14 @@ export default function ExplorationSystemPage () {
 
   // Compute valuable counts and scan progress (client-side)
   const valuableBodiesList = bodies.filter(body =>
-    body.mappedValue >= MIN_BODY_VALUE || body.bioValue >= MIN_BIO_VALUE
+    body.mappedValue >= minBodyValue || body.bioValue >= minBioValue
   )
   const scannedValuableBodies = valuableBodiesList.filter(b => b.wasMapped || b.isStar).length
   const totalValuableBio = []
   bodies.forEach(body => {
     if (body.speciesDetail) {
       body.speciesDetail.forEach(sp => {
-        if (sp.reward >= MIN_BIO_VALUE) totalValuableBio.push(sp)
+        if (sp.reward >= minBioValue) totalValuableBio.push(sp)
       })
     }
   })
@@ -338,7 +341,7 @@ export default function ExplorationSystemPage () {
                 </>}
           </div>}
         {bodies.length > 0 &&
-          <div className='scrollable' style={{ position: 'fixed', top: surveyPhase === 'complete' ? '14rem' : '10rem', bottom: '2rem', left: '5rem', right: '1rem' }}>
+          <div className='scrollable' style={{ position: 'fixed', top: '14rem', bottom: '2rem', left: '5rem', right: '1rem' }}>
             <table className='exploration-system__table table--animated table--interactive'>
               <thead>
                 <tr>
@@ -372,7 +375,7 @@ export default function ExplorationSystemPage () {
               </thead>
               <tbody className='fx-fade-in'>
                 {sortedBodies.map(body =>
-                  <BodyRow key={body.name || body.bodyId} body={body} cmdrName={cmdrName} systemName={systemData?.name} />
+                  <BodyRow key={body.name || body.bodyId} body={body} cmdrName={cmdrName} systemName={systemData?.name} minBodyValue={minBodyValue} minBioValue={minBioValue} />
                 )}
               </tbody>
             </table>

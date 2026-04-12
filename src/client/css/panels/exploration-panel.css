@@ -160,6 +160,7 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   justify-content: center;
   gap: 3rem;
   padding: .5rem 0;
+  min-height: 4.5rem;
 }
 
 .exploration-system__kpi {
@@ -185,6 +186,9 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
 .exploration-system__kpi-icon {
   font-size: 1.6rem;
   margin-right: .5rem;
+  vertical-align: middle;
+  position: relative;
+  top: -0.1em;
 }
 
 .exploration-system__progress-bar {

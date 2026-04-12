@@ -46,9 +46,9 @@ function FsdCooldownRing ({ active }) {
   const dashOffset = circumference * progress
 
   return (
-    <span className={active ? 'ship-panel__light--on' : 'ship-panel__light--off'} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>
+    <span className={active ? 'ship-panel__light--on' : 'ship-panel__light--off'} style={{ position: 'relative' }}>
       {active && (
-        <svg width={size} height={size} style={{ position: 'absolute', left: '-0.1em', top: '50%', transform: 'translateY(-50%) rotate(-90deg)' }}>
+        <svg width={size} height={size} style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%, -50%) rotate(-90deg)', zIndex: 2 }}>
           <circle
             cx={size / 2} cy={size / 2} r={radius}
             fill='none'
@@ -77,7 +77,7 @@ export default function ShipInstrumentation ({ ship, cmdrStatus, toggleSwitches,
 
   const panelActive = (ship.onBoard || cmdrStatus?.flags?.inSrv)
   
-  useEffect(async () => {
+  useEffect(() => {
     const resizeEventHandler = () => {
       if (scaledWrapper.current && scaledContent.current) {
         applyScaling(scaledWrapper.current, scaledContent.current)
@@ -310,9 +310,16 @@ export default function ShipInstrumentation ({ ship, cmdrStatus, toggleSwitches,
                 <FsdCooldownRing active={ship.onBoard && cmdrStatus?.flags?.fsdCooldown} />
               </td>
               <td>
-                <span className={ship.onBoard && (cmdrStatus?.flags?.supercruise && !cmdrStatus?.flags?.fsdJump) ? 'ship-panel__light--on' : 'ship-panel__light--off'}>
-                  <span className='ship-panel__light-text'>Super&shy;cruise</span>
-                </span>
+                {(() => {
+                  const inSupercruise = ship.onBoard && cmdrStatus?.flags?.supercruise && !cmdrStatus?.flags?.fsdJump
+                  const isSCO = inSupercruise && cmdrStatus?.flags?.fsdCharging && !cmdrStatus?.flags?.fsdHyperdriveCharging
+                  const className = isSCO ? 'ship-panel__light--danger' : (inSupercruise ? 'ship-panel__light--on' : 'ship-panel__light--off')
+                  return (
+                    <span className={className}>
+                      <span className='ship-panel__light-text'>{isSCO ? <>Over&shy;charge</> : <>Super&shy;cruise</>}</span>
+                    </span>
+                  )
+                })()}
               </td>
               <td>
                 <span className={ship.onBoard && (cmdrStatus?.flags?.fsdCharging && !cmdrStatus?.flags?.fsdJump) ? 'ship-panel__light--on' : 'ship-panel__light--off'}>

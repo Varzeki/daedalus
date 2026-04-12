@@ -1,79 +1,26 @@
 import { useState, useEffect } from 'react'
-import { useRouter } from 'next/router'
-import { sendEvent, eventListener, socketOptions } from 'lib/socket'
+import { socketOptions, setSocketOption } from 'lib/socket'
 import { isWindowFullScreen, toggleFullScreen } from 'lib/window'
 import { eliteDateTime } from 'lib/format'
 import { Settings } from 'components/settings'
 import LandingPadOverlay from 'components/landing-pad-overlay'
+import PrimaryNavigation from 'components/primary-navigation'
 import notification from 'lib/notification'
-
-const NAV_BUTTONS = [
-  {
-    name: 'Commander',
-    abbr: 'Cmdr',
-    path: '/cmdr'
-  },
-  {
-    name: 'Ship',
-    abbr: 'Ship',
-    path: '/ship'
-  },
-  {
-    name: 'Navigation',
-    abbr: 'Nav',
-    path: '/nav'
-  },
-  {
-    name: 'Exploration',
-    abbr: 'Expl',
-    path: '/exploration'
-  },
-  {
-    name: 'Trade',
-    abbr: 'Trade',
-    path: '/trade'
-  },
-  {
-    name: 'Mining',
-    abbr: 'Mine',
-    path: '/mining'
-  },
-  {
-    name: 'Missions',
-    abbr: 'Msns',
-    path: '/missions'
-  },
-  {
-    name: 'Engineering',
-    abbr: 'Eng',
-    path: '/eng'
-  },
-  {
-    name: 'Media',
-    abbr: 'Media',
-    path: '/media'
-  },
-  {
-    name: 'Controls',
-    abbr: 'Ctrl',
-    path: '/controls'
-  }
-]
+import useAudioToggle from 'lib/use-audio-toggle'
+import useLandingPad from 'lib/use-landing-pad'
 
 let IS_WINDOWS_APP = false
 
 export default function Header ({ connected, active }) {
-  const router = useRouter()
   const [dateTime, setDateTime] = useState(eliteDateTime())
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [notificationsVisible, setNotificationsVisible] = useState(socketOptions.notifications)
   const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(socketOptions.explorationAutoSwitch)
   const [settingsVisible, setSettingsVisible] = useState(false)
   const [toolbarOpen, setToolbarOpen] = useState(false)
-  const [audioEnabled, setAudioEnabled] = useState(socketOptions.audioEnabled)
-  const [landingPadEnabled, setLandingPadEnabled] = useState(socketOptions.landingPadEnabled)
-  const [landingPadData, setLandingPadData] = useState(null)
-  const [lastSettlementEconomy, setLastSettlementEconomy] = useState(null)
+
+  const { audioEnabled, toggleAudio } = useAudioToggle()
+  const { landingPadEnabled, landingPadData, toggleLandingPad, dismissLandingPad } = useLandingPad()
 
   async function fullScreen () {
     const newFullScreenState = await toggleFullScreen()
@@ -82,7 +29,7 @@ export default function Header ({ connected, active }) {
   }
 
   function toggleNotifications () {
-    socketOptions.notifications = !notificationsVisible
+    setSocketOption('notifications', !notificationsVisible)
     setNotificationsVisible(socketOptions.notifications)
     // FIXME Uses document.getElementById('notifications') hack to force
     // hiding of all notifications when muted as the toast library can be
@@ -102,46 +49,12 @@ export default function Header ({ connected, active }) {
         }
       }, 2000)
     }
-    try {
-      const saved = JSON.parse(window.localStorage.getItem('daedalus-socket-options') || '{}')
-      saved.notifications = socketOptions.notifications
-      window.localStorage.setItem('daedalus-socket-options', JSON.stringify(saved))
-    } catch (e) { /* ignore */ }
     document.activeElement.blur()
   }
 
   function toggleAutoSwitch () {
-    socketOptions.explorationAutoSwitch = !autoSwitchEnabled
+    setSocketOption('explorationAutoSwitch', !autoSwitchEnabled)
     setAutoSwitchEnabled(socketOptions.explorationAutoSwitch)
-    try {
-      const saved = JSON.parse(window.localStorage.getItem('daedalus-socket-options') || '{}')
-      saved.explorationAutoSwitch = socketOptions.explorationAutoSwitch
-      window.localStorage.setItem('daedalus-socket-options', JSON.stringify(saved))
-    } catch (e) { /* ignore */ }
-    document.activeElement.blur()
-  }
-
-  async function toggleAudio () {
-    const prefs = await sendEvent('getPreferences')
-    const newEnabled = !audioEnabled
-    prefs.covasVoiceoverEnabled = newEnabled
-    prefs.covasExtendedEnabled = newEnabled
-    await sendEvent('setPreferences', prefs)
-    socketOptions.audioEnabled = newEnabled
-    setAudioEnabled(newEnabled)
-    document.activeElement.blur()
-  }
-
-  function toggleLandingPad () {
-    const newEnabled = !landingPadEnabled
-    socketOptions.landingPadEnabled = newEnabled
-    setLandingPadEnabled(newEnabled)
-    if (!newEnabled) setLandingPadData(null)
-    try {
-      const saved = JSON.parse(window.localStorage.getItem('daedalus-socket-options') || '{}')
-      saved.landingPadEnabled = newEnabled
-      window.localStorage.setItem('daedalus-socket-options', JSON.stringify(saved))
-    } catch (e) { /* ignore */ }
     document.activeElement.blur()
   }
 
@@ -153,6 +66,10 @@ export default function Header ({ connected, active }) {
     if (typeof window !== 'undefined' && typeof window.daedalusTerminal_version === 'function') {
       IS_WINDOWS_APP = true
     }
+    // Sync toggle states from socketOptions (restored from localStorage)
+    // to fix SSR hydration mismatch where initial state defaults to false
+    setAutoSwitchEnabled(socketOptions.explorationAutoSwitch)
+    setNotificationsVisible(socketOptions.notifications)
     ;(async () => {
       const fs = await isWindowFullScreen()
       if (mounted) {
@@ -169,53 +86,6 @@ export default function Header ({ connected, active }) {
     return () => clearInterval(dateTimeInterval)
   }, [])
 
-  // Sync audio toggle state with preferences
-  useEffect(() => {
-    let mounted = true
-    ;(async () => {
-      const prefs = await sendEvent('getPreferences')
-      if (mounted) {
-        const enabled = prefs?.covasVoiceoverEnabled === true
-        socketOptions.audioEnabled = enabled
-        setAudioEnabled(enabled)
-      }
-    })()
-    return () => { mounted = false }
-  }, [])
-
-  useEffect(() => eventListener('syncMessage', async (event) => {
-    if (event.name === 'preferences') {
-      const prefs = await sendEvent('getPreferences')
-      const enabled = prefs?.covasVoiceoverEnabled === true
-      socketOptions.audioEnabled = enabled
-      setAudioEnabled(enabled)
-    }
-  }), [])
-
-  // Landing pad overlay: listen for DockingGranted and dismiss events
-  useEffect(() => {
-    const DISMISS_EVENTS = ['Docked', 'DockingCancelled', 'DockingTimeout', 'StartJump', 'Shutdown', 'Undocked']
-    return eventListener('newLogEntry', (message) => {
-      if (message.event === 'ApproachSettlement' && message.StationEconomy) {
-        // Extract economy name from "$economy_Extraction;" format
-        const raw = message.StationEconomy
-        const match = raw.match(/\$economy_(\w+);/)
-        setLastSettlementEconomy(match ? match[1] : null)
-      }
-      if (message.event === 'DockingGranted' && landingPadEnabled) {
-        setLandingPadData({
-          pad: message.LandingPad,
-          stationName: message.StationName,
-          stationType: message.StationType,
-          economy: lastSettlementEconomy
-        })
-      }
-      if (DISMISS_EVENTS.includes(message.event)) {
-        setLandingPadData(null)
-      }
-    })
-  }, [landingPadEnabled, lastSettlementEconomy])
-
   let signalClassName = 'icon daedalus-terminal-signal '
   if (!connected) {
     signalClassName += 'text-primary'
@@ -224,8 +94,6 @@ export default function Header ({ connected, active }) {
   } else {
     signalClassName += 'text-primary'
   }
-
-  const currentPath = `/${router.pathname.split('/')[1].toLowerCase()}`
 
   return (
     <header>
@@ -285,25 +153,10 @@ export default function Header ({ connected, active }) {
         </button>
       </div>
       <hr />
-      <div id='primaryNavigation' className='button-group'>
-        {NAV_BUTTONS.filter(button => button).map((button, i) =>
-          <button
-            key={button.name}
-            data-primary-navigation={i+1}
-            tabIndex='1'
-            disabled={button.path === currentPath}
-            className={button.path === currentPath ? 'button--active' : ''}
-            onClick={() => router.push(button.path)}
-            style={{ fontSize: '1.5rem' }}
-          >
-            <span className='visible-small'>{button.abbr}</span>
-            <span className='hidden-small'>{button.name}</span>
-          </button>
-        )}
-      </div>
+      <PrimaryNavigation />
       <hr className='bold' />
       <Settings visible={settingsVisible} toggleVisible={() => setSettingsVisible(!settingsVisible)} />
-      <LandingPadOverlay data={landingPadData} onDismiss={() => setLandingPadData(null)} />
+      <LandingPadOverlay data={landingPadData} onDismiss={dismissLandingPad} />
     </header>
   )
 }

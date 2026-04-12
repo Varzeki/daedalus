@@ -1,16 +1,8 @@
-import Router from 'next/router'
-import Layout from 'components/layout'
-import Panel from 'components/panel'
-import { useSocket } from 'lib/socket'
+import { useRouter } from 'next/router'
+import { useEffect } from 'react'
 
-export default function ShipPage () {
-  const { connected, active } = useSocket()
-
-  if (typeof window !== 'undefined') Router.push('/ship/status')
-
-  return (
-    <Layout connected={connected} active={active}>
-      <Panel layout='full-width' scrollable />
-    </Layout>
-  )
+export default function ShipIndex () {
+  const router = useRouter()
+  useEffect(() => { router.replace('/ship/status') }, [])
+  return null
 }

@@ -1,14 +1,9 @@
 #!/usr/bin/env node
-/**
- * Debug Anemone false negatives from the comparison test.
- */
-const path = require('path')
 const fs = require('fs')
-const { predictSpecies } = require('../src/service/lib/bio-predictor')
+const path = require('path')
+const { predictSpecies } = require('../../src/service/lib/bio-predictor')
 
-const CACHE_PATH = path.join(path.dirname(__filename), '.comparison-cache.json')
-const cache = JSON.parse(fs.readFileSync(CACHE_PATH, 'utf8'))
-
+const cache = JSON.parse(fs.readFileSync(path.join(__dirname, '.comparison-cache.json'), 'utf8'))
 const SYSTEM_IDS = [
   7259190873515, 6125336284579, 6121703676746, 6365837675955, 284180729219,
   2415457537675, 2312378322571, 2003140677259, 1728262770315, 1659543293579,
@@ -65,32 +60,12 @@ const GENUS_MAP = {
   '$Codex_Ent_Sphere_Genus_Name;': 'Anemone',
   '$Codex_Ent_Sphere_Name;': 'Anemone',
   '$Codex_Ent_SphereABCD_Name;': 'Anemone',
-  Tussock: 'Tussock', Tussocks: 'Tussock',
-  Bacterium: 'Bacterium',
-  Fungoida: 'Fungoida', Fungoids: 'Fungoida',
-  Stratum: 'Stratum',
-  Osseus: 'Osseus',
-  Conchas: 'Conchas', Concha: 'Conchas',
-  Cactoida: 'Cactoida', Cactoid: 'Cactoida',
-  Frutexta: 'Frutexta', Frutexa: 'Frutexta', Shrubs: 'Frutexta',
-  Fonticulua: 'Fonticulua', Fonticulus: 'Fonticulua',
-  Clypeus: 'Clypeus',
-  Tubus: 'Tubus',
-  Aleoida: 'Aleoida',
-  Electricae: 'Electricae',
-  Recepta: 'Recepta',
-  Fumerola: 'Fumerola',
-  'Bark Mounds': 'Bark Mounds',
-  'Brain Trees': 'Brain Trees',
-  Amphora: 'Amphora', 'Amphora Plant': 'Amphora',
-  Anemone: 'Anemone', 'Luteolum Anemone': 'Anemone',
-  Shards: 'Shards', 'Crystalline Shards': 'Shards',
-  Tubers: 'Tubers', 'Roseum Sinuous Tubers': 'Tubers'
+  Concha: 'Conchas', Frutexa: 'Frutexta',
+  'Amphora Plant': 'Amphora', 'Luteolum Anemone': 'Anemone',
+  'Crystalline Shards': 'Shards', 'Roseum Sinuous Tubers': 'Tubers'
 }
 function ng (n) { return GENUS_MAP[n] || n }
 
-let anemoneMisses = 0
-let anemoneHits = 0
 for (const id64 of SYSTEM_IDS) {
   const sys = cache[id64]
   if (!sys?.bodies) continue
@@ -100,27 +75,19 @@ for (const id64 of SYSTEM_IDS) {
   for (const b of allBodies) {
     if (b.type !== 'Planet' || !b.signals?.genuses?.length) continue
     const gt = new Set(b.signals.genuses.map(ng))
-    if (!gt.has('Anemone')) continue
-
     let preds
     try { preds = predictSpecies(b, allBodies, starPos) } catch { continue }
     const pg = new Set(preds.map(p => ng(p.genus)))
 
-    if (pg.has('Anemone')) {
-      anemoneHits++
-    } else {
-      anemoneMisses++
-      console.log(`MISS: ${sys.name} / ${b.name}`)
-      console.log(`  Body type: ${b.subType}`)
-      console.log(`  Atmosphere: ${b.atmosphereType}`)
-      console.log(`  Volcanism: ${b.volcanismType}`)
-      console.log(`  Temp: ${b.surfaceTemperature}`)
-      console.log(`  Gravity: ${b.gravity}`)
-      console.log(`  GT genuses: ${[...gt].join(', ')}`)
-      console.log(`  Predicted genuses: ${[...pg].join(', ')}`)
-      console.log(`  All predicted:`, preds.map(p => `${p.genus} (${p.species})`).join(', ').substring(0, 200))
+    const misses = [...gt].filter(g => !pg.has(g))
+    if (misses.length > 0) {
+      console.log(`${sys.name} / ${b.name}`)
+      console.log(`  Missing: ${misses.join(', ')}`)
+      console.log(`  Body: ${b.subType}, Atmos: ${b.atmosphereType}, Volc: ${b.volcanismType}`)
+      console.log(`  Temp: ${b.surfaceTemperature}, Grav: ${b.gravity}`)
+      console.log(`  GT: ${[...gt].join(', ')}`)
+      console.log(`  Predicted: ${[...pg].join(', ')}`)
       console.log()
     }
   }
 }
-console.log(`\nAnemone: ${anemoneHits} hits, ${anemoneMisses} misses`)

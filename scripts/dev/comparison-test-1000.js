@@ -13,10 +13,10 @@
 
 const path = require('path')
 const fs = require('fs')
-const { predictSpecies } = require('../src/service/lib/bio-predictor')
+const { predictSpecies } = require('../../src/service/lib/bio-predictor')
 
 // ─── ExplorationBuddy gc.dat loader ───────────────────────────────────
-const gcDatPath = path.join(__dirname, '..', '..', 'Elite Dangerous Exploration Buddy', 'gc.dat')
+const gcDatPath = path.join((__dirname, '..', '..'), '..', 'Elite Dangerous Exploration Buddy', 'gc.dat')
 let gcData = null
 try {
   gcData = JSON.parse(Buffer.from(fs.readFileSync(gcDatPath, 'utf8').trim(), 'base64').toString('utf8'))
