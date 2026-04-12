@@ -17,7 +17,7 @@ const {
 
 const DEVELOPMENT_BUILD = commandLineArgs.debug || DEVELOPMENT_BUILD_DEFAULT
 const DEBUG_CONSOLE = commandLineArgs.debug || DEBUG_CONSOLE_DEFAULT
-const ENTRY_POINT = path.join(__dirname, '..', 'src', 'service', 'main.js')
+const ENTRY_POINT = path.join(__dirname, '..', '..', 'src', 'service', 'main.js')
 const COMPRESS_FINAL_BUILD = true
 const PKG_TARGET = 'node24-win-x64'
 
@@ -40,7 +40,7 @@ async function build () {
     '--target', PKG_TARGET,
     '--output', SERVICE_UNOPTIMIZED_BUILD,
     '--compress', 'GZip',
-    '--config', path.join(__dirname, '..', 'package.json')
+    '--config', path.join(__dirname, '..', '..', 'package.json')
   ]
 
   if (DEBUG_CONSOLE) {

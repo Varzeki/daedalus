@@ -382,10 +382,269 @@ function drawSettlement (ctx, cx, cy, size, padNumber, economy, colors) {
   ctx.fillText(template.name + ' — ' + economy, cx, cy + perimR + 16)
 }
 
+// ---- Step-based draw generators (stick-by-stick animation) ----
+
+function getStarportSteps (ctx, cx, cy, radius, padNumber, colors) {
+  const steps = []
+
+  // Shell rings (4 steps)
+  for (let s = 0; s < SHELL_SCALE.length; s++) {
+    const si = s
+    steps.push(() => {
+      ctx.lineJoin = 'round'
+      ctx.lineCap = 'round'
+      const r = radius * SHELL_SCALE[si]
+      ctx.beginPath()
+      for (let i = 0; i <= DODECAGON.length; i++) {
+        const [dx, dy] = DODECAGON[i % DODECAGON.length]
+        const px = cx + dx * r
+        const py = cy + dy * r
+        if (i === 0) ctx.moveTo(px, py)
+        else ctx.lineTo(px, py)
+      }
+      ctx.strokeStyle = colors.station
+      ctx.lineWidth = (si === 0 || si === SHELL_SCALE.length - 1) ? 2 : 1
+      ctx.stroke()
+    })
+  }
+
+  // Sector lines (12 steps)
+  const outerR = radius * SHELL_SCALE[0]
+  const innerR = radius * SHELL_SCALE[SHELL_SCALE.length - 1]
+  for (let i = 0; i < DODECAGON.length; i++) {
+    const li = i
+    steps.push(() => {
+      const [dx, dy] = DODECAGON[li]
+      ctx.beginPath()
+      ctx.moveTo(cx + dx * outerR, cy + dy * outerR)
+      ctx.lineTo(cx + dx * innerR, cy + dy * innerR)
+      ctx.strokeStyle = colors.station
+      ctx.lineWidth = 2
+      ctx.stroke()
+    })
+  }
+
+  // Entry slot — red side
+  const slotWidth = radius * 0.75
+  const slotHeight = radius * SHELL_SCALE[SHELL_SCALE.length - 1]
+  steps.push(() => {
+    ctx.beginPath()
+    ctx.moveTo(cx, cy - slotHeight)
+    ctx.lineTo(cx + slotWidth, cy - slotHeight)
+    ctx.lineTo(cx + radius, cy - slotHeight + 6)
+    ctx.lineTo(cx + radius, cy + slotHeight - 6)
+    ctx.lineTo(cx + slotWidth, cy + slotHeight)
+    ctx.lineTo(cx, cy + slotHeight)
+    ctx.strokeStyle = colors.redSide
+    ctx.lineWidth = 4
+    ctx.stroke()
+  })
+
+  // Entry slot — green side
+  steps.push(() => {
+    ctx.beginPath()
+    ctx.moveTo(cx, cy - slotHeight)
+    ctx.lineTo(cx - slotWidth, cy - slotHeight)
+    ctx.lineTo(cx - radius, cy - slotHeight + 6)
+    ctx.lineTo(cx - radius, cy + slotHeight - 6)
+    ctx.lineTo(cx - slotWidth, cy + slotHeight)
+    ctx.lineTo(cx, cy + slotHeight)
+    ctx.strokeStyle = colors.greenSide
+    ctx.lineWidth = 4
+    ctx.stroke()
+  })
+
+  // Pad highlight
+  if (padNumber >= 1 && padNumber <= 45) {
+    steps.push(() => {
+      const { sector: rawSector, shell } = getStarportPadCoords(padNumber)
+      const sector = (rawSector + 6) % 12
+      const [dx, dy] = PAD_SECTORS[sector]
+      const midScale = (SHELL_SCALE[shell] + SHELL_SCALE[shell + 1]) / 2
+      const rt = radius * COS15 * midScale
+      const px = cx + rt * dx
+      const py = cy + rt * dy
+      const dotSize = radius * (SHELL_SCALE[0] - SHELL_SCALE[1]) / 4 * (3 - shell) / (4 - shell)
+
+      ctx.beginPath()
+      ctx.arc(px, py, dotSize, 0, Math.PI * 2)
+      ctx.fillStyle = colors.pad
+      ctx.fill()
+
+      ctx.font = `bold ${Math.max(10, dotSize)}px monospace`
+      ctx.fillStyle = colors.padLabel
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(String(padNumber), px, py)
+    })
+  }
+
+  return steps
+}
+
+function getCarrierSteps (ctx, cx, cy, size, padNumber, colors) {
+  const steps = []
+  const unit = size / FC_BOX_H
+
+  for (let i = 0; i < FC_PADS.length; i++) {
+    const pi = i
+    steps.push(() => {
+      const p = FC_PADS[pi]
+      const x = cx + p.x * unit
+      const y = cy + p.y * unit
+      const w = p.w * unit
+      const h = p.h * unit
+      ctx.strokeStyle = colors.station
+      ctx.lineWidth = 1.5
+      ctx.strokeRect(x, y, w, h)
+    })
+  }
+
+  if (padNumber >= 1 && padNumber <= 16) {
+    steps.push(() => {
+      const p = FC_PADS[padNumber - 1]
+      const x = cx + p.x * unit
+      const y = cy + p.y * unit
+      const w = p.w * unit
+      const h = p.h * unit
+      ctx.fillStyle = colors.pad
+      ctx.fillRect(x, y, w, h)
+      ctx.font = `bold ${Math.max(10, Math.min(w, h) * 0.6)}px monospace`
+      ctx.fillStyle = colors.padLabel
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(String(padNumber), x + w / 2, y + h / 2)
+    })
+  }
+
+  return steps
+}
+
+function getOutpostSteps (ctx, cx, cy, size, padNumber, colors) {
+  const steps = []
+  const padCount = Math.max(padNumber, 4)
+  const padSize = size / (padCount + 1)
+
+  for (let i = 0; i < padCount; i++) {
+    const pi = i
+    steps.push(() => {
+      const x = cx - (padCount * padSize) / 2 + pi * padSize + padSize * 0.1
+      const y = cy - padSize / 2
+      const w = padSize * 0.8
+      const h = padSize
+      const isActive = (pi + 1) === padNumber
+
+      ctx.strokeStyle = colors.station
+      ctx.lineWidth = 1.5
+      ctx.strokeRect(x, y, w, h)
+
+      if (isActive) {
+        ctx.fillStyle = colors.pad
+        ctx.fillRect(x, y, w, h)
+      }
+
+      ctx.font = `bold ${Math.max(10, w * 0.5)}px monospace`
+      ctx.fillStyle = isActive ? colors.padLabel : colors.station
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(String(pi + 1), x + w / 2, y + h / 2)
+    })
+  }
+
+  return steps
+}
+
+function getSettlementSteps (ctx, cx, cy, size, padNumber, economy, colors) {
+  const template = findSettlementTemplate(economy, padNumber)
+  if (!template) return getOutpostSteps(ctx, cx, cy, size, padNumber, colors)
+
+  const steps = []
+  const pads = template.pads
+
+  let minX = Infinity, maxX = -Infinity, minY = Infinity, maxY = -Infinity
+  for (const p of pads) {
+    if (p.x < minX) minX = p.x
+    if (p.x > maxX) maxX = p.x
+    if (p.y < minY) minY = p.y
+    if (p.y > maxY) maxY = p.y
+  }
+
+  const PAD_HALF = 40
+  const spanX = (maxX - minX) + PAD_HALF * 4 || PAD_HALF * 4
+  const spanY = (maxY - minY) + PAD_HALF * 4 || PAD_HALF * 4
+  const scale = size * 0.8 / Math.max(spanX, spanY)
+  const centerX = (minX + maxX) / 2
+  const centerY = (minY + maxY) / 2
+  const perimR = Math.max(spanX, spanY) * scale / 2 + 20
+
+  // Perimeter circle
+  steps.push(() => {
+    ctx.beginPath()
+    ctx.arc(cx, cy, perimR, 0, Math.PI * 2)
+    ctx.strokeStyle = colors.station
+    ctx.lineWidth = 1
+    ctx.setLineDash([6, 4])
+    ctx.stroke()
+    ctx.setLineDash([])
+  })
+
+  // Each pad
+  for (let i = 0; i < pads.length; i++) {
+    const pi = i
+    steps.push(() => {
+      const p = pads[pi]
+      const px = cx + (p.x - centerX) * scale
+      const py = cy + (p.y - centerY) * scale
+      const pw = PAD_HALF * 2 * scale
+      const ph = PAD_HALF * 2.5 * scale
+      const isActive = (pi + 1) === padNumber
+
+      ctx.strokeStyle = colors.station
+      ctx.lineWidth = 1.5
+      ctx.strokeRect(px - pw / 2, py - ph / 2, pw, ph)
+
+      ctx.beginPath()
+      ctx.moveTo(px, py - ph / 2 - 4)
+      ctx.lineTo(px - 6, py - ph / 2 + 4)
+      ctx.lineTo(px + 6, py - ph / 2 + 4)
+      ctx.closePath()
+      ctx.fillStyle = colors.station
+      ctx.fill()
+
+      if (isActive) {
+        ctx.fillStyle = colors.pad
+        ctx.fillRect(px - pw / 2, py - ph / 2, pw, ph)
+      }
+
+      const fontSize = Math.max(12, Math.min(pw, ph) * 0.4)
+      ctx.font = `bold ${fontSize}px monospace`
+      ctx.fillStyle = isActive ? colors.padLabel : colors.station
+      ctx.textAlign = 'center'
+      ctx.textBaseline = 'middle'
+      ctx.fillText(String(pi + 1), px, py)
+
+      ctx.font = `${Math.max(9, fontSize * 0.6)}px monospace`
+      ctx.fillStyle = isActive ? colors.padLabel : 'rgba(255, 147, 0, 0.4)'
+      ctx.fillText('L', px, py + fontSize * 0.6)
+    })
+  }
+
+  // Template name
+  steps.push(() => {
+    ctx.font = '11px monospace'
+    ctx.fillStyle = 'rgba(255, 147, 0, 0.35)'
+    ctx.textAlign = 'center'
+    ctx.textBaseline = 'bottom'
+    ctx.fillText(template.name + ' \u2014 ' + economy, cx, cy + perimR + 16)
+  })
+
+  return steps
+}
+
 // ---- Main overlay component ----
 
 const FADE_DURATION = 600   // ms for background fade-in
-const SWEEP_DURATION = 1200 // ms for circular reveal of canvas content
+const STEP_DELAY = 80       // ms between each element appearing
 const DISMISS_DURATION = 3000 // ms for fade-out on dismiss
 
 export default function LandingPadOverlay ({ data, onDismiss }) {
@@ -438,9 +697,9 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
     // The inner rectangle is ~80% of the screen, fully opaque
     // The fade border is ~10% on each side
     const innerX = w * 0.08
-    const innerY = h * 0.06
+    const innerY = h * 0.15
     const innerW = w * 0.84
-    const innerH = h * 0.88
+    const innerH = h * 0.70
     const fadeSize = Math.min(w, h) * 0.12
 
     // Fill solid center
@@ -512,7 +771,6 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
     const cx = rect.width / 2
     const cy = rect.height / 2
     const drawSize = Math.min(rect.width, rect.height) * 0.7
-    const maxRadius = Math.sqrt(rect.width * rect.width + rect.height * rect.height)
 
     const colors = {
       station: 'rgba(255, 147, 0, 0.6)',
@@ -524,24 +782,23 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
 
     const stationType = (data.stationType || '').toLowerCase()
 
-    function drawStation () {
-      if (STARPORT_TYPES.has(stationType)) {
-        drawStarport(ctx, cx, cy, drawSize / 2, data.pad, colors)
-      } else if (CARRIER_TYPES.has(stationType)) {
-        drawFleetCarrier(ctx, cx, cy, drawSize, data.pad, colors)
-      } else if (SETTLEMENT_TYPES.has(stationType)) {
-        drawSettlement(ctx, cx, cy, drawSize, data.pad, data.economy, colors)
-      } else {
-        drawOutpost(ctx, cx, cy, drawSize, data.pad, colors)
-      }
+    // Build array of individual draw steps for stick-by-stick animation
+    let steps
+    if (STARPORT_TYPES.has(stationType)) {
+      steps = getStarportSteps(ctx, cx, cy, drawSize / 2, data.pad, colors)
+    } else if (CARRIER_TYPES.has(stationType)) {
+      steps = getCarrierSteps(ctx, cx, cy, drawSize, data.pad, colors)
+    } else if (SETTLEMENT_TYPES.has(stationType)) {
+      steps = getSettlementSteps(ctx, cx, cy, drawSize, data.pad, data.economy, colors)
+    } else {
+      steps = getOutpostSteps(ctx, cx, cy, drawSize, data.pad, colors)
     }
 
-    // Wait for the background to fade in before starting the sweep
-    const sweepDelay = FADE_DURATION
+    // Wait for background fade-in, then reveal elements one by one
     const startTime = performance.now()
 
     function animate (now) {
-      const elapsed = now - startTime - sweepDelay
+      const elapsed = now - startTime - FADE_DURATION
       ctx.clearRect(0, 0, rect.width, rect.height)
 
       if (elapsed < 0) {
@@ -549,22 +806,11 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
         return
       }
 
-      const progress = Math.min(elapsed / SWEEP_DURATION, 1)
-      const eased = 1 - Math.pow(1 - progress, 2)
-      const sweepAngle = eased * Math.PI * 2
+      const visibleCount = Math.min(Math.floor(elapsed / STEP_DELAY) + 1, steps.length)
+      for (let i = 0; i < visibleCount; i++) steps[i]()
 
-      if (progress < 1) {
-        ctx.save()
-        ctx.beginPath()
-        ctx.moveTo(cx, cy)
-        ctx.arc(cx, cy, maxRadius, -Math.PI / 2, -Math.PI / 2 + sweepAngle)
-        ctx.closePath()
-        ctx.clip()
-        drawStation()
-        ctx.restore()
+      if (visibleCount < steps.length) {
         animRef.current = requestAnimationFrame(animate)
-      } else {
-        drawStation()
       }
     }
 

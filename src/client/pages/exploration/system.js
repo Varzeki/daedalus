@@ -165,17 +165,25 @@ export default function ExplorationSystemPage () {
   const [componentReady, setComponentReady] = useState(false)
   const [systemData, setSystemData] = useState(null)
   const [loadError, setLoadError] = useState(false)
-  const [sortKey, setSortKey] = useState(null) // null = default (distance), or column key
-  const [sortAsc, setSortAsc] = useState(true)
+  const SORT_KEY = 'daedalus-exploration-sort'
+  const [sortKey, setSortKey] = useState(() => {
+    try { return JSON.parse(window.localStorage.getItem(SORT_KEY))?.key ?? null } catch { return null }
+  })
+  const [sortAsc, setSortAsc] = useState(() => {
+    try { return JSON.parse(window.localStorage.getItem(SORT_KEY))?.asc ?? true } catch { return true }
+  })
 
   const handleSort = (key) => {
+    let newKey, newAsc
     if (sortKey === key) {
-      if (!sortAsc) { setSortKey(null); setSortAsc(true) } // third click resets
-      else setSortAsc(false)
+      if (!sortAsc) { newKey = null; newAsc = true } // third click resets
+      else { newKey = key; newAsc = false }
     } else {
-      setSortKey(key)
-      setSortAsc(true)
+      newKey = key; newAsc = true
     }
+    setSortKey(newKey)
+    setSortAsc(newAsc)
+    try { window.localStorage.setItem(SORT_KEY, JSON.stringify({ key: newKey, asc: newAsc })) } catch {}
   }
 
   const fetchSystem = async () => {

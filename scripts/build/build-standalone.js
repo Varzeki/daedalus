@@ -18,7 +18,7 @@ const {
 } = require('./lib/build-options')
 
 const DEBUG_CONSOLE = commandLineArgs.debug || DEBUG_CONSOLE_DEFAULT
-const ENTRY_POINT = path.join(__dirname, '..', 'src', 'service', 'main.js')
+const ENTRY_POINT = path.join(__dirname, '..', '..', 'src', 'service', 'main.js')
 
 ;(async () => {
   clean()
