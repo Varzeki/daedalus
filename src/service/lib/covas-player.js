@@ -245,6 +245,18 @@ function voicelinePlay (wavFile) {
 }
 
 /**
+ * Handle FSD charging start — fires when the fsdCharging status flag first becomes true.
+ * For hyperspace charges also broadcasts the countdown sequence.
+ */
+function handleFsdCharging (isHyperspace) {
+  voicelinePlay('frameshift_drive_charging.wav')
+  if (isHyperspace) {
+    const sequence = covasEventMap.voiceover.countdownSequence
+    if (sequence && isVoiceoverEnabled()) broadcastSequence(sequence, 400)
+  }
+}
+
+/**
  * Broadcast an extended alert event to all connected clients.
  * Only broadcasts if extended alerts are enabled in settings.
  */
@@ -291,18 +303,9 @@ function handleLogEvent (logEvent) {
   const eventName = logEvent.event
   if (!eventName) return
 
-  // --- Special handling for StartJump (split by JumpType) ---
-  if (eventName === 'StartJump') {
-    if (logEvent.JumpType === 'Hyperspace') {
-      voicelinePlay('frameshift_drive_charging.wav')
-      const sequence = covasEventMap.voiceover.countdownSequence
-      if (sequence && isVoiceoverEnabled()) broadcastSequence(sequence, 400)
-    } else {
-      const mapping = covasEventMap.voiceover.logEvents.StartJump_Supercruise
-      if (mapping) voicelinePlay(mapping.file)
-    }
-    return
-  }
+  // --- StartJump: audio now fires on fsdCharging status flag change (see handleFsdCharging).
+  // Skip audio here to avoid double-playing. Route/autoswitch logic listens to this event elsewhere.
+  if (eventName === 'StartJump') return
 
   // --- Hull damage: debounce + threshold alerts ---
   if (eventName === 'HullDamage') {
@@ -458,6 +461,7 @@ function stop () {
 }
 
 module.exports = {
+  handleFsdCharging,
   handleLogEvent,
   handleStatusChange,
   handleExtendedAlert,

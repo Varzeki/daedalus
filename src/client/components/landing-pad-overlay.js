@@ -411,7 +411,7 @@ function sortTimedSteps (steps) {
 function getFlashStages (stationType) {
   if (STARPORT_TYPES.has(stationType)) {
     return [
-      { group: 'front', flashes: 3 },
+      { group: 'front', flashes: 2 },
       { group: 'pad', flashes: 2 }
     ]
   }
@@ -793,8 +793,8 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
       canvas.height = h * dpr
       ctx.scale(dpr, dpr)
 
-      // Keep the vignette nearly full-screen so it doesn't snap tightly to the pad artwork.
-      const edgeInset = Math.max(Math.min(w, h) * 0.025, 16)
+      // Keep the vignette large but with visible padding on all sides.
+      const edgeInset = Math.max(Math.min(w, h) * 0.05, 40)
       const innerX = edgeInset
       const innerY = edgeInset
       const innerW = w - edgeInset * 2
