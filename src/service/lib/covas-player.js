@@ -94,6 +94,75 @@ function getVoicelinesDir () {
   return prefs?.covasDir || BUNDLED_VOICELINES_DIR
 }
 
+function runPowerShellWavTest (filePath) {
+  const escapedPath = filePath.replace(/'/g, "''")
+  const script = `try {
+  $player = New-Object System.Media.SoundPlayer('${escapedPath}')
+  $player.Load()
+  $player.PlaySync()
+  $player.Dispose()
+  Write-Output 'PLAYBACK_OK'
+  exit 0
+} catch {
+  Write-Output ('PLAYBACK_ERROR:' + $_.Exception.Message)
+  exit 1
+}`
+
+  return new Promise((resolve) => {
+    childProcess.execFile('powershell', ['-NoProfile', '-Command', script], {
+      windowsHide: true,
+      timeout: 30000
+    }, (error, stdout = '', stderr = '') => {
+      const output = stdout.trim()
+      const playbackError = output.match(/PLAYBACK_ERROR:(.*)$/m)?.[1]?.trim() || null
+      const timedOut = error?.killed === true || error?.signal === 'SIGTERM'
+
+      resolve({
+        success: !error && output.includes('PLAYBACK_OK'),
+        output,
+        stderr: stderr.trim(),
+        exitCode: typeof error?.code === 'number' ? error.code : 0,
+        timedOut,
+        error: playbackError || stderr.trim() || error?.message || null
+      })
+    })
+  })
+}
+
+async function testWav (wavFile) {
+  const voicelinesDir = getVoicelinesDir()
+  const filePath = path.join(voicelinesDir, wavFile)
+  const fileExists = fs.existsSync(filePath)
+  const baseResult = {
+    success: false,
+    wavFile,
+    voicelinesDir,
+    filePath,
+    fileExists,
+    voiceoverEnabled: isVoiceoverEnabled()
+  }
+
+  if (!fileExists) {
+    const result = {
+      ...baseResult,
+      error: 'Voiceline file not found'
+    }
+    console.log('[COVAS TEST]', result)
+    return result
+  }
+
+  const playbackResult = await runPowerShellWavTest(filePath)
+  const result = {
+    ...baseResult,
+    ...playbackResult,
+    success: playbackResult.success === true,
+    error: playbackResult.success ? null : (playbackResult.error || 'Playback did not complete successfully')
+  }
+
+  console.log('[COVAS TEST]', result)
+  return result
+}
+
 function sleep (ms) {
   return new Promise(resolve => setTimeout(resolve, ms))
 }
@@ -405,6 +474,7 @@ module.exports = {
   isVoiceoverEnabled,
   isExtendedEnabled,
   getVoicelinesDir,
+  testWav,
   stop,
   queuePlay
 }

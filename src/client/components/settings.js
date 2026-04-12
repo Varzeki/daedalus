@@ -171,24 +171,56 @@ function SoundSettings ({ visible }) {
 
 function TestAudioButton () {
   const [status, setStatus] = useState(null) // null | 'playing' | 'ok' | 'error'
+  const [details, setDetails] = useState(null)
 
   const handleTest = async () => {
     setStatus('playing')
+    setDetails(null)
     try {
-      await sendEvent('testAudio')
-      setStatus('ok')
-    } catch {
+      const result = await sendEvent('testAudio')
+      setDetails(result)
+      setStatus(result?.success ? 'ok' : 'error')
+    } catch (error) {
+      setDetails({
+        success: false,
+        error: error?.message || 'Unknown audio test error'
+      })
       setStatus('error')
     }
   }
 
   return (
-    <div style={{ marginTop: '.5rem', display: 'flex', alignItems: 'center', gap: '.5rem' }}>
-      <button onClick={handleTest} disabled={status === 'playing'}>
-        {status === 'playing' ? 'Playing...' : 'Test Audio'}
-      </button>
-      {status === 'ok' && <span className='text-secondary'>Sound played successfully</span>}
-      {status === 'error' && <span className='text-danger'>Audio playback failed — check browser permissions</span>}
+    <div style={{ marginTop: '.5rem' }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
+        <button onClick={handleTest} disabled={status === 'playing'}>
+          {status === 'playing' ? 'Playing...' : 'Test Audio'}
+        </button>
+        {status === 'ok' && <span className='text-secondary'>Sound played successfully</span>}
+        {status === 'error' && <span className='text-danger'>{details?.error || 'Audio playback failed'}</span>}
+      </div>
+      {details && (
+        <div
+          style={{
+            marginTop: '.5rem',
+            padding: '.5rem .75rem',
+            border: `.15rem solid ${details.success ? 'var(--color-secondary)' : 'var(--color-danger)'}`,
+            background: 'var(--color-background-panel)',
+            maxWidth: '36rem'
+          }}
+        >
+          <div className='text-info' style={{ marginBottom: '.25rem' }}>Last test diagnostics</div>
+          <div style={{ fontSize: '.9rem', lineHeight: '1.25rem', textTransform: 'none' }}>
+            {details.filePath && <div>File: <span className='text-muted'>{details.filePath}</span></div>}
+            {details.voicelinesDir && <div>Directory: <span className='text-muted'>{details.voicelinesDir}</span></div>}
+            {typeof details.fileExists === 'boolean' && <div>File exists: <span className={details.fileExists ? 'text-secondary' : 'text-danger'}>{String(details.fileExists)}</span></div>}
+            {typeof details.voiceoverEnabled === 'boolean' && <div>Voiceover enabled: <span className='text-info'>{String(details.voiceoverEnabled)}</span></div>}
+            {typeof details.exitCode === 'number' && <div>Exit code: <span className='text-info'>{details.exitCode}</span></div>}
+            {details.timedOut && <div className='text-danger'>Playback timed out after 30 seconds</div>}
+            {details.output && <div>Player output: <span className='text-muted'>{details.output}</span></div>}
+            {details.stderr && <div>Player stderr: <span className='text-danger'>{details.stderr}</span></div>}
+          </div>
+        </div>
+      )}
     </div>
   )
 }

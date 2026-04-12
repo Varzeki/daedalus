@@ -95,10 +95,7 @@ class EventHandlers {
         },
         detectVoicepackDir: () => detectVoicepackDir(),
         validateVoicepackDir: ({ dir }) => validateVoicepackDir(dir),
-        testAudio: async () => {
-          await covasPlayer.queuePlay('confirmed.wav')
-          return { success: true }
-        },
+        testAudio: async () => covasPlayer.testWav('confirmed.wav'),
         testMessage: ({name, message}) => {
           // Method to simulate messages, intended for developers
           if (name !== 'testMessage') broadcastEvent(name, message)
