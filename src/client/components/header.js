@@ -17,7 +17,12 @@ export default function Header ({ connected, active }) {
   const [notificationsVisible, setNotificationsVisible] = useState(socketOptions.notifications)
   const [autoSwitchEnabled, setAutoSwitchEnabled] = useState(socketOptions.explorationAutoSwitch)
   const [settingsVisible, setSettingsVisible] = useState(false)
-  const [toolbarOpen, setToolbarOpen] = useState(false)
+  const [toolbarOpen, setToolbarOpen] = useState(() => {
+    if (typeof window !== 'undefined') {
+      try { return window.localStorage.getItem('daedalus-toolbar-open') === 'true' } catch { return false }
+    }
+    return false
+  })
 
   const { audioEnabled, toggleAudio } = useAudioToggle()
   const { landingPadEnabled, landingPadData, toggleLandingPad, dismissLandingPad } = useLandingPad()
@@ -148,7 +153,7 @@ export default function Header ({ connected, active }) {
           </button>
         </div>
 
-        <button tabIndex='1' onClick={() => { setToolbarOpen(!toolbarOpen); document.activeElement.blur() }} className='button--icon'>
+        <button tabIndex='1' onClick={() => { const next = !toolbarOpen; setToolbarOpen(next); try { window.localStorage.setItem('daedalus-toolbar-open', String(next)) } catch {} document.activeElement.blur() }} className='button--icon'>
           <i className={`icon ${toolbarOpen ? 'daedalus-terminal-chevron-right' : 'daedalus-terminal-chevron-left'}`} style={{ fontSize: '2rem', transition: 'transform .2s ease' }} />
         </button>
       </div>

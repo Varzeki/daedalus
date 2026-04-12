@@ -14,7 +14,7 @@ const applyScaling = (scaledWrapper, scaledContent) => {
   }
 }
 
-const FSD_COOLDOWN_DURATION = 10000 // ~10 seconds standard FSD cooldown
+const FSD_COOLDOWN_ESTIMATE = 10000 // 10s standard FSD cooldown
 
 function FsdCooldownRing ({ active }) {
   const [progress, setProgress] = useState(0)
@@ -26,9 +26,18 @@ function FsdCooldownRing ({ active }) {
       startRef.current = performance.now()
       const tick = (now) => {
         const elapsed = now - startRef.current
-        const p = Math.min(elapsed / FSD_COOLDOWN_DURATION, 1)
+        let p
+        if (elapsed < FSD_COOLDOWN_ESTIMATE) {
+          // Fast phase: 0→95% over estimated ~10s
+          p = (elapsed / FSD_COOLDOWN_ESTIMATE) * 0.95
+        } else {
+          // Slow phase: if cooldown is longer than expected (emergency drop),
+          // creep from 95%→99% asymptotically until the flag clears
+          const extra = elapsed - FSD_COOLDOWN_ESTIMATE
+          p = 0.95 + 0.04 * (1 - Math.exp(-extra / 30000))
+        }
         setProgress(p)
-        if (p < 1) rafRef.current = requestAnimationFrame(tick)
+        rafRef.current = requestAnimationFrame(tick)
       }
       rafRef.current = requestAnimationFrame(tick)
     } else {
@@ -52,13 +61,13 @@ function FsdCooldownRing ({ active }) {
           <circle
             cx={size / 2} cy={size / 2} r={radius}
             fill='none'
-            stroke='rgba(255, 147, 0, 0.2)'
+            stroke='rgba(206, 237, 255, 0.2)'
             strokeWidth={stroke}
           />
           <circle
             cx={size / 2} cy={size / 2} r={radius}
             fill='none'
-            stroke='rgba(255, 147, 0, 0.9)'
+            stroke='rgba(206, 237, 255, 0.9)'
             strokeWidth={stroke}
             strokeDasharray={circumference}
             strokeDashoffset={dashOffset}

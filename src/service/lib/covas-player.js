@@ -129,17 +129,31 @@ function playWav (filePath) {
 }
 
 /**
- * Queue a voiceline for playback. Plays sequentially with a gap to avoid overlaps.
- * Also broadcasts the voiceline filename to all connected clients.
+ * Broadcast a voiceline event to all connected clients.
+ * Always fires regardless of server-side voiceover setting.
+ */
+function broadcastVoiceline (wavFile) {
+  if (global.BROADCAST_EVENT) {
+    global.BROADCAST_EVENT('playVoiceline', { file: wavFile })
+  }
+}
+
+/**
+ * Broadcast a voiceline sequence event to all connected clients.
+ * Always fires regardless of server-side voiceover setting.
+ */
+function broadcastSequence (files, gap) {
+  if (global.BROADCAST_EVENT) {
+    global.BROADCAST_EVENT('playVoicelineSequence', { files, gap: gap || 400 })
+  }
+}
+
+/**
+ * Queue a voiceline for local playback. Plays sequentially with a gap to avoid overlaps.
  */
 async function queuePlay (wavFile) {
   const voicelinesDir = getVoicelinesDir()
   const filePath = path.join(voicelinesDir, wavFile)
-
-  // Broadcast to clients so they can play audio independently
-  if (global.BROADCAST_EVENT) {
-    global.BROADCAST_EVENT('playVoiceline', { file: wavFile })
-  }
 
   if (!fs.existsSync(filePath)) return
 
@@ -156,6 +170,24 @@ async function queuePlay (wavFile) {
 }
 
 /**
+ * Broadcast + conditionally play locally for voiceover events.
+ * Always broadcasts to clients; only plays server-side if voiceover is enabled.
+ */
+function voicelinePlay (wavFile) {
+  broadcastVoiceline(wavFile)
+  if (isVoiceoverEnabled()) queuePlay(wavFile)
+}
+
+/**
+ * Broadcast + conditionally play locally for extended alert events.
+ * Always broadcasts to clients; only plays server-side if extended alerts are enabled.
+ */
+function extendedPlay (wavFile) {
+  broadcastVoiceline(wavFile)
+  if (isExtendedEnabled()) queuePlay(wavFile)
+}
+
+/**
  * Check if an event is currently debounced.
  * Returns true if the event should be suppressed.
  */
@@ -169,18 +201,12 @@ function isDebounced (eventName, debounceMs) {
 }
 
 /**
- * Play the FSD hyperspace countdown: 5... 4... 3... 2... 1... Engage
+ * Play the FSD hyperspace countdown locally: 5... 4... 3... 2... 1... Engage
  * Each clip is spaced ~1 second apart to match the in-game countdown.
- * Broadcasts the full sequence to clients so they can play it independently.
  */
 async function playCountdown () {
   const sequence = covasEventMap.voiceover.countdownSequence
   if (!sequence) return
-
-  // Broadcast full countdown sequence to clients
-  if (global.BROADCAST_EVENT) {
-    global.BROADCAST_EVENT('playVoicelineSequence', { files: sequence, gap: 400 })
-  }
 
   const voicelinesDir = getVoicelinesDir()
   for (let i = 0; i < sequence.length; i++) {
@@ -197,8 +223,6 @@ async function playCountdown () {
  * Handle a journal log event — look up matching voiceline and queue it.
  */
 function handleLogEvent (logEvent) {
-  if (!isVoiceoverEnabled()) return
-
   const eventName = logEvent.event
   if (!eventName) return
 
@@ -207,10 +231,13 @@ function handleLogEvent (logEvent) {
     if (logEvent.JumpType === 'Hyperspace') {
       // Queue the countdown sequence (non-blocking to allow other events)
       _queue = [] // clear queue so countdown isn't interrupted
-      playCountdown()
+      voicelinePlay('frameshift_drive_charging.wav')
+      const sequence = covasEventMap.voiceover.countdownSequence
+      if (sequence) broadcastSequence(sequence, 400)
+      if (isVoiceoverEnabled()) playCountdown()
     } else {
       const mapping = covasEventMap.voiceover.logEvents.StartJump_Supercruise
-      if (mapping) queuePlay(mapping.file)
+      if (mapping) voicelinePlay(mapping.file)
     }
     return
   }
@@ -231,7 +258,7 @@ function handleLogEvent (logEvent) {
         // Only play if crossing into a new threshold
         if (newState && newState !== _hullThresholdState) {
           _hullThresholdState = newState
-          queuePlay(thresholds[newState].file)
+          voicelinePlay(thresholds[newState].file)
         }
       }
       // Reset threshold state when hull is repaired above compromised
@@ -243,7 +270,7 @@ function handleLogEvent (logEvent) {
     // Debounce the "taking damage" clip (45s)
     const mapping = covasEventMap.voiceover.logEvents.HullDamage
     if (mapping && !isDebounced('HullDamage', mapping.debounce)) {
-      queuePlay(mapping.file)
+      voicelinePlay(mapping.file)
     }
     return
   }
@@ -252,7 +279,7 @@ function handleLogEvent (logEvent) {
   if (eventName === 'UnderAttack') {
     const mapping = covasEventMap.voiceover.logEvents.UnderAttack
     if (mapping && !isDebounced('UnderAttack', mapping.debounce)) {
-      queuePlay(mapping.file)
+      voicelinePlay(mapping.file)
     }
     return
   }
@@ -267,16 +294,16 @@ function handleLogEvent (logEvent) {
     // Play canopy critical first, then canopy compromised
     const canopyThresholds = covasEventMap.voiceover.canopyThresholds
     if (canopyThresholds?.critical?.file) {
-      queuePlay(canopyThresholds.critical.file)
+      voicelinePlay(canopyThresholds.critical.file)
     }
     const mapping = covasEventMap.voiceover.logEvents.CockpitBreached
-    if (mapping?.file) queuePlay(mapping.file)
+    if (mapping?.file) voicelinePlay(mapping.file)
     return
   }
 
   const mapping = covasEventMap.voiceover.logEvents[lookupKey]
   if (mapping && mapping.file) {
-    queuePlay(mapping.file)
+    voicelinePlay(mapping.file)
   }
 }
 
@@ -284,12 +311,10 @@ function handleLogEvent (logEvent) {
  * Handle a status flag change — look up matching voiceline and queue it.
  */
 function handleStatusChange (flagName, value) {
-  if (!isVoiceoverEnabled()) return
-
   const lookupKey = `${flagName}_${value}`
   const mapping = covasEventMap.voiceover.statusFlags[lookupKey]
   if (mapping) {
-    queuePlay(mapping.file)
+    voicelinePlay(mapping.file)
   }
 }
 
@@ -298,11 +323,9 @@ function handleStatusChange (flagName, value) {
  * (low fuel, dangerous system, valuable body, etc.)
  */
 function handleExtendedAlert (alertName) {
-  if (!isExtendedEnabled()) return
-
   const mapping = covasEventMap.extended[alertName]
   if (mapping) {
-    queuePlay(mapping.file)
+    extendedPlay(mapping.file)
   }
 }
 
@@ -315,7 +338,6 @@ function invalidatePreferencesCache () {
  * @param {number} oxygenLevel - Oxygen level from 0.0 to 1.0
  */
 function handleOxygenThreshold (oxygenLevel) {
-  if (!isVoiceoverEnabled()) return
   if (typeof oxygenLevel !== 'number') return
 
   const thresholds = covasEventMap.voiceover.oxygenThresholds
@@ -331,7 +353,7 @@ function handleOxygenThreshold (oxygenLevel) {
   // Only play if crossing into a new threshold
   if (newState && newState !== _oxygenThresholdState) {
     _oxygenThresholdState = newState
-    queuePlay(thresholds[newState].file)
+    voicelinePlay(thresholds[newState].file)
   }
 
   // Reset threshold state when oxygen recovers above low
@@ -346,7 +368,6 @@ function handleOxygenThreshold (oxygenLevel) {
  * @param {number} cargoCapacity - Max cargo capacity
  */
 function handleCargoCapacity (cargoCount, cargoCapacity) {
-  if (!isVoiceoverEnabled()) return
   if (typeof cargoCount !== 'number' || typeof cargoCapacity !== 'number') return
   if (cargoCapacity <= 0) return
 
@@ -355,7 +376,7 @@ function handleCargoCapacity (cargoCount, cargoCapacity) {
   if (isFull && !_cargoFullAnnounced) {
     _cargoFullAnnounced = true
     const alert = covasEventMap.voiceover.capacityAlerts?.cargoFull
-    if (alert?.file) queuePlay(alert.file)
+    if (alert?.file) voicelinePlay(alert.file)
   } else if (!isFull) {
     _cargoFullAnnounced = false
   }

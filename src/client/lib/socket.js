@@ -18,11 +18,15 @@ const socketOptions = {
   notifications: false,
   explorationAutoSwitch: false,
   audioEnabled: false,
-  landingPadEnabled: false
+  landingPadEnabled: false,
+  _autoSwitchFrom: null,
+  _autoSwitchJumping: false,
+  _autoSwitchCooldown: 0
 }
 
 const PERSISTED_OPTIONS = ['notifications', 'explorationAutoSwitch', 'landingPadEnabled', 'audioEnabled']
 const STORAGE_KEY = 'daedalus-socket-options'
+const AUTOSWITCH_STORAGE_KEY = 'daedalus-autoswitch-state'
 
 function setSocketOption (key, value) {
   socketOptions[key] = value
@@ -35,6 +39,17 @@ function setSocketOption (key, value) {
   }
 }
 
+function persistAutoSwitchState () {
+  if (typeof window === 'undefined') return
+  try {
+    window.sessionStorage.setItem(AUTOSWITCH_STORAGE_KEY, JSON.stringify({
+      from: socketOptions._autoSwitchFrom,
+      jumping: socketOptions._autoSwitchJumping,
+      cooldown: socketOptions._autoSwitchCooldown
+    }))
+  } catch (e) { /* ignore */ }
+}
+
 // Restore persisted toggle states from localStorage
 if (typeof window !== 'undefined') {
   try {
@@ -44,6 +59,15 @@ if (typeof window !== 'undefined') {
       if (typeof saved.notifications === 'boolean') socketOptions.notifications = saved.notifications
       if (typeof saved.landingPadEnabled === 'boolean') socketOptions.landingPadEnabled = saved.landingPadEnabled
       if (typeof saved.audioEnabled === 'boolean') socketOptions.audioEnabled = saved.audioEnabled
+    }
+  } catch (e) { /* ignore */ }
+  // Restore autoswitch navigation state from sessionStorage
+  try {
+    const autoState = JSON.parse(window.sessionStorage.getItem(AUTOSWITCH_STORAGE_KEY))
+    if (autoState) {
+      socketOptions._autoSwitchFrom = autoState.from || null
+      socketOptions._autoSwitchJumping = autoState.jumping || false
+      socketOptions._autoSwitchCooldown = autoState.cooldown || 0
     }
   } catch (e) { /* ignore */ }
 }
@@ -140,6 +164,8 @@ function connect (socketState, setSocketState) {
               // Hyperspace jump starting — save current page and switch to route view
               if (!socketOptions._autoSwitchFrom) socketOptions._autoSwitchFrom = path
               socketOptions._autoSwitchJumping = true
+              socketOptions._autoSwitchCooldown = 0
+              persistAutoSwitchState()
               if (path !== '/exploration/route') window.location.href = '/exploration/route'
             }
           }
@@ -149,18 +175,24 @@ function connect (socketState, setSocketState) {
       // Early auto-switch: FSD charging while in supercruise = hyperspace jump
       try {
         if (socketOptions.explorationAutoSwitch && name === 'gameStateChange') {
-          const path = window.location.pathname
-          if (path.startsWith('/exploration') && !socketOptions._autoSwitchFrom) {
-            sendEvent('getCmdrStatus').then(cmdrStatus => {
-              const flags = cmdrStatus?.flags || {}
-              const currentPath = window.location.pathname
-              if (!currentPath.startsWith('/exploration')) return
-              if (flags.fsdCharging && flags.supercruise && flags.fsdHyperdriveCharging && !socketOptions._autoSwitchFrom) {
-                // FSD charging for hyperspace in supercruise — switch early
-                socketOptions._autoSwitchFrom = currentPath
-                if (currentPath !== '/exploration/route') window.location.href = '/exploration/route'
-              }
-            }).catch(() => {})
+          // Skip if within post-jump cooldown (prevents bounce-back from stale gameStateChange)
+          if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) { /* skip */ }
+          else {
+            const path = window.location.pathname
+            if (path.startsWith('/exploration') && !socketOptions._autoSwitchFrom) {
+              sendEvent('getCmdrStatus').then(cmdrStatus => {
+                if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) return
+                const flags = cmdrStatus?.flags || {}
+                const currentPath = window.location.pathname
+                if (!currentPath.startsWith('/exploration')) return
+                if (flags.fsdCharging && flags.supercruise && flags.fsdHyperdriveCharging && !socketOptions._autoSwitchFrom) {
+                  // FSD charging for hyperspace in supercruise — switch early
+                  socketOptions._autoSwitchFrom = currentPath
+                  persistAutoSwitchState()
+                  if (currentPath !== '/exploration/route') window.location.href = '/exploration/route'
+                }
+              }).catch(() => {})
+            }
           }
         }
       } catch (e) { console.log('AUTO_SWITCH_EARLY_ERROR', e) }
@@ -168,20 +200,25 @@ function connect (socketState, setSocketState) {
       // Cancel auto-switch when FSD charge cancelled (flags clear without jump completing)
       try {
         if (socketOptions.explorationAutoSwitch && name === 'gameStateChange' && socketOptions._autoSwitchFrom) {
-          sendEvent('getCmdrStatus').then(cmdrStatus => {
-            const flags = cmdrStatus?.flags || {}
-            if (!flags.fsdCharging && !flags.fsdJump && socketOptions._autoSwitchFrom) {
-              if (!socketOptions._autoSwitchJumping) {
-                // FSD charge cancelled — switch back to previous page
-                const returnTo = socketOptions._autoSwitchFrom
-                socketOptions._autoSwitchFrom = null
-                const currentPath = window.location.pathname
-                if (currentPath.startsWith('/exploration') && currentPath !== returnTo) {
-                  window.location.href = returnTo
+          if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) { /* skip during cooldown */ }
+          else {
+            sendEvent('getCmdrStatus').then(cmdrStatus => {
+              if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) return
+              const flags = cmdrStatus?.flags || {}
+              if (!flags.fsdCharging && !flags.fsdJump && socketOptions._autoSwitchFrom) {
+                if (!socketOptions._autoSwitchJumping) {
+                  // FSD charge cancelled — switch back to previous page
+                  const returnTo = socketOptions._autoSwitchFrom
+                  socketOptions._autoSwitchFrom = null
+                  persistAutoSwitchState()
+                  const currentPath = window.location.pathname
+                  if (currentPath.startsWith('/exploration') && currentPath !== returnTo) {
+                    window.location.href = returnTo
+                  }
                 }
               }
-            }
-          }).catch(() => {})
+            }).catch(() => {})
+          }
         }
       } catch (e) { console.log('AUTO_SWITCH_CANCEL_ERROR', e) }
 
@@ -191,6 +228,8 @@ function connect (socketState, setSocketState) {
           if (message.event === 'FSDJump' || message.event === 'Location') {
             socketOptions._autoSwitchFrom = null
             socketOptions._autoSwitchJumping = false
+            socketOptions._autoSwitchCooldown = Date.now()
+            persistAutoSwitchState()
             const path = window.location.pathname
             if (path.startsWith('/exploration') && path !== '/exploration/system') {
               window.location.href = '/exploration/system'
