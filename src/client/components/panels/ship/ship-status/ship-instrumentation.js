@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 const applyScaling = (scaledWrapper, scaledContent) => {
   try {
@@ -12,6 +12,63 @@ const applyScaling = (scaledWrapper, scaledContent) => {
   } catch (e) {
     console.log(e)
   }
+}
+
+const FSD_COOLDOWN_DURATION = 10000 // ~10 seconds standard FSD cooldown
+
+function FsdCooldownRing ({ active }) {
+  const [progress, setProgress] = useState(0)
+  const startRef = useRef(null)
+  const rafRef = useRef(null)
+
+  useEffect(() => {
+    if (active) {
+      startRef.current = performance.now()
+      const tick = (now) => {
+        const elapsed = now - startRef.current
+        const p = Math.min(elapsed / FSD_COOLDOWN_DURATION, 1)
+        setProgress(p)
+        if (p < 1) rafRef.current = requestAnimationFrame(tick)
+      }
+      rafRef.current = requestAnimationFrame(tick)
+    } else {
+      setProgress(0)
+      startRef.current = null
+    }
+    return () => { if (rafRef.current) cancelAnimationFrame(rafRef.current) }
+  }, [active])
+
+  const size = 28
+  const stroke = 3
+  const radius = (size - stroke) / 2
+  const circumference = 2 * Math.PI * radius
+  const remaining = 1 - progress
+  const dashOffset = circumference * progress
+
+  return (
+    <span className={active ? 'ship-panel__light--on' : 'ship-panel__light--off'} style={{ position: 'relative', display: 'inline-flex', alignItems: 'center', gap: '0.2em' }}>
+      {active && (
+        <svg width={size} height={size} style={{ position: 'absolute', left: '-0.1em', top: '50%', transform: 'translateY(-50%) rotate(-90deg)' }}>
+          <circle
+            cx={size / 2} cy={size / 2} r={radius}
+            fill='none'
+            stroke='rgba(255, 147, 0, 0.2)'
+            strokeWidth={stroke}
+          />
+          <circle
+            cx={size / 2} cy={size / 2} r={radius}
+            fill='none'
+            stroke='rgba(255, 147, 0, 0.9)'
+            strokeWidth={stroke}
+            strokeDasharray={circumference}
+            strokeDashoffset={dashOffset}
+            strokeLinecap='round'
+          />
+        </svg>
+      )}
+      <span className='ship-panel__light-text'>FSD cool&shy;down</span>
+    </span>
+  )
 }
 
 export default function ShipInstrumentation ({ ship, cmdrStatus, toggleSwitches, toggleSwitch }) {
@@ -250,9 +307,7 @@ export default function ShipInstrumentation ({ ship, cmdrStatus, toggleSwitches,
                 </span>
               </td>
               <td>
-                <span className={ship.onBoard && cmdrStatus?.flags?.fsdCooldown ? 'ship-panel__light--on' : 'ship-panel__light--off'}>
-                  <span className='ship-panel__light-text'>FSD cool&shy;down</span>
-                </span>
+                <FsdCooldownRing active={ship.onBoard && cmdrStatus?.flags?.fsdCooldown} />
               </td>
               <td>
                 <span className={ship.onBoard && (cmdrStatus?.flags?.supercruise && !cmdrStatus?.flags?.fsdJump) ? 'ship-panel__light--on' : 'ship-panel__light--off'}>

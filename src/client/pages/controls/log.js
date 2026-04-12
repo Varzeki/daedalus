@@ -5,6 +5,7 @@ import Panel from 'components/panel'
 import LogListPanel from 'components/panels/log/log-list-panel'
 import LogInspectorPanel from 'components/panels/log/log-inspector-panel'
 import { useSocket, eventListener, sendEvent } from 'lib/socket'
+import { ControlsPanelNavItems } from 'lib/navigation-items'
 
 export default function LogPage () {
   const { connected, active, ready } = useSocket()
@@ -38,7 +39,7 @@ export default function LogPage () {
 
   return (
     <Layout connected={connected} active={active} ready={ready && componentReady}>
-      <Panel layout='left-half' scrollable>
+      <Panel layout='left-half' scrollable navigation={ControlsPanelNavItems('Log')}>
         <LogListPanel logEntries={logEntries} setSelectedLogEntry={setSelectedLogEntry} />
         {ready && logEntries.length === 0 && <p style={{ margin: '2rem 0' }} className='text-center text-muted'>No recent log entries</p>}
       </Panel>

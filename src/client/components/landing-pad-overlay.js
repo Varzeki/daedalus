@@ -386,23 +386,39 @@ function drawSettlement (ctx, cx, cy, size, padNumber, economy, colors) {
 
 const FADE_DURATION = 600   // ms for background fade-in
 const SWEEP_DURATION = 1200 // ms for circular reveal of canvas content
+const DISMISS_DURATION = 3000 // ms for fade-out on dismiss
 
 export default function LandingPadOverlay ({ data, onDismiss }) {
   const canvasRef = useRef(null)
   const backdropRef = useRef(null)
   const animRef = useRef(null)
   const [fadedIn, setFadedIn] = useState(false)
+  const [dismissing, setDismissing] = useState(false)
+  const dismissTimerRef = useRef(null)
 
   const isVisible = data != null
 
   // Reset fade state when overlay appears
   useEffect(() => {
     if (isVisible) {
+      setDismissing(false)
       requestAnimationFrame(() => setFadedIn(true))
     } else {
       setFadedIn(false)
+      setDismissing(false)
+    }
+    return () => {
+      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current)
     }
   }, [isVisible])
+
+  function handleDismiss () {
+    if (dismissing) return
+    setDismissing(true)
+    dismissTimerRef.current = setTimeout(() => {
+      onDismiss()
+    }, DISMISS_DURATION)
+  }
 
   // Draw the Elite-style rectangular vignette backdrop
   useEffect(() => {
@@ -564,7 +580,7 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
   return (
     <div
       className='landing-pad-overlay'
-      onClick={onDismiss}
+      onClick={handleDismiss}
       style={{
         position: 'fixed',
         top: 0,
@@ -577,8 +593,10 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
-        opacity: fadedIn ? 1 : 0,
-        transition: `opacity ${FADE_DURATION}ms ease-in`
+        opacity: dismissing ? 0 : (fadedIn ? 1 : 0),
+        transition: dismissing
+          ? `opacity ${DISMISS_DURATION}ms ease-out`
+          : `opacity ${FADE_DURATION}ms ease-in`
       }}
     >
       <canvas

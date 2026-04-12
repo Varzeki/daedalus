@@ -42,7 +42,7 @@
   background-repeat: repeat-x;
   background-position-y: 50%;
   margin-left: .5rem;
-  animation: horizontal-activity-animation 10s linear infinite;
+  animation: horizontal-activity-animation 80s linear infinite;
   filter: invert(1) blur(.075rem);
   opacity: .5;
 }
@@ -56,7 +56,7 @@
   position: relative;
   top: -5.5rem;
   background-clip: cover;
-  animation: horizontal-activity-animation 6s linear infinite;
+  animation: horizontal-activity-animation 48s linear infinite;
   filter: blur(.2rem);
   opacity: .75;
   transform: scaleY(-1.5);
@@ -71,7 +71,7 @@
   background-repeat: repeat-x;
   background-position-y: 50%;
   background-clip: cover;
-  animation: horizontal-activity-animation 18s linear infinite;
+  animation: horizontal-activity-animation 144s linear infinite;
   filter: blur(.15rem);
   opacity: .65;
   transform: scaleY(-2);
@@ -86,7 +86,7 @@
 
   }
   100% {
-    background-position-x: 584px;
+    background-position-x: 4672px;
   }
 }
 

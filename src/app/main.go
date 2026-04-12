@@ -161,7 +161,8 @@ func main() {
 	// Run service
 	cmdArg0 := fmt.Sprintf("%s%d", "--port=", *portPtr)
 	cmdArg1 := fmt.Sprintf("%s%s", "--save-game-dir=", saveGameDirPath)
-	serviceCmdInstance := exec.Command(filepath.Join(dirname, SERVICE_EXECUTABLE), cmdArg0, cmdArg1)
+	cmdArg2 := fmt.Sprintf("%s%d", "--parent-pid=", os.Getpid())
+	serviceCmdInstance := exec.Command(filepath.Join(dirname, SERVICE_EXECUTABLE), cmdArg0, cmdArg1, cmdArg2)
 	serviceCmdInstance.Dir = dirname
 	serviceCmdInstance.SysProcAttr = &syscall.SysProcAttr{CreationFlags: 0x08000000, HideWindow: true}
 	serviceCmdErr := serviceCmdInstance.Start()
@@ -425,7 +426,10 @@ func bindFunctionsToWebView(w webview.WebView) {
 }
 
 func exitApplication(exitCode int) {
-	// Placeholder for future logic
+	// Explicitly dispose the process group before exiting.
+	// os.Exit() does not run defers, so the deferred Dispose() in main()
+	// would be skipped, leaving the service process orphaned.
+	processGroup.Dispose()
 	os.Exit(exitCode)
 }
 

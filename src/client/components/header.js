@@ -9,9 +9,9 @@ import notification from 'lib/notification'
 
 const NAV_BUTTONS = [
   {
-    name: 'Navigation',
-    abbr: 'Nav',
-    path: '/nav'
+    name: 'Commander',
+    abbr: 'Cmdr',
+    path: '/cmdr'
   },
   {
     name: 'Ship',
@@ -19,9 +19,29 @@ const NAV_BUTTONS = [
     path: '/ship'
   },
   {
+    name: 'Navigation',
+    abbr: 'Nav',
+    path: '/nav'
+  },
+  {
     name: 'Exploration',
     abbr: 'Expl',
     path: '/exploration'
+  },
+  {
+    name: 'Trade',
+    abbr: 'Trade',
+    path: '/trade'
+  },
+  {
+    name: 'Mining',
+    abbr: 'Mine',
+    path: '/mining'
+  },
+  {
+    name: 'Missions',
+    abbr: 'Msns',
+    path: '/missions'
   },
   {
     name: 'Engineering',
@@ -29,9 +49,14 @@ const NAV_BUTTONS = [
     path: '/eng'
   },
   {
-    name: 'Log',
-    abbr: 'Log',
-    path: '/log'
+    name: 'Media',
+    abbr: 'Media',
+    path: '/media'
+  },
+  {
+    name: 'Controls',
+    abbr: 'Ctrl',
+    path: '/controls'
   }
 ]
 

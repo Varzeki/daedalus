@@ -19,6 +19,21 @@ function ShipPanelNavItems (activePanel) {
       name: 'Inventory',
       icon: 'inventory',
       url: '/ship/inventory'
+    },
+    {
+      name: 'Stats',
+      icon: 'info',
+      url: '/ship/stats'
+    },
+    {
+      name: 'Carrier',
+      icon: 'fleet-carrier',
+      url: '/ship/carrier'
+    },
+    {
+      name: 'Fleet',
+      icon: 'ship',
+      url: '/ship/fleet'
     }
   ]
   navigationItems.forEach(item => {
@@ -55,6 +70,14 @@ function NavPanelNavItems (activePanel, query) {
       icon: 'route',
       url: {
         pathname: '/nav/route',
+        query
+      }
+    },
+    {
+      name: 'Neutron Plotter',
+      icon: 'route',
+      url: {
+        pathname: '/nav/neutron-plotter',
         query
       }
     }
@@ -96,6 +119,16 @@ function EngineeringPanelNavItems (activePanel) {
       name: 'Xeno Materials',
       icon: 'materials-xeno',
       url: '/eng/xeno-materials'
+    },
+    {
+      name: 'Wishlist',
+      icon: 'poi',
+      url: '/eng/wishlist'
+    },
+    {
+      name: 'Material Planner',
+      icon: 'route',
+      url: '/eng/material-planner'
     }
   ]
   navigationItems.forEach(item => {
@@ -115,6 +148,21 @@ function ExplorationPanelNavItems (activePanel) {
       name: 'System',
       icon: 'system-orbits',
       url: '/exploration/system'
+    },
+    {
+      name: 'Biologicals',
+      icon: 'scan',
+      url: '/exploration/biologicals'
+    },
+    {
+      name: 'Inventory',
+      icon: 'inventory',
+      url: '/exploration/inventory'
+    },
+    {
+      name: 'Log',
+      icon: 'table-inspector',
+      url: '/exploration/log'
     }
   ]
   navigationItems.forEach(item => {
@@ -144,10 +192,165 @@ function SettingsNavItems (activePanel) {
   return navigationItems
 }
 
+function TradePanelNavItems (activePanel) {
+  const navigationItems = [
+    {
+      name: 'Routes',
+      icon: 'route',
+      url: '/trade/routes'
+    },
+    {
+      name: 'Commodities',
+      icon: 'cargo',
+      url: '/trade/commodities'
+    },
+    {
+      name: 'PTN',
+      icon: 'fleet-carrier',
+      url: '/trade/ptn'
+    },
+    {
+      name: 'FCOC',
+      icon: 'fleet-carrier',
+      url: '/trade/fcoc'
+    }
+  ]
+  navigationItems.forEach(item => {
+    if (item.name.toLowerCase() === activePanel.toLowerCase()) item.active = true
+  })
+  return navigationItems
+}
+
+function CmdrPanelNavItems (activePanel) {
+  const navigationItems = [
+    {
+      name: 'Overview',
+      icon: 'shield',
+      url: '/cmdr/overview'
+    },
+    {
+      name: 'Session',
+      icon: 'trending-up-chart',
+      url: '/cmdr/session'
+    },
+    {
+      name: 'Community Goals',
+      icon: 'poi',
+      url: '/cmdr/community-goals'
+    },
+    {
+      name: 'Wing & Crew',
+      icon: 'credits',
+      url: '/cmdr/wing'
+    }
+  ]
+  navigationItems.forEach(item => {
+    if (item.name.toLowerCase() === activePanel.toLowerCase()) item.active = true
+  })
+  return navigationItems
+}
+
+function MissionsPanelNavItems (activePanel) {
+  const navigationItems = [
+    {
+      name: 'Missions',
+      icon: 'poi',
+      url: '/missions/overview'
+    },
+    {
+      name: 'Powerplay',
+      icon: 'power',
+      url: '/missions/powerplay'
+    },
+    {
+      name: 'Local Activity',
+      icon: 'poi',
+      url: '/missions/local-activity'
+    }
+  ]
+  navigationItems.forEach(item => {
+    if (item.name.toLowerCase() === activePanel.toLowerCase()) item.active = true
+  })
+  return navigationItems
+}
+
+function MiningPanelNavItems (activePanel) {
+  const navigationItems = [
+    {
+      name: 'Status',
+      icon: 'asteroid-base',
+      url: '/mining/status'
+    },
+    {
+      name: 'Log',
+      icon: 'table-inspector',
+      url: '/mining/log'
+    },
+    {
+      name: 'Statistics',
+      icon: 'trending-up-chart',
+      url: '/mining/statistics'
+    }
+  ]
+  navigationItems.forEach(item => {
+    if (item.name.toLowerCase() === activePanel.toLowerCase()) item.active = true
+  })
+  return navigationItems
+}
+
+function ControlsPanelNavItems (activePanel) {
+  const navigationItems = [
+    {
+      name: 'Keybinds',
+      icon: 'cogs',
+      url: '/controls/keybinds'
+    },
+    {
+      name: 'Button Pane',
+      icon: 'settings',
+      url: '/controls/button-pane'
+    },
+    {
+      name: 'Log',
+      icon: 'table-inspector',
+      url: '/controls/log'
+    }
+  ]
+  navigationItems.forEach(item => {
+    if (item.name.toLowerCase() === activePanel.toLowerCase()) item.active = true
+  })
+  return navigationItems
+}
+
+function MediaPanelNavItems (activePanel) {
+  const navigationItems = [
+    {
+      name: 'GalNet',
+      icon: 'info',
+      url: '/media/galnet'
+    },
+    {
+      name: 'Video & Music',
+      icon: 'sound',
+      url: '/media/video'
+    }
+  ]
+  navigationItems.forEach(item => {
+    if (item.name.toLowerCase() === activePanel.toLowerCase()) item.active = true
+  })
+  return navigationItems
+}
+
 module.exports = {
   ShipPanelNavItems,
   NavPanelNavItems,
   ExplorationPanelNavItems,
   EngineeringPanelNavItems,
-  SettingsNavItems
+  SettingsNavItems,
+  TradePanelNavItems,
+  CmdrPanelNavItems,
+  MissionsPanelNavItems,
+  MiningPanelNavItems,
+  ControlsPanelNavItems,
+  MediaPanelNavItems
 }

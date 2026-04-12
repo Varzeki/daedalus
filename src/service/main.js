@@ -28,6 +28,10 @@ const commandLineArgs = yargs
     alias: 's',
     description: 'Elite Dangerous Save Game Directory'
   })
+  .option('parent-pid', {
+    type: 'number',
+    description: 'PID of parent app process (for orphan detection)'
+  })
   .version(packageJson.version)
   .alias('v', 'version')
   .alias('h', 'help')
@@ -206,6 +210,24 @@ webSocketServer.on('error', function (error) {
 // Start server
 httpServer.listen(PORT)
 console.log(`Listening on port ${PORT}…`)
+
+// Failsafe: if the parent app dies without cleaning up, detect it and exit.
+// Polls every 5 seconds to check if the parent process is still alive.
+const PARENT_PID = commandLineArgs['parent-pid']
+if (PARENT_PID) {
+  const parentCheckInterval = setInterval(() => {
+    try {
+      // process.kill with signal 0 checks existence without killing
+      process.kill(PARENT_PID, 0)
+    } catch (e) {
+      // ESRCH = process not found; parent has exited
+      console.log('Parent process no longer running, shutting down service.')
+      clearInterval(parentCheckInterval)
+      process.exit(0)
+    }
+  }, 5000)
+  parentCheckInterval.unref() // Don't prevent natural exit
+}
 
 // Initialize app - start parsing data and watching for game state changes
 setTimeout(() => init(), 500)
