@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { socketOptions, setSocketOption } from 'lib/socket'
+import { socketOptions, setSocketOption, useSocket } from 'lib/socket'
 import { isWindowFullScreen, toggleFullScreen } from 'lib/window'
 import { eliteDateTime } from 'lib/format'
 import { Settings } from 'components/settings'
@@ -11,7 +11,8 @@ import useLandingPad from 'lib/use-landing-pad'
 
 let IS_WINDOWS_APP = false
 
-export default function Header ({ connected, active }) {
+export default function Header () {
+  const { connected, active, ready } = useSocket()
   const [dateTime, setDateTime] = useState(eliteDateTime())
   const [isFullScreen, setIsFullScreen] = useState(false)
   const [notificationsVisible, setNotificationsVisible] = useState(socketOptions.notifications)
@@ -34,8 +35,9 @@ export default function Header ({ connected, active }) {
   }
 
   function toggleNotifications () {
-    setSocketOption('notifications', !notificationsVisible)
-    setNotificationsVisible(socketOptions.notifications)
+    const newValue = !socketOptions.notifications
+    setSocketOption('notifications', newValue)
+    setNotificationsVisible(newValue)
     // FIXME Uses document.getElementById('notifications') hack to force
     // hiding of all notifications when muted as the toast library can be
     // buggy. It needs swapping out for a different approach but this is a
@@ -58,8 +60,9 @@ export default function Header ({ connected, active }) {
   }
 
   function toggleAutoSwitch () {
-    setSocketOption('explorationAutoSwitch', !autoSwitchEnabled)
-    setAutoSwitchEnabled(socketOptions.explorationAutoSwitch)
+    const newValue = !socketOptions.explorationAutoSwitch
+    setSocketOption('explorationAutoSwitch', newValue)
+    setAutoSwitchEnabled(newValue)
     document.activeElement.blur()
   }
 
@@ -91,10 +94,12 @@ export default function Header ({ connected, active }) {
     return () => clearInterval(dateTimeInterval)
   }, [])
 
+  const isActive = active || !ready
+
   let signalClassName = 'icon daedalus-terminal-signal '
   if (!connected) {
     signalClassName += 'text-primary'
-  } else if (active) {
+  } else if (isActive) {
     signalClassName += 'text-secondary'
   } else {
     signalClassName += 'text-primary'
@@ -121,7 +126,7 @@ export default function Header ({ connected, active }) {
             </span>
           </p>
 
-          <button disabled className='button--icon button--transparent' style={{ marginRight: '.5rem', opacity: active ? 1 : .25, transition: 'all .25s ease-out' }}>
+          <button disabled className='button--icon button--transparent' style={{ marginRight: '.5rem', opacity: isActive ? 1 : .25, transition: 'all .25s ease-out' }}>
             <i className={signalClassName} style={{ position: 'relative', transition: 'all .25s ease', fontSize: '3rem', lineHeight: '1.8rem', top: '.5rem', right: '.25rem' }} />
           </button>
 

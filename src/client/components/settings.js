@@ -1,4 +1,4 @@
-import { useState, useEffect, Fragment } from 'react'
+import { useState, useEffect, Fragment, useRef } from 'react'
 import { sendEvent, eventListener } from 'lib/socket'
 import { SettingsNavItems } from 'lib/navigation-items'
 import packageJson from '../../../package.json'
@@ -120,6 +120,7 @@ function SoundSettings ({ visible }) {
         />
         Enable COVAS voiceover
       </label>
+      <TestAudioButton />
       <hr style={{ margin: '1rem 0' }} />
       <h4 className='text-primary'>COVAS Extended Alerts</h4>
       <p>
@@ -164,6 +165,31 @@ function SoundSettings ({ visible }) {
           }
         </p>
       )}
+    </div>
+  )
+}
+
+function TestAudioButton () {
+  const [status, setStatus] = useState(null) // null | 'playing' | 'ok' | 'error'
+  const audioRef = useRef(null)
+
+  const handleTest = () => {
+    if (audioRef.current) { audioRef.current.pause(); audioRef.current = null }
+    setStatus('playing')
+    const audio = new Audio('/voicelines/confirmed.wav')
+    audioRef.current = audio
+    audio.onended = () => { setStatus('ok'); audioRef.current = null }
+    audio.onerror = () => { setStatus('error'); audioRef.current = null }
+    audio.play().catch(() => { setStatus('error'); audioRef.current = null })
+  }
+
+  return (
+    <div style={{ marginTop: '.5rem', display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+      <button onClick={handleTest} disabled={status === 'playing'}>
+        {status === 'playing' ? 'Playing...' : 'Test Audio'}
+      </button>
+      {status === 'ok' && <span className='text-secondary'>Sound played successfully</span>}
+      {status === 'error' && <span className='text-danger'>Audio playback failed — check browser permissions</span>}
     </div>
   )
 }

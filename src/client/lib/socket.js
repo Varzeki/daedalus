@@ -1,5 +1,6 @@
 /* global WebSocket, CustomEvent */
 import { createContext, useState, useContext, useEffect } from 'react'
+import Router from 'next/router'
 import notification from 'lib/notification'
 
 let socket = null// Store socket connection (defaults to null)
@@ -158,7 +159,7 @@ function connect (socketState, setSocketState) {
       // (charging in supercruise can only be a hyperspace jump)
       try {
         if (socketOptions.explorationAutoSwitch && name === 'newLogEntry') {
-          const path = window.location.pathname
+          const path = Router.asPath
           if (path.startsWith('/exploration')) {
             if (message.event === 'StartJump' && message.JumpType === 'Hyperspace') {
               // Hyperspace jump starting — save current page and switch to route view
@@ -166,7 +167,7 @@ function connect (socketState, setSocketState) {
               socketOptions._autoSwitchJumping = true
               socketOptions._autoSwitchCooldown = 0
               persistAutoSwitchState()
-              if (path !== '/exploration/route') window.location.href = '/exploration/route'
+              if (path !== '/exploration/route') Router.push('/exploration/route')
             }
           }
         }
@@ -178,18 +179,18 @@ function connect (socketState, setSocketState) {
           // Skip if within post-jump cooldown (prevents bounce-back from stale gameStateChange)
           if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) { /* skip */ }
           else {
-            const path = window.location.pathname
+            const path = Router.asPath
             if (path.startsWith('/exploration') && !socketOptions._autoSwitchFrom) {
               sendEvent('getCmdrStatus').then(cmdrStatus => {
                 if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) return
                 const flags = cmdrStatus?.flags || {}
-                const currentPath = window.location.pathname
+                const currentPath = Router.asPath
                 if (!currentPath.startsWith('/exploration')) return
                 if (flags.fsdCharging && flags.supercruise && flags.fsdHyperdriveCharging && !socketOptions._autoSwitchFrom) {
                   // FSD charging for hyperspace in supercruise — switch early
                   socketOptions._autoSwitchFrom = currentPath
                   persistAutoSwitchState()
-                  if (currentPath !== '/exploration/route') window.location.href = '/exploration/route'
+                  if (currentPath !== '/exploration/route') Router.push('/exploration/route')
                 }
               }).catch(() => {})
             }
@@ -211,9 +212,9 @@ function connect (socketState, setSocketState) {
                   const returnTo = socketOptions._autoSwitchFrom
                   socketOptions._autoSwitchFrom = null
                   persistAutoSwitchState()
-                  const currentPath = window.location.pathname
+                  const currentPath = Router.asPath
                   if (currentPath.startsWith('/exploration') && currentPath !== returnTo) {
-                    window.location.href = returnTo
+                    Router.push(returnTo)
                   }
                 }
               }
@@ -230,9 +231,9 @@ function connect (socketState, setSocketState) {
             socketOptions._autoSwitchJumping = false
             socketOptions._autoSwitchCooldown = Date.now()
             persistAutoSwitchState()
-            const path = window.location.pathname
+            const path = Router.asPath
             if (path.startsWith('/exploration') && path !== '/exploration/system') {
-              window.location.href = '/exploration/system'
+              Router.push('/exploration/system')
             }
           }
         }

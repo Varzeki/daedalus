@@ -650,6 +650,7 @@ const DISMISS_DURATION = 3000 // ms for fade-out on dismiss
 export default function LandingPadOverlay ({ data, onDismiss }) {
   const canvasRef = useRef(null)
   const backdropRef = useRef(null)
+  const contentRef = useRef(null)
   const animRef = useRef(null)
   const [fadedIn, setFadedIn] = useState(false)
   const [dismissing, setDismissing] = useState(false)
@@ -683,24 +684,37 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
   useEffect(() => {
     if (!isVisible || !backdropRef.current) return
 
-    const canvas = backdropRef.current
-    const ctx = canvas.getContext('2d')
-    const dpr = window.devicePixelRatio || 1
+    // Defer drawing until content is laid out so we can measure it
+    const drawVignette = () => {
+      const canvas = backdropRef.current
+      if (!canvas) return
+      const ctx = canvas.getContext('2d')
+      const dpr = window.devicePixelRatio || 1
 
-    const w = window.innerWidth
-    const h = window.innerHeight
-    canvas.width = w * dpr
-    canvas.height = h * dpr
-    ctx.scale(dpr, dpr)
+      const w = window.innerWidth
+      const h = window.innerHeight
+      canvas.width = w * dpr
+      canvas.height = h * dpr
+      ctx.scale(dpr, dpr)
 
-    // Draw the rectangular vignette: solid dark center that fades to transparent at edges
-    // The inner rectangle is ~80% of the screen, fully opaque
-    // The fade border is ~10% on each side
-    const innerX = w * 0.08
-    const innerY = h * 0.15
-    const innerW = w * 0.84
-    const innerH = h * 0.70
-    const fadeSize = Math.min(w, h) * 0.12
+      // Measure content area and add padding, or fall back to viewport percentages
+      const PADDING = Math.min(w, h) * 0.06
+      let innerX, innerY, innerW, innerH
+
+      if (contentRef.current) {
+        const rect = contentRef.current.getBoundingClientRect()
+        innerX = rect.left - PADDING
+        innerY = rect.top - PADDING
+        innerW = rect.width + PADDING * 2
+        innerH = rect.height + PADDING * 2
+      } else {
+        innerX = w * 0.08
+        innerY = h * 0.15
+        innerW = w * 0.84
+        innerH = h * 0.70
+      }
+
+      const fadeSize = Math.min(w, h) * 0.12
 
     // Fill solid center
     ctx.fillStyle = 'rgba(0, 0, 0, 0.88)'
@@ -754,6 +768,10 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
       ctx.rect(sx, sy, fadeSize, fadeSize)
       ctx.fill()
     }
+    }
+
+    // Draw after a frame so content has been laid out and measured
+    requestAnimationFrame(drawVignette)
   }, [isVisible])
 
   useEffect(() => {
@@ -856,27 +874,28 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
           pointerEvents: 'none'
         }}
       />
-      <div style={{ textAlign: 'center', marginBottom: '1rem', zIndex: 1 }}>
-        <p className='text-primary' style={{ fontSize: '1.2rem', margin: '0 0 .25rem 0', opacity: 0.7 }}>
-          {data.stationName}
-        </p>
-        <p className='text-info' style={{ fontSize: '4rem', margin: 0, fontWeight: 'bold', letterSpacing: '.2rem' }}>
-          PAD {data.pad}
+      <div ref={contentRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1 }}>
+        <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
+          <p className='text-primary' style={{ fontSize: '1.2rem', margin: '0 0 .25rem 0', opacity: 0.7 }}>
+            {data.stationName}
+          </p>
+          <p className='text-info' style={{ fontSize: '4rem', margin: 0, fontWeight: 'bold', letterSpacing: '.2rem' }}>
+            PAD {data.pad}
+          </p>
+        </div>
+        <canvas
+          ref={canvasRef}
+          style={{
+            width: '60vmin',
+            height: '60vmin',
+            maxWidth: '600px',
+            maxHeight: '600px'
+          }}
+        />
+        <p className='text-muted' style={{ fontSize: '.9rem', marginTop: '1rem', opacity: 0.5 }}>
+          Click anywhere to dismiss
         </p>
       </div>
-      <canvas
-        ref={canvasRef}
-        style={{
-          width: '60vmin',
-          height: '60vmin',
-          maxWidth: '600px',
-          maxHeight: '600px',
-          zIndex: 1
-        }}
-      />
-      <p className='text-muted' style={{ fontSize: '.9rem', marginTop: '1rem', opacity: 0.5, zIndex: 1 }}>
-        Click anywhere to dismiss
-      </p>
     </div>
   )
 }

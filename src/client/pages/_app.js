@@ -1,6 +1,7 @@
 import App from 'next/app'
 import { Toaster } from 'react-hot-toast'
 import { SocketProvider, eventListener } from 'lib/socket'
+import Header from 'components/header'
 import { loadColorSettings, saveColorSettings } from 'components/settings'
 import 'lib/performance-profiler'
 import '../public/fonts/daedalus-terminal/daedalus-terminal.css'
@@ -150,6 +151,7 @@ export default class MyApp extends App {
             }}
           />
         </div>
+        <Header />
         <Component {...pageProps} />
         {/* Pre-decode galaxy background so it's instant when nav map mounts */}
         <img src='/images/textures/galaxy.jpg' alt='' decoding='async' style={{ position: 'absolute', width: 0, height: 0, opacity: 0, pointerEvents: 'none' }} />

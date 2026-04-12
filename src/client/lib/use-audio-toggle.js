@@ -7,7 +7,7 @@ export default function useAudioToggle () {
   const audioPlaying = useRef(false)
 
   function toggleAudio () {
-    const newEnabled = !audioEnabled
+    const newEnabled = !socketOptions.audioEnabled
     setSocketOption('audioEnabled', newEnabled)
     setAudioEnabled(newEnabled)
     document.activeElement.blur()

@@ -1,4 +1,3 @@
-import Header from 'components/header'
 import Loader from 'components/loader'
 
 export default function Layout ({ children, connected = false, active = false, ready = true, loader = false, className = '' }) {
@@ -6,7 +5,6 @@ export default function Layout ({ children, connected = false, active = false, r
     <>
       <div className='layout'>
         <Loader visible={!connected || !ready || loader} />
-        <Header connected={connected} active={active || !ready} />
         <div className={`layout__main ${className}`} style={{ opacity: connected && ready ? 1 : 0 }}>
           {children}
         </div>

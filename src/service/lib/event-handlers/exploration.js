@@ -850,11 +850,14 @@ class Exploration {
       includeNonValuable: options.includeNonValuable
     })
 
+    // Adjust body counts to exclude belt clusters (consistent with filtered body list)
+    const beltClusterCount = cached.bodies.filter(b => b.name?.includes('Belt Cluster')).length
+
     return {
       name: currentSystemName,
       cmdrName,
-      bodyCount,
-      bodiesFound: cached.bodies.length,
+      bodyCount: bodyCount - beltClusterCount,
+      bodiesFound: bodies.length,
       bodies,
       systemValue,
       minBodyValue: options.minBodyValue ?? 1000000,
