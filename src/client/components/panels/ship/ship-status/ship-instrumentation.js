@@ -52,7 +52,7 @@ function FsdCooldownRing ({ active }) {
   const radius = (size - stroke) / 2
   const circumference = 2 * Math.PI * radius
   const remaining = 1 - progress
-  const dashOffset = circumference * progress
+  const dashLength = Math.max(remaining * circumference, circumference * 0.015)
 
   return (
     <span className={active ? 'ship-panel__light--on' : 'ship-panel__light--off'} style={{ position: 'relative' }}>
@@ -69,8 +69,7 @@ function FsdCooldownRing ({ active }) {
             fill='none'
             stroke='rgba(206, 237, 255, 0.9)'
             strokeWidth={stroke}
-            strokeDasharray={circumference}
-            strokeDashoffset={dashOffset}
+            strokeDasharray={`${dashLength} ${circumference}`}
             strokeLinecap='round'
           />
         </svg>

@@ -384,13 +384,37 @@ function drawSettlement (ctx, cx, cy, size, padNumber, economy, colors) {
 
 // ---- Step-based draw generators (stick-by-stick animation) ----
 
+function getClockwiseAngleFromTop (dx, dy) {
+  return (Math.atan2(dy, dx) + Math.PI / 2 + Math.PI * 2) % (Math.PI * 2)
+}
+
+function createTimedStep (draw, phase = 0, angle = 0, order = 0) {
+  return { draw, phase, angle, order }
+}
+
+function drawStep (step) {
+  if (typeof step === 'function') {
+    step()
+    return
+  }
+  step.draw()
+}
+
+function sortTimedSteps (steps) {
+  return [...steps].sort((left, right) => {
+    if (left.phase !== right.phase) return left.phase - right.phase
+    if (left.angle !== right.angle) return left.angle - right.angle
+    return left.order - right.order
+  })
+}
+
 function getStarportSteps (ctx, cx, cy, radius, padNumber, colors) {
   const steps = []
 
   // Shell rings (4 steps)
   for (let s = 0; s < SHELL_SCALE.length; s++) {
     const si = s
-    steps.push(() => {
+    steps.push(createTimedStep(() => {
       ctx.lineJoin = 'round'
       ctx.lineCap = 'round'
       const r = radius * SHELL_SCALE[si]
@@ -405,7 +429,7 @@ function getStarportSteps (ctx, cx, cy, radius, padNumber, colors) {
       ctx.strokeStyle = colors.station
       ctx.lineWidth = (si === 0 || si === SHELL_SCALE.length - 1) ? 2 : 1
       ctx.stroke()
-    })
+    }, 0, 0, si))
   }
 
   // Sector lines (12 steps)
@@ -413,7 +437,8 @@ function getStarportSteps (ctx, cx, cy, radius, padNumber, colors) {
   const innerR = radius * SHELL_SCALE[SHELL_SCALE.length - 1]
   for (let i = 0; i < DODECAGON.length; i++) {
     const li = i
-    steps.push(() => {
+    const [dx, dy] = DODECAGON[li]
+    steps.push(createTimedStep(() => {
       const [dx, dy] = DODECAGON[li]
       ctx.beginPath()
       ctx.moveTo(cx + dx * outerR, cy + dy * outerR)
@@ -421,13 +446,13 @@ function getStarportSteps (ctx, cx, cy, radius, padNumber, colors) {
       ctx.strokeStyle = colors.station
       ctx.lineWidth = 2
       ctx.stroke()
-    })
+    }, 1, getClockwiseAngleFromTop(dx, dy), li))
   }
 
   // Entry slot — red side
   const slotWidth = radius * 0.75
   const slotHeight = radius * SHELL_SCALE[SHELL_SCALE.length - 1]
-  steps.push(() => {
+  steps.push(createTimedStep(() => {
     ctx.beginPath()
     ctx.moveTo(cx, cy - slotHeight)
     ctx.lineTo(cx + slotWidth, cy - slotHeight)
@@ -438,10 +463,10 @@ function getStarportSteps (ctx, cx, cy, radius, padNumber, colors) {
     ctx.strokeStyle = colors.redSide
     ctx.lineWidth = 4
     ctx.stroke()
-  })
+  }, 2, getClockwiseAngleFromTop(1, 0), 0))
 
   // Entry slot — green side
-  steps.push(() => {
+  steps.push(createTimedStep(() => {
     ctx.beginPath()
     ctx.moveTo(cx, cy - slotHeight)
     ctx.lineTo(cx - slotWidth, cy - slotHeight)
@@ -452,18 +477,18 @@ function getStarportSteps (ctx, cx, cy, radius, padNumber, colors) {
     ctx.strokeStyle = colors.greenSide
     ctx.lineWidth = 4
     ctx.stroke()
-  })
+  }, 2, getClockwiseAngleFromTop(-1, 0), 1))
 
   // Pad highlight
   if (padNumber >= 1 && padNumber <= 45) {
-    steps.push(() => {
-      const { sector: rawSector, shell } = getStarportPadCoords(padNumber)
-      const sector = (rawSector + 6) % 12
-      const [dx, dy] = PAD_SECTORS[sector]
+    const { sector: rawSector, shell } = getStarportPadCoords(padNumber)
+    const sector = (rawSector + 6) % 12
+    const [padDx, padDy] = PAD_SECTORS[sector]
+    steps.push(createTimedStep(() => {
       const midScale = (SHELL_SCALE[shell] + SHELL_SCALE[shell + 1]) / 2
       const rt = radius * COS15 * midScale
-      const px = cx + rt * dx
-      const py = cy + rt * dy
+      const px = cx + rt * padDx
+      const py = cy + rt * padDy
       const dotSize = radius * (SHELL_SCALE[0] - SHELL_SCALE[1]) / 4 * (3 - shell) / (4 - shell)
 
       ctx.beginPath()
@@ -476,10 +501,10 @@ function getStarportSteps (ctx, cx, cy, radius, padNumber, colors) {
       ctx.textAlign = 'center'
       ctx.textBaseline = 'middle'
       ctx.fillText(String(padNumber), px, py)
-    })
+    }, 3, getClockwiseAngleFromTop(padDx, padDy), 0))
   }
 
-  return steps
+  return sortTimedSteps(steps)
 }
 
 function getCarrierSteps (ctx, cx, cy, size, padNumber, colors) {
@@ -644,40 +669,53 @@ function getSettlementSteps (ctx, cx, cy, size, padNumber, economy, colors) {
 // ---- Main overlay component ----
 
 const FADE_DURATION = 600   // ms for background fade-in
-const STEP_DELAY = 80       // ms between each element appearing
-const DISMISS_DURATION = 3000 // ms for fade-out on dismiss
+const ENTER_STEP_DELAY = 80       // ms between each element appearing
+const EXIT_REVERSE_DURATION = 2400 // ms to undo visible geometry before fading out
 
 export default function LandingPadOverlay ({ data, onDismiss }) {
   const canvasRef = useRef(null)
   const backdropRef = useRef(null)
   const contentRef = useRef(null)
   const animRef = useRef(null)
+  const clearTimerRef = useRef(null)
+  const dismissCallbackRef = useRef(null)
+  const currentVisibleCountRef = useRef(0)
+  const animationStateRef = useRef(data ? 'entering' : 'hidden')
+  const [displayData, setDisplayData] = useState(data)
   const [fadedIn, setFadedIn] = useState(false)
-  const [dismissing, setDismissing] = useState(false)
-  const dismissTimerRef = useRef(null)
+  const [animationState, setAnimationState] = useState(data ? 'entering' : 'hidden')
 
-  const isVisible = data != null
+  const isVisible = displayData != null
 
-  // Reset fade state when overlay appears
+  function beginExit (dismissCallback = null) {
+    if (!displayData || animationStateRef.current === 'exiting') return
+    if (clearTimerRef.current) clearTimeout(clearTimerRef.current)
+    dismissCallbackRef.current = dismissCallback
+    animationStateRef.current = 'exiting'
+    setAnimationState('exiting')
+  }
+
+  // Preserve the last visible data long enough to animate cleanly out.
   useEffect(() => {
-    if (isVisible) {
-      setDismissing(false)
-      requestAnimationFrame(() => setFadedIn(true))
-    } else {
+    if (data) {
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current)
+      dismissCallbackRef.current = null
+      currentVisibleCountRef.current = 0
+      setDisplayData(data)
+      animationStateRef.current = 'entering'
+      setAnimationState('entering')
       setFadedIn(false)
-      setDismissing(false)
+      requestAnimationFrame(() => setFadedIn(true))
+    } else if (displayData) {
+      beginExit()
     }
     return () => {
-      if (dismissTimerRef.current) clearTimeout(dismissTimerRef.current)
+      if (clearTimerRef.current) clearTimeout(clearTimerRef.current)
     }
-  }, [isVisible])
+  }, [data, displayData])
 
   function handleDismiss () {
-    if (dismissing) return
-    setDismissing(true)
-    dismissTimerRef.current = setTimeout(() => {
-      onDismiss()
-    }, DISMISS_DURATION)
+    beginExit(() => onDismiss())
   }
 
   // Draw the Elite-style rectangular vignette backdrop
@@ -772,10 +810,10 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
 
     // Draw after a frame so content has been laid out and measured
     requestAnimationFrame(drawVignette)
-  }, [isVisible])
+  }, [isVisible, displayData])
 
   useEffect(() => {
-    if (!isVisible || !canvasRef.current) return
+    if (!isVisible || !canvasRef.current || !displayData) return
 
     const canvas = canvasRef.current
     const ctx = canvas.getContext('2d')
@@ -798,37 +836,64 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
       redSide: 'rgba(200, 0, 0, 0.8)'
     }
 
-    const stationType = (data.stationType || '').toLowerCase()
+    const stationType = (displayData.stationType || '').toLowerCase()
 
     // Build array of individual draw steps for stick-by-stick animation
     let steps
     if (STARPORT_TYPES.has(stationType)) {
-      steps = getStarportSteps(ctx, cx, cy, drawSize / 2, data.pad, colors)
+      steps = getStarportSteps(ctx, cx, cy, drawSize / 2, displayData.pad, colors)
     } else if (CARRIER_TYPES.has(stationType)) {
-      steps = getCarrierSteps(ctx, cx, cy, drawSize, data.pad, colors)
+      steps = getCarrierSteps(ctx, cx, cy, drawSize, displayData.pad, colors)
     } else if (SETTLEMENT_TYPES.has(stationType)) {
-      steps = getSettlementSteps(ctx, cx, cy, drawSize, data.pad, data.economy, colors)
+      steps = getSettlementSteps(ctx, cx, cy, drawSize, displayData.pad, displayData.economy, colors)
     } else {
-      steps = getOutpostSteps(ctx, cx, cy, drawSize, data.pad, colors)
+      steps = getOutpostSteps(ctx, cx, cy, drawSize, displayData.pad, colors)
     }
 
-    // Wait for background fade-in, then reveal elements one by one
+    const exitStepDelay = EXIT_REVERSE_DURATION / Math.max(steps.length, 1)
+    const exitStartCount = currentVisibleCountRef.current
     const startTime = performance.now()
+    let completionScheduled = false
 
     function animate (now) {
-      const elapsed = now - startTime - FADE_DURATION
       ctx.clearRect(0, 0, rect.width, rect.height)
 
-      if (elapsed < 0) {
-        animRef.current = requestAnimationFrame(animate)
-        return
+      let visibleCount = steps.length
+
+      if (animationState === 'entering') {
+        const elapsed = now - startTime - FADE_DURATION
+        if (elapsed < 0) {
+          visibleCount = 0
+        } else {
+          visibleCount = Math.min(Math.floor(elapsed / ENTER_STEP_DELAY) + 1, steps.length)
+        }
+      } else if (animationState === 'exiting') {
+        const elapsed = now - startTime
+        visibleCount = Math.max(exitStartCount - Math.floor(elapsed / exitStepDelay), 0)
       }
 
-      const visibleCount = Math.min(Math.floor(elapsed / STEP_DELAY) + 1, steps.length)
-      for (let i = 0; i < visibleCount; i++) steps[i]()
+      currentVisibleCountRef.current = visibleCount
+      for (let i = 0; i < visibleCount; i++) drawStep(steps[i])
 
-      if (visibleCount < steps.length) {
+      if (animationState === 'entering' && visibleCount < steps.length) {
         animRef.current = requestAnimationFrame(animate)
+      } else if (animationState === 'entering') {
+        animationStateRef.current = 'visible'
+        setAnimationState('visible')
+      } else if (animationState === 'exiting' && visibleCount > 0) {
+        animRef.current = requestAnimationFrame(animate)
+      } else if (animationState === 'exiting' && !completionScheduled) {
+        completionScheduled = true
+        setFadedIn(false)
+        clearTimerRef.current = setTimeout(() => {
+          const dismissCallback = dismissCallbackRef.current
+          dismissCallbackRef.current = null
+          currentVisibleCountRef.current = 0
+          animationStateRef.current = 'hidden'
+          setAnimationState('hidden')
+          setDisplayData(null)
+          if (dismissCallback) dismissCallback()
+        }, FADE_DURATION)
       }
     }
 
@@ -837,7 +902,7 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current)
     }
-  }, [data, isVisible])
+  }, [displayData, isVisible, animationState])
 
   if (!isVisible) return null
 
@@ -857,10 +922,8 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
         alignItems: 'center',
         justifyContent: 'center',
         cursor: 'pointer',
-        opacity: dismissing ? 0 : (fadedIn ? 1 : 0),
-        transition: dismissing
-          ? `opacity ${DISMISS_DURATION}ms ease-out`
-          : `opacity ${FADE_DURATION}ms ease-in`
+        opacity: fadedIn ? 1 : 0,
+        transition: `opacity ${FADE_DURATION}ms ease-${animationState === 'exiting' ? 'out' : 'in'}`
       }}
     >
       <canvas
@@ -877,10 +940,10 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
       <div ref={contentRef} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', zIndex: 1 }}>
         <div style={{ textAlign: 'center', marginBottom: '1rem' }}>
           <p className='text-primary' style={{ fontSize: '1.2rem', margin: '0 0 .25rem 0', opacity: 0.7 }}>
-            {data.stationName}
+            {displayData.stationName}
           </p>
           <p className='text-info' style={{ fontSize: '4rem', margin: 0, fontWeight: 'bold', letterSpacing: '.2rem' }}>
-            PAD {data.pad}
+            PAD {displayData.pad}
           </p>
         </div>
         <canvas

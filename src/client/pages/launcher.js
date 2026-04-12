@@ -20,12 +20,34 @@ export default function IndexPage () {
   const [hostInfo, setHostInfo] = useState()
   const [update, setUpdate] = useState()
   const [downloadingUpdate, setDownloadingUpdate] = useState(false)
+  const [checkingForUpdate, setCheckingForUpdate] = useState(false)
+  const [updateStatus, setUpdateStatus] = useState(null)
   const [loadingProgress, setLoadingProgress] = useState(defaultloadingStats)
+
+  async function refreshUpdateStatus ({ silent = false } = {}) {
+    setCheckingForUpdate(true)
+    try {
+      const latestUpdate = await checkForUpdate()
+      setUpdate(latestUpdate || null)
+      if (!silent) {
+        if (latestUpdate?.isUpgrade) {
+          setUpdateStatus(`Update ${latestUpdate.productVersion} available`)
+        } else {
+          setUpdateStatus('Already on the latest version')
+        }
+      }
+    } catch {
+      if (!silent) setUpdateStatus('Unable to check for updates')
+    } finally {
+      setCheckingForUpdate(false)
+    }
+  }
 
   // Display URL (IP address/port) to connect from a browser
   useEffect(() => { sendEvent('hostInfo').then(setHostInfo) }, [])
 
   useEffect(() => {
+    let timeoutId
     ;(async () => {
       const message = await sendEvent('getLoadingStatus')
       setLoadingProgress(message)
@@ -33,11 +55,13 @@ export default function IndexPage () {
         document.getElementById('loadingProgressBar').style.opacity = 0
       }
 
-      setTimeout(async () => {
-        const update = await checkForUpdate()
-        setUpdate(update)
+      timeoutId = setTimeout(() => {
+        refreshUpdateStatus({ silent: true })
       }, 3000)
     })()
+    return () => {
+      if (timeoutId) clearTimeout(timeoutId)
+    }
   }, [connected])
 
   useEffect(() => eventListener('loadingProgress', (message) => {
@@ -61,6 +85,15 @@ export default function IndexPage () {
         <span className='launcher-title'>
           <h3 className='text-primary'>DAEDALUS Terminal</h3>
           <h4 className='text-primary text-muted'>Version {packageJson.version}</h4>
+          <div style={{ marginTop: '.75rem' }}>
+            <button onClick={() => refreshUpdateStatus()} disabled={checkingForUpdate}>
+              {checkingForUpdate ? 'Checking for Updates...' : 'Check for Updates'}
+            </button>
+            {updateStatus && !update?.isUpgrade &&
+              <p className='text-muted' style={{ margin: '.5rem 0 0 0', fontSize: '.95rem', fontWeight: 'normal' }}>
+                {updateStatus}
+              </p>}
+          </div>
         </span>
         {update && update.isUpgrade &&
           <div className='fx-fade-in'>
