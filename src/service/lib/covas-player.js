@@ -142,31 +142,19 @@ async function testWav (wavFile) {
   const voicelinesDir = getVoicelinesDir()
   const filePath = path.join(voicelinesDir, wavFile)
   const fileExists = fs.existsSync(filePath)
-  const baseResult = {
-    success: false,
+
+  const result = {
+    success: fileExists,
     wavFile,
     voicelinesDir,
     filePath,
     fileExists,
-    voiceoverEnabled: isVoiceoverEnabled()
+    voiceoverEnabled: isVoiceoverEnabled(),
+    error: fileExists ? null : 'Voiceline file not found'
   }
 
-  if (!fileExists) {
-    const result = {
-      ...baseResult,
-      error: 'Voiceline file not found'
-    }
-    console.log('[COVAS TEST]', result)
-    return result
-  }
-
-  const playbackResult = await runPowerShellWavTest(filePath)
-  const result = {
-    ...baseResult,
-    ...playbackResult,
-    success: playbackResult.success === true,
-    error: playbackResult.success ? null : (playbackResult.error || 'Playback did not complete successfully')
-  }
+  // Broadcast unconditionally so any client with audio enabled hears the test tone
+  if (fileExists) broadcastVoiceline(wavFile)
 
   console.log('[COVAS TEST]', result)
   return result
@@ -248,21 +236,20 @@ async function queuePlay (wavFile) {
 }
 
 /**
- * Broadcast + conditionally play locally for voiceover events.
- * Always broadcasts to clients; only plays server-side if voiceover is enabled.
+ * Broadcast a voiceover event to all connected clients.
+ * Only broadcasts if voiceover is enabled in settings — each client decides
+ * whether to play based on its own audio toggle (header button).
  */
 function voicelinePlay (wavFile) {
-  broadcastVoiceline(wavFile)
-  if (isVoiceoverEnabled()) queuePlay(wavFile)
+  if (isVoiceoverEnabled()) broadcastVoiceline(wavFile)
 }
 
 /**
- * Broadcast + conditionally play locally for extended alert events.
- * Always broadcasts to clients; only plays server-side if extended alerts are enabled.
+ * Broadcast an extended alert event to all connected clients.
+ * Only broadcasts if extended alerts are enabled in settings.
  */
 function extendedPlay (wavFile) {
-  broadcastVoiceline(wavFile)
-  if (isExtendedEnabled()) queuePlay(wavFile)
+  if (isExtendedEnabled()) broadcastVoiceline(wavFile)
 }
 
 /**
@@ -307,12 +294,9 @@ function handleLogEvent (logEvent) {
   // --- Special handling for StartJump (split by JumpType) ---
   if (eventName === 'StartJump') {
     if (logEvent.JumpType === 'Hyperspace') {
-      // Queue the countdown sequence (non-blocking to allow other events)
-      _queue = [] // clear queue so countdown isn't interrupted
       voicelinePlay('frameshift_drive_charging.wav')
       const sequence = covasEventMap.voiceover.countdownSequence
-      if (sequence) broadcastSequence(sequence, 400)
-      if (isVoiceoverEnabled()) playCountdown()
+      if (sequence && isVoiceoverEnabled()) broadcastSequence(sequence, 400)
     } else {
       const mapping = covasEventMap.voiceover.logEvents.StartJump_Supercruise
       if (mapping) voicelinePlay(mapping.file)

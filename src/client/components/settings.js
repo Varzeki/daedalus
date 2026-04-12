@@ -98,14 +98,14 @@ function SoundSettings ({ visible }) {
     <div className='modal-dialog__panel modal-dialog__panel--with-navigation scrollable'>
       <h3 className='text-primary'>Sounds</h3>
       <p>
-        Configure voice announcements for ship events and alerts.
-        Audio plays through the computer DAEDALUS Terminal is running on.
+        Configure which voice announcements are broadcast for ship events and alerts.
+        Use the audio button in the header to control whether this terminal plays audio.
       </p>
       <h4 className='text-primary'>COVAS Voiceover</h4>
       <p>
-        Play authentic in-game COVAS voice clips for ship events. These are
-        the same announcements that play in-game (e.g. docking granted, frameshift
-        drive charging). Enable this if you have the game audio muted.
+        Broadcast authentic in-game COVAS voice clips to all connected terminals.
+        Any terminal with audio enabled will play these announcements. Enable this
+        if you want voiceover (e.g. docking granted, frameshift drive charging).
       </p>
       <label style={{ display: 'flex', alignItems: 'center', gap: '.5rem', cursor: 'pointer' }}>
         <input
@@ -124,9 +124,10 @@ function SoundSettings ({ visible }) {
       <hr style={{ margin: '1rem 0' }} />
       <h4 className='text-primary'>COVAS Extended Alerts</h4>
       <p>
-        Additional voice warnings beyond what the game provides, such as low
-        fuel alerts, dangerous system warnings, high gravity cautions, and
-        notifications when valuable bodies are discovered.
+        Broadcast additional voice warnings beyond what the game provides, such as
+        low fuel alerts, dangerous system warnings, high gravity cautions, and
+        notifications when valuable bodies are discovered. Any terminal with audio
+        enabled will play these alerts.
       </p>
       <label style={{ display: 'flex', alignItems: 'center', gap: '.5rem', cursor: 'pointer' }}>
         <input
@@ -193,10 +194,10 @@ function TestAudioButton () {
     <div style={{ marginTop: '.5rem' }}>
       <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', flexWrap: 'wrap' }}>
         <button onClick={handleTest} disabled={status === 'playing'}>
-          {status === 'playing' ? 'Playing...' : 'Test Audio'}
+          {status === 'playing' ? 'Sending...' : 'Test Audio'}
         </button>
-        {status === 'ok' && <span className='text-secondary'>Sound played successfully</span>}
-        {status === 'error' && <span className='text-danger'>{details?.error || 'Audio playback failed'}</span>}
+        {status === 'ok' && <span className='text-secondary'>Broadcast sent — enable audio (header button) to hear it</span>}
+        {status === 'error' && <span className='text-danger'>{details?.error || 'Audio test failed'}</span>}
       </div>
       {details && (
         <div
@@ -214,10 +215,6 @@ function TestAudioButton () {
             {details.voicelinesDir && <div>Directory: <span className='text-muted'>{details.voicelinesDir}</span></div>}
             {typeof details.fileExists === 'boolean' && <div>File exists: <span className={details.fileExists ? 'text-secondary' : 'text-danger'}>{String(details.fileExists)}</span></div>}
             {typeof details.voiceoverEnabled === 'boolean' && <div>Voiceover enabled: <span className='text-info'>{String(details.voiceoverEnabled)}</span></div>}
-            {typeof details.exitCode === 'number' && <div>Exit code: <span className='text-info'>{details.exitCode}</span></div>}
-            {details.timedOut && <div className='text-danger'>Playback timed out after 30 seconds</div>}
-            {details.output && <div>Player output: <span className='text-muted'>{details.output}</span></div>}
-            {details.stderr && <div>Player stderr: <span className='text-danger'>{details.stderr}</span></div>}
           </div>
         </div>
       )}
