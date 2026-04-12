@@ -81,8 +81,8 @@ export default function PanelNavigation ({ items = [], search = () => {}, exit }
                     : () => item.url ? router.push(item.url) : () => null
                 }
               >
-                <i className={`icon daedalus-terminal-${item.icon}`} />
                 {item.name && <span className='secondary-navigation__label'>{item.name}</span>}
+                <i className={`icon daedalus-terminal-${item.icon}`} />
               </button>
             </Fragment>
           )}

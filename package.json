@@ -1,6 +1,6 @@
 {
   "name": "daedalus",
-  "version": "1.5.8",
+  "version": "1.5.9",
   "description": "DAEDALUS Terminal for Elite Dangerous",
   "scripts": {
     "build": "npm run build:client && npm run build:app && npm run build:service && npm run build:verify && npm run build:package",
