@@ -1,0 +1,457 @@
+/* ═══════════════════════════════════════════════════════════════════════════
+   Powerplay panel
+   ═══════════════════════════════════════════════════════════════════════════ */
+
+/* ── Root ─────────────────────────────────────────────────────────────────── */
+.powerplay-panel {
+  padding: 1.5rem 2rem;
+  min-height: 100%;
+  box-sizing: border-box;
+}
+
+.powerplay-panel__loading {
+  margin-top: 4rem;
+}
+
+/* ── Header: portrait + hero info ─────────────────────────────────────────── */
+.powerplay-panel__header {
+  display: flex;
+  min-height: 18rem;
+  gap: 0;
+  margin-bottom: 0;
+}
+
+.powerplay-panel__portrait-wrap {
+  flex: 0 0 14rem;
+  height: 18rem;
+  position: relative;
+  overflow: hidden;
+}
+
+.powerplay-panel__portrait {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  object-position: center 15%;
+  display: block;
+}
+
+/* Gradient: right edge bleeds into background, bottom edge softens */
+.powerplay-panel__portrait-fade {
+  position: absolute;
+  inset: 0;
+  background:
+    linear-gradient(to right,  transparent 45%, var(--color-background-panel) 95%),
+    linear-gradient(to top,    var(--color-background-panel) 0%,  transparent 25%);
+}
+
+/* ── Hero text area (right of portrait) ───────────────────────────────────── */
+.powerplay-panel__hero {
+  flex: 1 1 auto;
+  padding-left: 1.5rem;
+  display: flex;
+  flex-direction: column;
+}
+
+.powerplay-panel__hero-title {
+  margin-bottom: .25rem;
+}
+
+.powerplay-panel__power-name {
+  font-size: 3rem;
+  line-height: 1;
+  margin: 0 0 .2rem;
+  text-transform: uppercase;
+  letter-spacing: .05em;
+}
+
+.powerplay-panel__rank-badge {
+  font-size: 1.4rem;
+  letter-spacing: .1em;
+  display: inline-block;
+}
+
+/* ── Hero quick stats row ─────────────────────────────────────────────────── */
+.powerplay-panel__hero-stats {
+  display: flex;
+  gap: 3rem;
+  flex-wrap: wrap;
+  margin: .9rem 0 0;
+}
+
+.powerplay-panel__hero-stat {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+}
+
+.powerplay-panel__hero-stat-label {
+  font-size: 1.2rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.powerplay-panel__hero-stat-value {
+  font-size: 2rem;
+}
+
+/* ── Progress section (bottom of hero) ───────────────────────────────────── */
+.powerplay-panel__progress-section {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+
+/* Merit bar — progress to next rank */
+.powerplay-panel__merit-bar-track {
+  height: .35rem;
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .12);
+  position: relative;
+  overflow: hidden;
+}
+
+.powerplay-panel__merit-bar-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: var(--color-primary);
+  box-shadow: 0 0 .5rem rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .55);
+  transition: width .5s ease;
+}
+
+.powerplay-panel__merit-bar-label {
+  display: block;
+  font-size: 1.3rem;
+  margin: .3rem 0 .8rem;
+}
+
+/* ── 0→100 rank track ─────────────────────────────────────────────────────── */
+.powerplay-panel__rank-track {
+  position: relative;
+  padding-bottom: 2.5rem;
+}
+
+.powerplay-panel__rank-track-line {
+  height: .25rem;
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .12);
+  position: relative;
+  overflow: visible;
+}
+
+.powerplay-panel__rank-track-fill {
+  position: absolute;
+  top: 0;
+  left: 0;
+  height: 100%;
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .35);
+}
+
+.powerplay-panel__rank-track-marker {
+  position: absolute;
+  top: 50%;
+  transform: translate(-50%, -50%);
+  width: .75rem;
+  height: .75rem;
+  background: var(--color-primary);
+  box-shadow: 0 0 .6rem rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .9);
+  border-radius: 50%;
+  z-index: 1;
+}
+
+.powerplay-panel__rank-tick {
+  position: absolute;
+  top: 0;
+  transform: translateX(-50%);
+}
+
+.powerplay-panel__rank-tick-line {
+  width: .1rem;
+  height: .5rem;
+  margin-top: .3rem;
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .2);
+}
+
+.powerplay-panel__rank-tick--passed .powerplay-panel__rank-tick-line {
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .55);
+}
+
+.powerplay-panel__rank-tick-label {
+  display: block;
+  font-size: 1.1rem;
+  color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .35);
+  text-align: center;
+  margin-top: .1rem;
+  white-space: nowrap;
+}
+
+.powerplay-panel__rank-tick--passed .powerplay-panel__rank-tick-label {
+  color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .7);
+}
+
+/* ── Two-column main body ─────────────────────────────────────────────────── */
+.powerplay-panel__main {
+  display: grid;
+  grid-template-columns: 3fr 2fr;
+  gap: 2.5rem;
+  align-items: start;
+  margin-top: 1.5rem;
+}
+
+.powerplay-panel__right-col {
+  min-width: 0;
+}
+
+/* ── Section headings ─────────────────────────────────────────────────────── */
+.powerplay-panel__section-title {
+  font-size: 1.35rem;
+  letter-spacing: .1em;
+  text-transform: uppercase;
+  margin: 0 0 .6rem;
+  padding-bottom: .3rem;
+  border-bottom: .15rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .3);
+}
+
+/* ── Key/value rows ───────────────────────────────────────────────────────── */
+.powerplay-panel__rows {
+  border-top: 1px solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .12);
+}
+
+.powerplay-panel__row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .4rem 0;
+  border-bottom: 1px solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .12);
+  font-size: 1.4rem;
+  gap: 1rem;
+}
+
+.powerplay-panel__row > span:last-child {
+  text-align: right;
+}
+
+/* ── System type badge ────────────────────────────────────────────────────── */
+.powerplay-panel__type-badge {
+  font-weight: 700;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  font-size: 1.15rem;
+}
+
+/* ── Activity groups ──────────────────────────────────────────────────────── */
+.powerplay-panel__activity-groups {
+  margin-top: .9rem;
+}
+
+.powerplay-panel__activities-heading {
+  font-size: 1.3rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin: 0 0 .4rem;
+  opacity: .75;
+}
+
+.powerplay-panel__activity-group {
+  margin-bottom: 1rem;
+}
+
+.powerplay-panel__activity-group-header {
+  display: flex;
+  align-items: center;
+  gap: .75rem;
+  font-size: 1.2rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .1em;
+  padding-bottom: .25rem;
+  margin-bottom: .3rem;
+  border-bottom: .1rem solid currentColor;
+  opacity: .8;
+}
+
+.powerplay-panel__activity-group--ethos .powerplay-panel__activity-group-header {
+  opacity: 1;
+}
+
+.powerplay-panel__bonus-tag {
+  font-size: 1.05rem;
+  font-weight: 700;
+  letter-spacing: .05em;
+}
+
+.powerplay-panel__activity-row {
+  padding: .3rem 0;
+  border-bottom: .05rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .08);
+}
+
+.powerplay-panel__activity-row:last-child {
+  border-bottom: none;
+}
+
+.powerplay-panel__activity-name {
+  display: block;
+  font-size: 1.4rem;
+}
+
+.powerplay-panel__activity-desc {
+  display: block;
+  font-size: 1.3rem;
+  line-height: 1.5;
+  margin: .15rem 0 0;
+  opacity: .6;
+}
+
+/* ── Category colours ─────────────────────────────────────────────────────── */
+.powerplay-panel__cat--combat  { color: var(--color-danger);    }
+.powerplay-panel__cat--finance { color: var(--color-success);   }
+.powerplay-panel__cat--social  { color: var(--color-info);      }
+.powerplay-panel__cat--covert  { color: var(--color-secondary); }
+
+/* ── Info / prose block ───────────────────────────────────────────────────── */
+.powerplay-panel__info-block {
+  margin-top: .5rem;
+}
+
+.powerplay-panel__info-block p {
+  font-size: 1.15rem;
+  margin: .4rem 0;
+  line-height: 1.5;
+}
+
+/* ── System type contextual note ────────────────────────────────────────────────── */
+.powerplay-panel__system-type-note {
+  font-size: 1.35rem;
+  line-height: 1.55;
+  margin: .75rem 0 0;
+  padding: .5rem .75rem;
+  border-left: .2rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .25);
+}
+
+/* ── Pledge bonus text ──────────────────────────────────────────────────────── */
+.powerplay-panel__pledge-bonus {
+  font-size: 1.4rem;
+  line-height: 1.5;
+  margin: 0 0 .25rem;
+}
+
+/* ── Module reward track ───────────────────────────────────────────────────── */
+.powerplay-panel__module-track {
+  margin-top: .75rem;
+}
+
+/* 12-row compact grid: [rank] [name] [status] */
+.powerplay-panel__reward-list {
+  margin-top: .4rem;
+}
+
+.powerplay-panel__reward-row {
+  display: grid;
+  grid-template-columns: 4rem 1fr auto;
+  align-items: baseline;
+  gap: .4rem;
+  padding: .2rem 0;
+  border-bottom: .05rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .07);
+  opacity: .4;
+}
+
+.powerplay-panel__reward-row:last-child {
+  border-bottom: none;
+}
+
+/* Unlocked rows — slightly brighter but de-emphasised (done) */
+.powerplay-panel__reward-row--unlocked {
+  opacity: .55;
+}
+
+/* Next unlock — full opacity, subtle highlight */
+.powerplay-panel__reward-row--next {
+  opacity: 1;
+  padding: .3rem .5rem;
+  margin: .1rem -.5rem;
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .07);
+  border-radius: .25rem;
+  border-bottom: none;
+}
+
+.powerplay-panel__reward-rank {
+  font-size: 1.15rem;
+  white-space: nowrap;
+}
+
+.powerplay-panel__reward-module {
+  font-size: 1.3rem;
+}
+
+.powerplay-panel__reward-status {
+  font-size: 1.15rem;
+  white-space: nowrap;
+  text-align: right;
+}
+
+/* ── Salary table ─────────────────────────────────────────────────────────── */
+.powerplay-panel__salary-table {
+  border-top: 1px solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .12);
+}
+
+.powerplay-panel__salary-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .35rem 0;
+  border-bottom: 1px solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .12);
+  font-size: 1.4rem;
+}
+
+.powerplay-panel__salary-row:last-child {
+  border-bottom: none;
+}
+
+/* ── No powerplay system empty state ─────────────────────────────────────── */
+.powerplay-panel__no-pp-system {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 3rem 1rem 1rem;
+  text-align: center;
+  opacity: .4;
+}
+
+.powerplay-panel__no-pp-icon {
+  font-size: 7rem;
+  display: block;
+  margin-bottom: 1.25rem;
+}
+
+.powerplay-panel__no-pp-text {
+  font-size: 1.3rem;
+  line-height: 1.65;
+  max-width: 22rem;
+}
+
+/* ── Mechanics grid (full-width 2×2) ──────────────────────────────────────── */
+.powerplay-panel__mechanics-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1.25rem 2.5rem;
+  margin-top: .6rem;
+}
+
+.powerplay-panel__mechanic-block {
+  min-width: 0;
+}
+
+.powerplay-panel__mechanic-heading {
+  font-size: 1.05rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin: 0 0 .35rem;
+}
+
+.powerplay-panel__mechanic-block p {
+  font-size: 1.05rem;
+  margin: 0;
+  line-height: 1.55;
+}
+
+

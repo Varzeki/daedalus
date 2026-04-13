@@ -50,6 +50,10 @@ header h1 {
   height: 100%;
 }
 
+.layout__full-width.scrollable {
+  overflow-y: auto;
+}
+
 .layout__left-half,
 .layout__right-half {
   position: relative;

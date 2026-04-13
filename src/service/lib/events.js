@@ -176,7 +176,7 @@ function getLoadingStatus () {
     loadingCompleted: loadingEndTime,
     loadingTime: (loadingEndTime) ? loadingEndTime - loadingStartTime : new Date() - loadingStartTime,
     numberOfFiles: filesLoaded.length,
-    numberOfEventsImported,
+    numberOfEventsImported: loadingComplete ? numberOfLogLines : numberOfEventsImported,
     numberOfLogLines,
     logSizeInBytes,
     lastActivity: eliteLog.stats().lastActivity

@@ -1,0 +1,427 @@
+/* ── Keybinds panel ─────────────────────────────────────────────────────── */
+
+/* Page header: holds page title row + toolbar controls + the view toggle.
+   Flex-shrink: 0 keeps it at its intrinsic height inside the flex-column wrapper. */
+.keybinds-page-header {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  flex-shrink: 0;
+  padding: .5rem 0;
+  border-bottom: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .25);
+}
+
+/* Flex wrapper: header + scrollable body fill the panel height */
+.keybinds-page {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  overflow: hidden;
+}
+
+/* Scrollable body below the header */
+.keybinds-page-body {
+  flex: 1 1 0;
+  overflow-y: auto;
+  min-height: 0;
+}
+
+.keybinds-page-header h2,
+.keybinds-page-header h3 {
+  margin: 0;
+  padding: 0;
+}
+
+.keybinds-page-header h2 {
+  margin-top: .25rem;
+}
+
+.keybinds-toolbar-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+}
+
+.keybinds-toolbar {
+  flex: 1 1 auto;
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .75rem 0 1rem 0;
+  flex-wrap: wrap;
+}
+
+.keybinds-toolbar select,
+.keybinds-toolbar input[type='search'],
+.keybinds-toolbar input[type='text'] {
+  min-width: 12rem;
+}
+
+.keybinds-toolbar .keybinds-toolbar__preset {
+  flex: 1 1 auto;
+  max-width: 22rem;
+}
+
+.keybinds-toolbar .keybinds-toolbar__search {
+  flex: 2 1 auto;
+  max-width: 30rem;
+}
+
+.keybinds-toolbar .keybinds-toolbar__group {
+  flex: 0 0 auto;
+}
+
+/* Key badges */
+.keybind-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: .25rem;
+  flex-wrap: wrap;
+}
+
+.keybind-badge kbd {
+  display: inline-block;
+  padding: .2rem .55rem;
+  border-radius: .25rem;
+  font-size: 1.2rem;
+  font-family: inherit;
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .12);
+  border: .08rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .4);
+  color: var(--color-primary);
+  white-space: nowrap;
+  line-height: 1.4;
+}
+
+.keybind-badge .keybind-badge__modifier + kbd::before {
+  content: '';
+}
+
+.keybind-badge__plus {
+  color: var(--color-info);
+  font-size: .75rem;
+  opacity: .7;
+}
+
+/* Device label */
+.keybind-device {
+  display: block;
+  font-size: 1rem;
+  opacity: .5;
+  margin-top: .1rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 20rem;
+}
+
+/* Type badge */
+.keybind-type {
+  display: inline-block;
+  padding: .15rem .45rem;
+  border-radius: .2rem;
+  font-size: 1.05rem;
+  text-transform: uppercase;
+  letter-spacing: .04em;
+  white-space: nowrap;
+}
+
+.keybind-type--digital {
+  color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .8);
+}
+
+.keybind-type--analogue {
+  color: rgba(var(--color-secondary-r), var(--color-secondary-g), var(--color-secondary-b), .8);
+}
+
+/* Status messages */
+.keybinds-status {
+  padding: 2rem 0;
+  text-align: center;
+  color: var(--color-muted, #777);
+  font-size: .9rem;
+}
+
+/* Row count indicator */
+.keybinds-row-count {
+  font-size: var(--base-font-size);
+  opacity: .6;
+  white-space: nowrap;
+  align-self: center;
+}
+
+/* View toggle button — anchored at the right end of .keybinds-toolbar-row */
+/* Appearance is handled by the global button CSS; these are layout-only overrides */
+.keybinds-view-toggle {
+  flex-shrink: 0;
+  align-self: center;
+  white-space: nowrap;
+  padding: 1rem 2.5rem;
+  font-size: 1.5rem;
+  line-height: 2rem;
+  margin-right: 1rem;
+  width: 12rem;
+  text-align: center;
+}
+
+/* ── Visual (keyboard / device) view ────────────────────────────────────── */
+
+.kbd-visual {
+  --kbd-unit: 6rem;
+  padding-bottom: 2rem;
+  overflow-x: auto;
+}
+
+.keybinds-table thead tr {
+  top: 0 !important;
+}
+
+/* Keybinds table — exploration-style header: subtle top border, thin non-glowing bottom border */
+.keybinds-table thead tr th:before {
+  position: absolute;
+  content: '';
+  display: block;
+  width: 100%;
+  top: 0;
+  left: 0;
+  right: 0;
+  border-top: .1rem solid var(--color-primary);
+  box-shadow: none;
+  opacity: 0.5;
+}
+
+.keybinds-table thead tr th:after {
+  border-bottom-width: .1rem !important;
+  box-shadow: none !important;
+}
+
+/* Joystick devices grouped at top */
+.kbd-joystick-section {
+  margin-bottom: 2.5rem;
+}
+
+/* Keyboard + Mouse side by side */
+.kbd-kb-mouse-row {
+  display: flex;
+  align-items: flex-start;
+  gap: 3rem;
+  flex-wrap: wrap;
+}
+
+.kbd-section {
+  width: 100%;
+}
+
+.kbd-frow {
+  margin-bottom: .5rem;
+}
+
+.kbd-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 1.25rem;
+}
+
+.kbd-row {
+  display: flex;
+  gap: .15rem;
+  margin-bottom: .15rem;
+}
+
+/* Individual key cap */
+.kbd-key {
+  --key-w: 1;
+  flex: 0 0 calc(var(--key-w) * var(--kbd-unit));
+  min-height: 6.5rem;
+  border: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .18);
+  border-radius: .3rem;
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .03);
+  display: flex;
+  flex-direction: column;
+  padding: .25rem .3rem .2rem;
+  overflow: hidden;
+  cursor: default;
+  box-sizing: border-box;
+}
+
+.kbd-key--gap {
+  border: none;
+  background: transparent;
+}
+
+.kbd-key__cap {
+  font-size: 1.1rem;
+  opacity: .35;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+/* Bound key highlight */
+.kbd-key--bound {
+  border-color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .6);
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .08);
+}
+
+.kbd-key--bound .kbd-key__cap {
+  color: var(--color-primary);
+  opacity: .8;
+}
+
+.kbd-key__fns {
+  display: flex;
+  flex-direction: column;
+  margin-top: .2rem;
+  gap: .05rem;
+  overflow: hidden;
+}
+
+.kbd-key__fn-name {
+  font-size: 1rem;
+  color: var(--color-secondary);
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.kbd-nav-block {
+  flex-shrink: 0;
+}
+
+/* ── Device card sections ────────────────────────────────────────────────── */
+
+.kbd-device {
+  margin-top: 2rem;
+  padding-bottom: 1.25rem;
+}
+
+.kbd-device--mouse {
+  max-width: 25%;
+}
+
+/* ── SVG wireframe stage (aspect-ratio container with overlay labels) ──── */
+
+.kbd-device-svg-stage {
+  position: relative;
+  width: 100%;
+  /* padding-top set inline by component to maintain SVG aspect ratio */
+  overflow: hidden;
+  margin-bottom: 1rem;
+  border: none;
+  border-radius: .4rem;
+  /* transparent: app background shows through areas without device photo */
+  background: transparent;
+}
+
+.kbd-device-svg {
+  position: absolute;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  display: block;
+  z-index: 1;
+}
+
+/* Inline SVG must fill its container div */
+.kbd-device-svg > svg {
+  display: block;
+  width: 100%;
+  height: 100%;
+}
+
+/* SVG elements annotated with data-label/data-labels dim when [data-dim] is set by JS.
+   Both the box rect and its leader-line path share the same attribute, so they
+   fade together as a matched pair. */
+.kbd-device-svg-stage [data-dim] {
+  opacity: 0.12;
+  transition: opacity 0.15s;
+}
+
+/* Label text overlaid at hotasDetails positions — SVG provides the box outline */
+.kbd-svg-label {
+  position: absolute;
+  z-index: 3;
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  /* Match SVG box inner padding (small margin from box edge) */
+  padding: .15rem .35rem;
+  /* No background or border — the SVG rect IS the box */
+  background: transparent;
+  border: none;
+  pointer-events: none;
+  /* Single line, truncate if longer than box width */
+  white-space: nowrap;
+  overflow: clip;
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--color-secondary);
+  line-height: 1.3;
+}
+
+.kbd-svg-label--dim {
+  /* SVG elements (box + leader line) are dimmed via [data-dim] set by JS.
+     Only the text overlay itself needs to fade. */
+  color: rgba(var(--color-secondary-r), var(--color-secondary-g), var(--color-secondary-b), 0.2);
+  transition: color .15s;
+}
+
+.kbd-key--dim {
+  opacity: .15;
+  transition: opacity .15s;
+}
+
+/* Overflow grid below SVG for unlabelled bindings */
+.kbd-device__grid--overflow {
+  margin-top: .75rem;
+  opacity: .8;
+}
+
+.kbd-device__name {
+  font-size: 1.1rem;
+  letter-spacing: .06em;
+  text-transform: uppercase;
+  opacity: .55;
+  margin-bottom: .75rem;
+}
+
+.kbd-device__grid {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .5rem;
+}
+
+.kbd-device__btn {
+  border: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .4);
+  border-radius: .3rem;
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .05);
+  padding: .45rem .75rem;
+  min-width: 9rem;
+  max-width: 20rem;
+}
+
+.kbd-device__btn-key {
+  font-size: 1.4rem;
+  color: var(--color-primary);
+  font-weight: bold;
+  margin-bottom: .25rem;
+  line-height: 1.2;
+}
+
+.kbd-device__btn-fns {
+  display: flex;
+  flex-direction: column;
+  gap: .1rem;
+}
+
+.kbd-device__btn-fns span {
+  font-size: 1.1rem;
+  opacity: .75;
+  line-height: 1.3;
+}
+
+/* Unbound controls in the table — greyed out.
+   Target td (not tr) so the table--animated flash animation on tr doesn't override. */
+.keybind-row--unbound td {
+  opacity: 0.45;
+}

@@ -25,6 +25,12 @@
   overflow-x: hidden;
   -ms-overflow-style: none;
   scrollbar-width: none;
+  /* Prevent the 20rem-wide container from intercepting clicks on content behind it */
+  pointer-events: none;
+}
+
+.secondary-navigation__items-scroll > * {
+  pointer-events: auto;
 }
 
 .secondary-navigation__items-scroll::-webkit-scrollbar {

@@ -104,6 +104,7 @@ class EliteLog {
         const rawLog = fs.readFileSync(file.name).toString()
         const parsedLog = this.#parse(rawLog)
         logs = logs.concat(parsedLog) // Add new log entries to existing logs
+        file.lineCount = parsedLog.length // Use actual parsed count (not file-size estimate)
         if (this.loadFileCallback) this.loadFileCallback(file)
       }, {
         retries: 10

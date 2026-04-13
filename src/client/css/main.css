@@ -25,6 +25,8 @@
 @import "panels/ship-panel.css";
 @import "panels/exploration-panel.css";
 @import "panels/engineering-panel.css";
+@import "panels/missions-panel.css";
+@import "panels/keybinds-panel.css";
 
 @import "overrides/safari.css";
 @import "overrides/firefox.css";
