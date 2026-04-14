@@ -107,6 +107,10 @@ func GetLatestRelease() (Release, error) {
 		return release, reqErr
 	}
 
+	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Cache-Control", "no-cache")
+	req.Header.Set("If-None-Match", "")
+
 	res, getErr := httpClient.Do(req)
 	if getErr != nil {
 		return release, getErr
