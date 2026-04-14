@@ -2,7 +2,7 @@
   <source media="(prefers-color-scheme: dark)" srcset="resources/images/title-whitetext.png">
   <img alt="DAEDALUS Terminal" src="resources/images/title.png" height="100" width="auto"/>
 </picture>
-
+<br>
 ![GitHub Version](https://img.shields.io/github/v/release/Varzeki/daedalus?display_name=tag&include_prereleases&sort=semver&color=cf7500&style=for-the-badge)
 ![GitHub License](https://img.shields.io/github/license/Varzeki/daedalus?color=cf7500&style=for-the-badge)
 ![GitHub Downloads](https://img.shields.io/github/downloads/Varzeki/daedalus/total?color=cf7500&style=for-the-badge)

@@ -3,6 +3,7 @@
 const os = require('os')
 const fs = require('fs').promises
 const path = require('path')
+const { execSync } = require('child_process')
 
 const BINDINGS_DIR = path.join(
   os.homedir(),
@@ -257,6 +258,82 @@ function parseBindsFile (xmlContent) {
 }
 
 // ---------------------------------------------------------------------------
+// Game installation discovery (default presets)
+// ---------------------------------------------------------------------------
+
+// Hardware-specific presets that only appear when that device is connected.
+// Excluding these leaves the ~11 generic presets the game always shows.
+const HARDWARE_PRESET_RE = /^(Saitek|ThrustMaster|TFlight|T16000M|Logitech|BlackWidow|PS3Controller|AdvancedPS3|DualShock|Oculus)/
+
+let _controlSchemesDir // undefined = not searched, null = not found, string = path
+
+async function findControlSchemesDir () {
+  if (_controlSchemesDir !== undefined) return _controlSchemesDir
+
+  const candidates = []
+
+  // Steam: read install path from the Windows registry
+  try {
+    const raw = execSync(
+      'reg query "HKLM\\SOFTWARE\\WOW6432Node\\Valve\\Steam" /v InstallPath',
+      { encoding: 'utf8', timeout: 3000 }
+    )
+    const m = raw.match(/InstallPath\s+REG_SZ\s+(.+)/)
+    if (m) {
+      const steamRoot = m[1].trim()
+      const vdfPath = path.join(steamRoot, 'steamapps', 'libraryfolders.vdf')
+      try {
+        const vdf = await fs.readFile(vdfPath, 'utf8')
+        // Modern Steam (2021+): "path"  "C:\\…"
+        for (const pm of vdf.matchAll(/"path"\s+"([^"]+)"/g)) {
+          candidates.push(path.join(pm[1].replace(/\\\\/g, '\\'), 'steamapps', 'common', 'Elite Dangerous'))
+        }
+        // Older format: "1"  "D:\\SteamLibrary"
+        if (candidates.length === 0) {
+          for (const pm of vdf.matchAll(/"\d+"\s+"([A-Z]:[^"]+)"/g)) {
+            candidates.push(path.join(pm[1].replace(/\\\\/g, '\\'), 'steamapps', 'common', 'Elite Dangerous'))
+          }
+        }
+      } catch (_) {}
+      candidates.push(path.join(steamRoot, 'steamapps', 'common', 'Elite Dangerous'))
+    }
+  } catch (_) { /* Steam not installed or registry inaccessible */ }
+
+  // Common fallback paths
+  candidates.push(
+    path.join('C:', 'Program Files (x86)', 'Steam', 'steamapps', 'common', 'Elite Dangerous'),
+    path.join('C:', 'Program Files', 'Steam', 'steamapps', 'common', 'Elite Dangerous'),
+    path.join('D:', 'Steam', 'steamapps', 'common', 'Elite Dangerous'),
+    path.join('D:', 'SteamLibrary', 'steamapps', 'common', 'Elite Dangerous'),
+    path.join('C:', 'Program Files', 'Epic Games', 'EliteDangerous')
+  )
+
+  // Scan Products/*/ControlSchemes/ for .binds files
+  const seen = new Set()
+  for (const base of candidates) {
+    if (seen.has(base)) continue
+    seen.add(base)
+    try {
+      const productsDir = path.join(base, 'Products')
+      const products = (await fs.readdir(productsDir)).sort().reverse() // prefer odyssey-64 over base 64
+      for (const product of products) {
+        const csDir = path.join(productsDir, product, 'ControlSchemes')
+        try {
+          const entries = await fs.readdir(csDir)
+          if (entries.some(e => e.endsWith('.binds'))) {
+            _controlSchemesDir = csDir
+            return csDir
+          }
+        } catch (_) {}
+      }
+    } catch (_) {}
+  }
+
+  _controlSchemesDir = null
+  return null
+}
+
+// ---------------------------------------------------------------------------
 // File listing
 // ---------------------------------------------------------------------------
 
@@ -270,10 +347,11 @@ async function getBindingFiles () {
     activePreset = (await fs.readFile(startFile, 'utf8')).trim().split('\n')[0].trim()
   } catch (_) { /* no start preset file */ }
 
-  let files = []
+  // Scan user bindings directory
+  let allFiles = []
   try {
     const entries = await fs.readdir(BINDINGS_DIR, { withFileTypes: true })
-    const allFiles = await Promise.all(
+    allFiles = await Promise.all(
       entries
         .filter(e => e.isFile() && e.name.endsWith('.binds'))
         .map(async e => {
@@ -283,27 +361,47 @@ async function getBindingFiles () {
           return { name: e.name.replace(/\.binds$/, ''), filename: e.name, mtimeMs }
         })
     )
-    allFiles.sort((a, b) => a.name.localeCompare(b.name))
-
-    // Determine active file: exact match wins; for prefix matches (e.g. "Custom"
-    // matching "Custom.4.2", "Custom.3.0") pick the most recently modified — that
-    // is the file the game most recently wrote to (i.e. the one truly in use).
-    let activeFile = null
-    if (activePreset) {
-      const candidates = allFiles.filter(f =>
-        f.name === activePreset || f.name.startsWith(activePreset + '.')
-      )
-      if (candidates.length === 1) {
-        activeFile = candidates[0].name
-      } else if (candidates.length > 1) {
-        // Most recently modified = the one the game last saved
-        candidates.sort((a, b) => b.mtimeMs - a.mtimeMs)
-        activeFile = candidates[0].name
-      }
-    }
-
-    files = allFiles.map(f => ({ name: f.name, filename: f.filename, active: f.name === activeFile }))
   } catch (_) { /* bindings dir not found */ }
+
+  // Scan game's default ControlSchemes directory
+  const csDir = await findControlSchemesDir()
+  if (csDir) {
+    try {
+      const entries = await fs.readdir(csDir, { withFileTypes: true })
+      const userNames = new Set(allFiles.map(f => f.name))
+      const defaults = entries
+        .filter(e => e.isFile() && e.name.endsWith('.binds'))
+        .map(e => ({ name: e.name.replace(/\.binds$/, ''), filename: e.name, mtimeMs: 0, isDefault: true }))
+        .filter(f => !userNames.has(f.name) && !HARDWARE_PRESET_RE.test(f.name))
+      allFiles.push(...defaults)
+    } catch (_) {}
+  }
+
+  allFiles.sort((a, b) => a.name.localeCompare(b.name))
+
+  // Determine active file: exact match wins; for prefix matches (e.g. "Custom"
+  // matching "Custom.4.2", "Custom.3.0") pick the most recently modified — that
+  // is the file the game most recently wrote to (i.e. the one truly in use).
+  let activeFile = null
+  if (activePreset) {
+    const candidates = allFiles.filter(f =>
+      f.name === activePreset || f.name.startsWith(activePreset + '.')
+    )
+    if (candidates.length === 1) {
+      activeFile = candidates[0].name
+    } else if (candidates.length > 1) {
+      // Most recently modified = the one the game last saved
+      candidates.sort((a, b) => b.mtimeMs - a.mtimeMs)
+      activeFile = candidates[0].name
+    }
+  }
+
+  const files = allFiles.map(f => ({
+    name: f.name,
+    filename: f.filename,
+    active: f.name === activeFile,
+    ...(f.isDefault ? { isDefault: true } : {})
+  }))
 
   return { activePreset, files }
 }
@@ -318,8 +416,15 @@ class Keybinds {
   }
 
   async getKeybinds ({ preset }) {
-    const filePath = path.join(BINDINGS_DIR, `${preset}.binds`)
-    const content = await fs.readFile(filePath, 'utf8')
+    let content
+    try {
+      content = await fs.readFile(path.join(BINDINGS_DIR, `${preset}.binds`), 'utf8')
+    } catch (_) {
+      // Fall back to game's default ControlSchemes directory
+      const csDir = await findControlSchemesDir()
+      if (!csDir) throw new Error(`Binding file not found: ${preset}`)
+      content = await fs.readFile(path.join(csDir, `${preset}.binds`), 'utf8')
+    }
     const { presetName, bindings } = parseBindsFile(content)
 
     // Collect unique device names then load any .buttonMap files for them

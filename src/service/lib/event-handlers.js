@@ -23,6 +23,7 @@ const Exploration = require('./event-handlers/exploration')
 const TextToSpeech = require('./event-handlers/text-to-speech')
 const Powerplay = require('./event-handlers/powerplay')
 const Keybinds = require('./event-handlers/keybinds')
+const Video = require('./event-handlers/video')
 const covasPlayer = require('./covas-player')
 
 class EventHandlers {
@@ -44,6 +45,7 @@ class EventHandlers {
     this.exploration = this._register(new Exploration({ eliteLog, eliteJson, system: this.system, shipStatus: this.shipStatus }))
     this.powerplay = this._register(new Powerplay({ eliteLog }))
     this.keybinds = this._register(new Keybinds())
+    this.video = this._register(new Video())
     this.textToSpeech = new TextToSpeech({ eliteLog, eliteJson, cmdrStatus: this.cmdrStatus, shipStatus: this.shipStatus })
   }
 

@@ -27,6 +27,7 @@
 @import "panels/engineering-panel.css";
 @import "panels/missions-panel.css";
 @import "panels/keybinds-panel.css";
+@import "panels/video-panel.css";
 
 @import "overrides/safari.css";
 @import "overrides/firefox.css";

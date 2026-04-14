@@ -85,6 +85,7 @@ SetOverwrite ifnewer
 SetOutPath "$INSTDIR"
 File "..\..\build\bin\DAEDALUS Service.exe"
 File "..\..\build\bin\DAEDALUS Terminal.exe"
+File "..\..\build\bin\yt-dlp.exe"
 File "..\assets\icon.ico"
 SetOutPath "$INSTDIR\game_voicelines"
 File /r "..\..\game_voicelines\verity"
@@ -137,6 +138,7 @@ Section Uninstall
 ${INSTALL_TYPE}
 Delete "$INSTDIR\DAEDALUS Service.exe"
 Delete "$INSTDIR\DAEDALUS Terminal.exe"
+Delete "$INSTDIR\yt-dlp.exe"
 Delete "$INSTDIR\icon.ico"
 Delete "$INSTDIR\uninstall.exe"
 !ifdef WEB_SITE

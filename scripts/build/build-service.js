@@ -55,6 +55,16 @@ async function build () {
   // that pkg embeds. The service is a background process so doesn't need
   // a custom icon or version info in its PE resources.
 
+  // Copy yt-dlp.exe alongside the service binary
+  const YTDLP_SRC = path.join(__dirname, '..', '..', 'resources', 'yt-dlp.exe')
+  const YTDLP_DST = path.join(BIN_DIR, 'yt-dlp.exe')
+  if (fs.existsSync(YTDLP_SRC)) {
+    fs.copyFileSync(YTDLP_SRC, YTDLP_DST)
+    console.log('Copied yt-dlp.exe to build/bin/')
+  } else {
+    console.warn('Warning: resources/yt-dlp.exe not found — video features will be unavailable')
+  }
+
   if (DEVELOPMENT_BUILD) {
     console.log('Development build (skipping compression)')
     fs.copyFileSync(SERVICE_UNOPTIMIZED_BUILD, SERVICE_FINAL_BUILD)

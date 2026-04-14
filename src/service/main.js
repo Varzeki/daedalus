@@ -40,7 +40,15 @@ console.log(`DAEDALUS Terminal Service ${packageJson.version}`)
 // Parse command line arguments
 const PORT = commandLineArgs.port || commandLineArgs.p || 3300 // Port to listen on
 const DEVELOPMENT = commandLineArgs.dev || false // Development mode
-const WEB_DIR = path.join(__dirname, '..', '..', 'build', 'client')
+const WEB_DIR = (() => {
+  // In pkg builds, __dirname is a virtual snapshot path — try multiple candidates
+  const candidates = [
+    path.join(__dirname, '..', '..', 'build', 'client'),           // pkg snapshot (assets bundled)
+    path.join(path.dirname(process.execPath), 'build', 'client'),  // next to exe
+    path.join(process.cwd(), 'build', 'client')                    // working directory
+  ]
+  return candidates.find(d => fs.existsSync(d)) || candidates[0]
+})()
 const LOG_DIR = getLogDir()
 
 if (!fs.existsSync(LOG_DIR)) {
@@ -158,6 +166,57 @@ function voicelinesMiddleware (req, res, next) {
   next()
 }
 
+// Middleware to serve cached video files at /videos/ with Range request support
+const videoManager = require('./lib/video-manager')
+function videosMiddleware (req, res, next) {
+  if (req.url && req.url.startsWith('/videos/')) {
+    const fileName = path.basename(decodeURIComponent(req.url.slice('/videos/'.length)))
+    if (!fileName || fileName.includes('..') || !/\.(mp4|webm|mkv)$/i.test(fileName)) {
+      res.writeHead(400)
+      return res.end()
+    }
+    const filePath = path.join(videoManager.getCacheDir(), fileName)
+    if (!fs.existsSync(filePath)) {
+      res.writeHead(404)
+      return res.end()
+    }
+    const stat = fs.statSync(filePath)
+    const total = stat.size
+    const ext = path.extname(fileName).toLowerCase()
+    const mimeTypes = { '.mp4': 'video/mp4', '.webm': 'video/webm', '.mkv': 'video/x-matroska' }
+    const contentType = mimeTypes[ext] || 'application/octet-stream'
+
+    // Support Range requests for seeking
+    const range = req.headers.range
+    if (range) {
+      const parts = range.replace(/bytes=/, '').split('-')
+      const start = parseInt(parts[0], 10)
+      const end = parts[1] ? parseInt(parts[1], 10) : total - 1
+      if (start >= total || end >= total || start > end) {
+        res.writeHead(416, { 'Content-Range': `bytes */${total}` })
+        return res.end()
+      }
+      res.writeHead(206, {
+        'Content-Range': `bytes ${start}-${end}/${total}`,
+        'Accept-Ranges': 'bytes',
+        'Content-Length': end - start + 1,
+        'Content-Type': contentType
+      })
+      fs.createReadStream(filePath, { start, end }).pipe(res)
+    } else {
+      res.writeHead(200, {
+        'Content-Length': total,
+        'Content-Type': contentType,
+        'Accept-Ranges': 'bytes',
+        'Cache-Control': 'public, max-age=86400'
+      })
+      fs.createReadStream(filePath).pipe(res)
+    }
+    return
+  }
+  next()
+}
+
 let httpServer
 if (DEVELOPMENT) {
   // If DEVELOPMENT is specified then HTTP requests other than web socket
@@ -174,13 +233,13 @@ if (DEVELOPMENT) {
     if (res.end) res.end('Waiting for Next.js dev server...')
   })
   httpServer = http.createServer((req, res) => {
-    voicelinesMiddleware(req, res, () => proxy.web(req, res, { target: 'http://localhost:3000' }))
+    voicelinesMiddleware(req, res, () => videosMiddleware(req, res, () => proxy.web(req, res, { target: 'http://localhost:3000' })))
   })
 } else {
   // The default behaviour (i.e. production) is to serve static assets. When the
   // application is compiled to a native executable these assets will be bundled
   // with the executable in a virtual file system.
-  const webServer = connect().use(voicelinesMiddleware).use(serveStatic(WEB_DIR, { extensions: ['html'] }))
+  const webServer = connect().use(voicelinesMiddleware).use(videosMiddleware).use(serveStatic(WEB_DIR, { extensions: ['html'] }))
   httpServer = http.createServer(webServer)
 }
 
