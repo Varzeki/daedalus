@@ -745,6 +745,13 @@ export default function LandingPadOverlay ({ data, onDismiss }) {
 
   const isVisible = displayData != null
 
+  // Safety: auto-dismiss after 2 minutes if no journal event clears it
+  useEffect(() => {
+    if (!data) return
+    const safetyTimer = setTimeout(() => onDismiss(), 120000)
+    return () => clearTimeout(safetyTimer)
+  }, [data])
+
   function beginExit (dismissCallback = null) {
     if (!displayData || animationStateRef.current === 'exiting') return
     if (clearTimerRef.current) clearTimeout(clearTimerRef.current)
