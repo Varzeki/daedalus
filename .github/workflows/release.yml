@@ -52,6 +52,12 @@ jobs:
         shell: bash
         run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
+      - name: Download yt-dlp
+        shell: bash
+        run: |
+          curl -L -o resources/yt-dlp.exe https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe
+          ls -la resources/yt-dlp.exe
+
       - name: Build client
         run: npm run build:client
 
