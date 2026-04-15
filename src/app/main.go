@@ -4,18 +4,19 @@ import (
 	"encoding/json"
 	"flag"
 	"fmt"
-	"github.com/nvsoft/win"
-	"github.com/phayes/freeport"
-	"github.com/rodolfoag/gow32"
-	"github.com/sqweek/dialog"
-	webview "github.com/jchv/go-webview2"
-	"golang.org/x/sys/windows"
 	"os"
 	"os/exec"
 	"path/filepath"
 	"syscall"
 	"time"
 	"unsafe"
+
+	webview "github.com/jchv/go-webview2"
+	"github.com/nvsoft/win"
+	"github.com/phayes/freeport"
+	"github.com/rodolfoag/gow32"
+	"github.com/sqweek/dialog"
+	"golang.org/x/sys/windows"
 )
 
 var dirname = ""
@@ -44,7 +45,8 @@ func getMonitorRect(hwnd win.HWND) win.RECT {
 	procGetMonitorInfoW.Call(hMonitor, uintptr(unsafe.Pointer(&mi)))
 	return mi.RcMonitor
 }
-var port int           // Actual port we are running on
+
+var port int // Actual port we are running on
 var webViewInstance webview.WebView
 
 // Track main window size when switching to/from fullscreen

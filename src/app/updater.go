@@ -3,8 +3,6 @@ package main
 import (
 	"encoding/json"
 	"errors"
-	"github.com/gonutz/w32/v2"
-	"github.com/jmoiron/jsonq"
 	"io"
 	"io/ioutil"
 	"net/http"
@@ -13,6 +11,9 @@ import (
 	"regexp"
 	"strings"
 	"time"
+
+	"github.com/gonutz/w32/v2"
+	"github.com/jmoiron/jsonq"
 )
 
 // GitHub releases API endpoint for auto-update checks

@@ -166,6 +166,14 @@ async function init ({ days = 7 } = {}) {
 
   loadingProgressEvent() // Trigger once complete
 
+  // Start background backfill of all historical journal data.
+  // The inventory page (and others) can await this or check status.
+  eliteLog.ensureFullLoad().then(() => {
+    broadcastEvent('backfillComplete')
+  }).catch(e => {
+    console.error('Background backfill failed:', e)
+  })
+
   return getLoadingStatus()
 }
 

@@ -65,6 +65,19 @@ async function build () {
     console.warn('Warning: resources/yt-dlp.exe not found — video features will be unavailable')
   }
 
+  // Copy @parcel/watcher native addon alongside the service binary.
+  // pkg cannot embed native .node files, so we ship it externally.
+  // At runtime, require('@parcel/watcher-win32-x64') resolves to the
+  // watcher.node file next to the exe. Falls back gracefully if missing.
+  const WATCHER_SRC = path.join(__dirname, '..', '..', 'node_modules', '@parcel', 'watcher-win32-x64', 'watcher.node')
+  const WATCHER_DST = path.join(BIN_DIR, 'watcher.node')
+  if (fs.existsSync(WATCHER_SRC)) {
+    fs.copyFileSync(WATCHER_SRC, WATCHER_DST)
+    console.log('Copied @parcel/watcher native addon to build/bin/')
+  } else {
+    console.warn('Warning: @parcel/watcher-win32-x64 native addon not found — will use polling fallback')
+  }
+
   if (DEVELOPMENT_BUILD) {
     console.log('Development build (skipping compression)')
     fs.copyFileSync(SERVICE_UNOPTIMIZED_BUILD, SERVICE_FINAL_BUILD)

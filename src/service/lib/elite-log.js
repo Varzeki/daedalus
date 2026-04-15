@@ -32,6 +32,9 @@ class EliteLog {
     this.logEventCallback = null
     this.singleInstanceEvents = {}
     this.numberOfEventsImported = 0
+    this._fullLoadComplete = false
+    this._fullLoadInProgress = false
+    this._fullLoadPromise = null
 
     // setInterval(() => {
     //   const numberOfFilesBeingWatched = Object.entries(this.files)
@@ -127,6 +130,36 @@ class EliteLog {
     return logsIngested
   }
 
+  // Ensures all historical journal data is loaded (not just the
+  // initial N-day window). Safe to call multiple times — only
+  // performs the reload once. Suppresses event callbacks during
+  // backfill so historical events don't flood connected clients.
+  // Returns a promise that resolves when the backfill is complete.
+  ensureFullLoad () {
+    if (this._fullLoadPromise) return this._fullLoadPromise
+    this._fullLoadInProgress = true
+    this._fullLoadPromise = (async () => {
+      const savedCallback = this.logEventCallback
+      this.logEventCallback = null
+      try {
+        await this.load({ reload: true })
+      } finally {
+        this.logEventCallback = savedCallback
+        this._fullLoadInProgress = false
+        this._fullLoadComplete = true
+      }
+    })()
+    return this._fullLoadPromise
+  }
+
+  get isFullLoadComplete () {
+    return this._fullLoadComplete
+  }
+
+  get isFullLoadInProgress () {
+    return this._fullLoadInProgress
+  }
+
   stats() {
     return {
       numberOfEventsImported: this.numberOfEventsImported,
@@ -213,53 +246,247 @@ class EliteLog {
   }
 
   watch(callback) {
+    // Three-tier fallback for journal file watching:
+    //   1. @parcel/watcher native addon  (~5-10ms latency)
+    //   2. fs.watch() hybrid + polling safety net (~0-100ms when watch fires, 500ms fallback)
+    //   3. fs.watchFile() polling only (250ms)
+    this.#startNativeWatch(callback).catch((e) => {
+      console.log('Native watcher unavailable:', e.message ?? e)
+      this.#startHybridWatch(callback).catch((e2) => {
+        console.log('Hybrid fs.watch unavailable:', e2.message ?? e2)
+        this.#watchPollingOnly(callback)
+      })
+    })
+  }
+
+  // ---------------------------------------------------------------------------
+  // Shared incremental reader — manages per-file read offsets and parses new
+  // JSON lines appended since the last read. Used by all three watcher tiers.
+  // ---------------------------------------------------------------------------
+  #createIncrementalReader (callback) {
+    const readState = new Map()
+
+    const getState = (filePath) => {
+      const key = path.resolve(filePath)
+      if (!readState.has(key)) {
+        let offset = 0
+        try { offset = fs.statSync(filePath).size } catch (e) {}
+        readState.set(key, { path: filePath, offset, partial: '', busy: false })
+      }
+      return readState.get(key)
+    }
+
+    const readNewData = async (filePath) => {
+      const state = getState(filePath)
+      if (state.busy) return
+      state.busy = true
+      try {
+        const stats = fs.statSync(filePath)
+        if (stats.size === state.offset) return
+        if (stats.size < state.offset) {
+          state.offset = 0
+          state.partial = ''
+        }
+
+        const bytesToRead = stats.size - state.offset
+        const buffer = Buffer.alloc(bytesToRead)
+        const fd = fs.openSync(filePath, 'r')
+        try {
+          fs.readSync(fd, buffer, 0, bytesToRead, state.offset)
+        } finally {
+          fs.closeSync(fd)
+        }
+
+        const newData = state.partial + buffer.toString()
+        const lines = newData.split('\n')
+        state.partial = lines.pop()
+
+        const newLogs = []
+        for (const line of lines) {
+          try { newLogs.push(JSON.parse(line)) } catch (e) {}
+        }
+        state.offset = stats.size
+
+        if (newLogs.length > 0) {
+          const ingested = await this.#processLogs(newLogs)
+          if (callback) ingested.forEach(log => callback(log))
+        }
+      } catch (e) {
+        console.error('Error reading journal incrementally:', e)
+      } finally {
+        state.busy = false
+      }
+    }
+
+    const resetFile = (filePath) => {
+      const key = path.resolve(filePath)
+      readState.set(key, { path: filePath, offset: 0, partial: '', busy: false })
+    }
+
+    return { getState, readNewData, resetFile }
+  }
+
+  // Helper: initialise reader state for all existing journal files and track
+  // the active log file.
+  async #initReaderState (reader) {
+    const files = await this.#getFiles()
+    for (const file of files) {
+      if (!this.files[file.name]) this.files[file.name] = file
+      reader.getState(file.name)
+    }
+    if (files.length > 0) {
+      this.lastActiveLogFileName = files.sort((a, b) => b.lastModified - a.lastModified)[0].name
+    }
+    return files
+  }
+
+  // Helper: start a periodic safety-net scan that catches missed events and
+  // detects new journal files.
+  #startSafetyNet (reader, intervalMs = 10000) {
+    this.watchFilesInterval = setInterval(async () => {
+      const files = await this.#getFiles()
+      if (files.length === 0) return
+      const activeLogFile = files.sort((a, b) => b.lastModified - a.lastModified)[0]
+      this.lastActiveLogFileName = activeLogFile.name
+      for (const file of files) {
+        if (!this.files[file.name]) this.files[file.name] = file
+      }
+      reader.readNewData(activeLogFile.name)
+    }, intervalMs)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tier 1: Native watcher — uses @parcel/watcher with ReadDirectoryChangesW
+  // on Windows for near-instant file change detection (~5-10ms latency).
+  // ---------------------------------------------------------------------------
+  async #startNativeWatch (callback) {
+    const parcelWatcher = require('@parcel/watcher')
+    const reader = this.#createIncrementalReader(callback)
+    await this.#initReaderState(reader)
+
+    this._nativeSubscription = await parcelWatcher.subscribe(this.dir, (err, events) => {
+      if (err) { console.error('Native watcher error:', err); return }
+      for (const event of events) {
+        if (event.type !== 'update' && event.type !== 'create') continue
+        const basename = path.basename(event.path)
+        if (!/^Journal\..+\.log$/.test(basename)) continue
+
+        this.lastActiveLogFileName = event.path
+        if (event.type === 'create') reader.resetFile(event.path)
+        reader.readNewData(event.path)
+      }
+    })
+
+    console.log('Using native file watcher for journal detection')
+    this.#startSafetyNet(reader)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tier 2: Hybrid watcher — uses fs.watch() for near-instant notification
+  // with a 500ms fs.watchFile() polling safety net to catch missed events.
+  // fs.watch() uses OS-level ReadDirectoryChangesW on Windows but can
+  // sometimes miss events for append-only files; the polling backstop
+  // ensures nothing is lost.
+  // ---------------------------------------------------------------------------
+  async #startHybridWatch (callback) {
+    const reader = this.#createIncrementalReader(callback)
+    await this.#initReaderState(reader)
+
+    // Track which file we're currently watching with fs.watch
+    let activeWatcher = null
+    let activePollWatcher = null
+    let activeFileName = null
+
+    const attachToFile = (filePath) => {
+      if (filePath === activeFileName) return
+      // Clean up previous watchers
+      if (activeWatcher) { activeWatcher.close(); activeWatcher = null }
+      if (activePollWatcher) { fs.unwatchFile(activeFileName, activePollWatcher); activePollWatcher = null }
+
+      activeFileName = filePath
+      this.lastActiveLogFileName = filePath
+
+      // Primary: fs.watch for instant notification
+      try {
+        activeWatcher = fs.watch(filePath, { persistent: false }, (eventType) => {
+          if (eventType === 'change') reader.readNewData(filePath)
+        })
+        activeWatcher.on('error', () => {
+          // Silently ignore — the polling safety net will pick up any changes
+        })
+      } catch (e) {
+        // fs.watch failed to attach — rely on polling alone
+      }
+
+      // Safety net: poll to catch anything fs.watch misses
+      activePollWatcher = fs.watchFile(
+        filePath,
+        { interval: 100 },
+        (curr) => {
+          reader.readNewData(filePath)
+        }
+      )
+    }
+
+    // Attach to the current active journal file
+    if (this.lastActiveLogFileName) {
+      attachToFile(this.lastActiveLogFileName)
+    }
+
+    console.log('Using hybrid fs.watch + polling fallback for journal detection')
+
+    // Periodically check for new journal files (log rotation)
+    this.watchFilesInterval = setInterval(async () => {
+      const files = await this.#getFiles()
+      if (files.length === 0) return
+      const activeLogFile = files.sort((a, b) => b.lastModified - a.lastModified)[0]
+      for (const file of files) {
+        if (!this.files[file.name]) this.files[file.name] = file
+      }
+      // If active file changed (rotation), switch watchers
+      attachToFile(activeLogFile.name)
+      // Also trigger a read in case the poll hasn't fired yet
+      reader.readNewData(activeLogFile.name)
+    }, 10 * 1000)
+  }
+
+  // ---------------------------------------------------------------------------
+  // Tier 3: Polling-only watcher — uses fs.watchFile with 250ms polling.
+  // Last-resort fallback when both native and fs.watch are unavailable.
+  // ---------------------------------------------------------------------------
+  #watchPollingOnly (callback) {
+    console.log('Using polling-only fallback for journal detection (100ms)')
     const watchFiles = async () => {
       const files = await this.#getFiles()
+      if (files.length === 0) return
 
-      // If no files found, nothing to do
-      if (files.length === 0) return 
-
-      // Get currently active log file (mostly recently modified) in case that
-      // has changed since we loaded (e.g. due to log rotation)
       const activeLogFile = files.sort((a, b) => b.lastModified - a.lastModified)[0]
       this.lastActiveLogFileName = activeLogFile.name
 
-      // Get all log files
       for (const file of files) {
         if (!this.files[file.name])
           this.files[file.name] = file
 
-        // Add watcher to log file, if it's the currently active log file
         if (!this.files[file.name].watch && file.name === activeLogFile.name)
-          this.files[file.name].watch = this.#watchFile(file, callback)
+          this.files[file.name].watch = this.#watchFilePoll(file, callback)
       }
 
-      // Remove any previously bound listeners from other files
       for (const fileName in this.files) {
         const file = this.files[fileName]
         if (file.watch && fileName !== activeLogFile.name) {
-          // Check for any logs we might have missed during log rotation
-          const logs = await this.load({file})
+          const logs = await this.load({ file })
           if (callback) logs.map(log => callback(log))
-          // Remove watch from file
           fs.unwatchFile(fileName, file.watch)
           file.watch = false
         }
       }
     }
 
-    // Start watching for changes
     watchFiles()
-
-    // Periodically check for new log files
     this.watchFilesInterval = setInterval(() => { watchFiles() }, 10 * 1000)
   }
 
-  #watchFile(file, callback) {
-    // fs.watch is proving to not be reliable and is not picking up changes
-    // to game logs on Windows at all so falling back to the older
-    // fs.watchFile, which uses polling rather than file system events.
-    //
+  #watchFilePoll (file, callback) {
     // Uses incremental reading: only reads new bytes appended since the last
     // read, rather than re-reading the entire file each poll. This reduces
     // disk I/O from potentially hundreds of MB/sec to just a few bytes.
@@ -275,7 +502,7 @@ class EliteLog {
 
     return fs.watchFile(
       file.name,
-      { interval: 250 },
+      { interval: 100 },
       async (curr, prev) => {
         // curr/prev are fs.Stats objects from fs.watchFile
         if (!curr || curr.size === lastReadOffset) return // No new data

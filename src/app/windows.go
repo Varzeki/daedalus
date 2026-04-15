@@ -1,9 +1,10 @@
 package main
 
 import (
-	"github.com/nvsoft/win"
 	"syscall"
 	"unsafe"
+
+	"github.com/nvsoft/win"
 )
 
 func WndProc(hwnd win.HWND, msg uint32, wParam, lParam uintptr) uintptr {

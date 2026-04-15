@@ -151,7 +151,7 @@ function ExplorationPanelNavItems (activePanel) {
     },
     {
       name: 'Biologicals',
-      icon: 'scan',
+      icon: 'plant',
       url: '/exploration/biologicals'
     },
     {

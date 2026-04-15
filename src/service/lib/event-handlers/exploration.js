@@ -1,5 +1,5 @@
 const distance = require('../../../shared/distance')
-const { getBodyValue, getExpectedBioValue, getSystemValue, isStarClass, GENUS_MAX_VALUES, normalizeDssGenus, _bayesianGenusWeights } = require('../exploration-value')
+const { getBodyValue, getExpectedBioValue, getSystemValue, isStarClass, GENUS_MAX_VALUES, normalizeDssGenus, _bayesianGenusWeights, FIRST_FOOTFALL_MULTIPLIER } = require('../exploration-value')
 const { UNKNOWN_VALUE } = require('../../../shared/consts')
 const EDSM = require('../edsm')
 const { predictSpecies } = require('../bio-predictor')
@@ -848,6 +848,7 @@ class Exploration {
 
       // Build species detail for bio breakdown
       let speciesDetail = null
+      const ffMultiplier = isFirstFootfall ? FIRST_FOOTFALL_MULTIPLIER : 1
       if (bioSignals > 0 && (predictedSpecies || knownSpecies.length > 0)) {
         speciesDetail = []
 
@@ -856,7 +857,7 @@ class Exploration {
           speciesDetail.push({
             genus: sp.genus,
             species: sp.species,
-            reward: sp.reward,
+            reward: sp.reward * ffMultiplier,
             isConfirmed: true,
             probability: 100
           })
@@ -937,7 +938,7 @@ class Exploration {
             speciesDetail.push({
               genus: pred.genus,
               species: pred.species,
-              reward,
+              reward: reward * ffMultiplier,
               isConfirmed: false,
               probability
             })
@@ -948,15 +949,15 @@ class Exploration {
       // EDSM discoverer
       const edsmDiscoverer = body.discovery?.commander ?? null
 
-      // When includeNonValuable is off, the displayed bio value should only sum valuable species
+      // When includeNonValuable is off, the displayed bio value should only sum valuable species,
+      // weighted by probability for unconfirmed predictions (expected average outcome).
       const minBioValue = options.minBioValue ?? 7000000
       const includeNonValuable = options.includeNonValuable !== false
       let bioValue = bioValueTotal
       if (!includeNonValuable && speciesDetail && speciesDetail.length > 0) {
-        const ffMultiplier = isFirstFootfall ? 5 : 1
         bioValue = speciesDetail
           .filter(sp => sp.reward >= minBioValue)
-          .reduce((sum, sp) => sum + sp.reward * ffMultiplier, 0)
+          .reduce((sum, sp) => sum + sp.reward * (sp.isConfirmed ? 1 : sp.probability / 100), 0)
       }
 
       return {
@@ -1008,6 +1009,16 @@ class Exploration {
       minBioValue: options.minBioValue,
       includeNonValuable: options.includeNonValuable
     })
+
+    // Override systemValue.bioValue with the sum of per-body bioValues, which
+    // filter individual species against minBioValue when includeNonValuable is off.
+    // getSystemValue checks body-level totals against the threshold, but the per-body
+    // handler filters per-species, so we use the per-body values for consistency.
+    if (systemValue) {
+      const filteredBioTotal = bodies.reduce((sum, b) => sum + (b.bioValue || 0), 0)
+      systemValue.total = systemValue.total - systemValue.bioValue + filteredBioTotal
+      systemValue.bioValue = filteredBioTotal
+    }
 
     // Adjust body counts to exclude belt clusters (consistent with filtered body list)
     const beltClusterCount = cached.bodies.filter(b => b.name?.includes('Belt Cluster')).length
@@ -1229,11 +1240,370 @@ class Exploration {
     }
   }
 
+  // ── Data Inventory ──────────────────────────────────────────────────────────
+  // Returns all scanned bodies + biologicals that haven't been sold yet,
+  // grouped by system.  Historical journal data may lack first-discovery info
+  // so those fields are marked unknown when unavailable.
+
+  async getExplorationInventory (options = {}) {
+    const minBodyValue = options.minBodyValue ?? 1000000
+    const minBioValue = options.minBioValue ?? 7000000
+
+    // If historical backfill is still running, tell the client to wait
+    if (this.eliteLog.isFullLoadInProgress) {
+      return { backfillInProgress: true }
+    }
+
+    // Ensure backfill is complete (instant if already done)
+    await this.eliteLog.ensureFullLoad()
+
+    // 1. Fetch all relevant journal events in parallel
+    const [
+      allScans,
+      allSAAScanComplete,
+      allScanOrganic,
+      allSellExploration,
+      allMultiSellExploration,
+      allSellOrganic,
+      allDied,
+      LoadGame
+    ] = await Promise.all([
+      this.eliteLog._query({ event: 'Scan' }, 0, { timestamp: 1 }),
+      this.eliteLog._query({ event: 'SAAScanComplete' }, 0, { timestamp: 1 }),
+      this.eliteLog._query({ event: 'ScanOrganic', ScanType: 'Analyse' }, 0, { timestamp: 1 }),
+      this.eliteLog._query({ event: 'SellExplorationData' }, 0, { timestamp: 1 }),
+      this.eliteLog._query({ event: 'MultiSellExplorationData' }, 0, { timestamp: 1 }),
+      this.eliteLog._query({ event: 'SellOrganicData' }, 0, { timestamp: 1 }),
+      this.eliteLog._query({ event: 'Died' }, 0, { timestamp: 1 }),
+      this.eliteLog.getEvent('LoadGame')
+    ])
+
+    // Death causes loss of ALL unsold exploration and biological data.
+    // Any scan before the most recent death (that wasn't already sold) is lost.
+    const latestDeath = allDied.length > 0 ? allDied[allDied.length - 1].timestamp : null
+
+    const cmdrName = LoadGame?.Commander ?? null
+
+    // 2. Build a set of sold system names with the timestamp of sale.
+    //    After a sell event, all scans in that system are "sold".
+    //    If the player re-scans the same system later, those new scans
+    //    are unsold again, so we track per-system sell timestamps.
+    const soldSystems = {}  // systemName (lower) → latest sell timestamp
+    for (const evt of allSellExploration) {
+      const ts = evt.timestamp
+      for (const sysName of (evt.Systems || [])) {
+        const key = sysName.toLowerCase()
+        if (!soldSystems[key] || ts > soldSystems[key]) soldSystems[key] = ts
+      }
+    }
+    for (const evt of allMultiSellExploration) {
+      const ts = evt.timestamp
+      for (const d of (evt.Discovered || [])) {
+        const key = (d.SystemName || '').toLowerCase()
+        if (key && (!soldSystems[key] || ts > soldSystems[key])) soldSystems[key] = ts
+      }
+    }
+
+    // 3. Build a set of sold organic species.
+    //    SellOrganicData fires per visit to Vista Genomics and lists every
+    //    specimen sold in that batch. We track sell timestamps to handle re-scans.
+    const soldOrganics = []  // { species, timestamp }
+    for (const evt of allSellOrganic) {
+      const ts = evt.timestamp
+      for (const bio of (evt.BioData || [])) {
+        soldOrganics.push({
+          species: bio.Species_Localised || bio.Species || '',
+          timestamp: ts
+        })
+      }
+    }
+
+    // 4. Build SAAScanComplete lookup (bodyName → timestamp)
+    const mappedBodies = {}
+    for (const evt of allSAAScanComplete) {
+      mappedBodies[evt.BodyName] = evt.timestamp
+    }
+
+    // 5. Build organic lookup: systemAddress:bodyId → [{ species, genus, reward, timestamp }]
+    //    Only Analyse (3rd scan) = completed specimens.
+    //    Events are sorted ascending — keep the LATEST per body+species so
+    //    re-scans after death replace the lost earlier scan.
+    //    Key uses systemAddress:bodyId because body IDs are only unique within a system.
+    const organicsByBody = {}  // 'systemAddress:bodyId' → [specimen]
+    for (const evt of allScanOrganic) {
+      const key = `${evt.SystemAddress}:${evt.Body}`
+      if (!organicsByBody[key]) organicsByBody[key] = []
+      const speciesName = evt.Species_Localised || evt.Species || ''
+      const genus = evt.Genus_Localised || speciesName.split(' ')[0]
+      const entry = {
+        species: speciesName,
+        genus,
+        reward: SPECIES_REWARDS[speciesName] ?? UNKNOWN_VALUE,
+        timestamp: evt.timestamp
+      }
+      // Keep latest scan per body+species (overwrite earlier ones)
+      const existingIdx = organicsByBody[key].findIndex(s => s.species === speciesName)
+      if (existingIdx >= 0) {
+        organicsByBody[key][existingIdx] = entry
+      } else {
+        organicsByBody[key].push(entry)
+      }
+    }
+
+    // 6. Process all Scan events into inventory items, grouped by system
+    const systems = {}  // systemName → { scans[], address, position }
+    const seenBodies = new Set()  // track duplicates by BodyName
+
+    for (const scan of allScans) {
+      const systemName = scan.StarSystem
+      if (!systemName) continue
+
+      // Skip belt clusters — not valuable
+      if (scan.BodyName?.includes('Belt Cluster')) continue
+
+      // Skip nav beacon scans (AutoScan / NavBeaconDetail)
+      if (scan.ScanType === 'NavBeaconDetail') continue
+
+      // Deduplicate: keep the most recent scan per body (allScans sorted asc)
+      const bodyKey = (scan.BodyName || '').toLowerCase()
+      seenBodies.add(bodyKey)  // last one wins since sorted ascending
+
+      const sysKey = systemName.toLowerCase()
+      if (!systems[sysKey]) {
+        systems[sysKey] = {
+          name: systemName,
+          address: scan.SystemAddress,
+          position: scan.StarPos ?? null,
+          bodies: {}
+        }
+      }
+
+      // Check if this system was sold BEFORE this scan happened.
+      // If scan is after the most recent sell, it's unsold.
+      const sellTimestamp = soldSystems[sysKey]
+      const wasSold = sellTimestamp && scan.timestamp <= sellTimestamp
+      // Death loses all unsold exploration data — treat as gone
+      const isLostToDeath = !wasSold && latestDeath && scan.timestamp <= latestDeath
+      const isSold = wasSold || isLostToDeath
+
+      const bodyType = scan.PlanetClass || scan.StarType || ''
+      const isStar = isStarClass(bodyType)
+      const isTerraformable = scan.TerraformState === 'Terraformable'
+      const mass = scan.MassEM || scan.StellarMass || 1
+
+      // Discovery info — may not be present in older journal versions
+      const wasDiscovered = scan.WasDiscovered
+      const wasMapped = scan.WasMapped
+      const isFirstDiscoverer = wasDiscovered === false
+      const isFirstMapped = wasMapped === false
+
+      // Calculate body value (mapped + efficiency bonus = best possible payout)
+      const mappedValue = getBodyValue({
+        bodyType,
+        isTerraformable,
+        mass,
+        isFirstDiscoverer: isFirstDiscoverer || wasDiscovered === undefined,
+        isMapped: !isStar,
+        isFirstMapped: isFirstMapped || wasMapped === undefined,
+        withEfficiencyBonus: true
+      })
+
+      // Scan-only value (what you get just for honking/FSSing, without DSS)
+      const scanValue = getBodyValue({
+        bodyType,
+        isTerraformable,
+        mass,
+        isFirstDiscoverer: isFirstDiscoverer || wasDiscovered === undefined,
+        isMapped: false,
+        isFirstMapped: false,
+        withEfficiencyBonus: false
+      })
+
+      const wasDSSMapped = !!mappedBodies[scan.BodyName]
+
+      systems[sysKey].bodies[bodyKey] = {
+        name: scan.BodyName,
+        bodyId: scan.BodyID,
+        type: isStar ? 'Star' : 'Planet',
+        subType: bodyType,
+        isStar,
+        isTerraformable,
+        mass,
+        distanceToArrival: scan.DistanceFromArrivalLS,
+        isFirstDiscoverer: wasDiscovered === undefined ? null : isFirstDiscoverer,
+        isFirstMapped: wasMapped === undefined ? null : isFirstMapped,
+        wasScanned: true,
+        wasMapped: wasDSSMapped,
+        scanValue,
+        mappedValue,
+        value: wasDSSMapped ? mappedValue : scanValue,
+        isSold,
+        isLostToDeath: !!isLostToDeath,
+        scanTimestamp: scan.timestamp
+      }
+    }
+
+    // 7. Attach organics to their bodies and handle sold status
+    for (const [sysKey, sys] of Object.entries(systems)) {
+      for (const [bodyKey, body] of Object.entries(sys.bodies)) {
+        const organicKey = `${sys.address}:${body.bodyId}`
+        const specimens = organicsByBody[organicKey] ?? []
+        if (specimens.length === 0) continue
+
+        body.organics = specimens.map(sp => {
+          // Check if this specific species was sold after this scan
+          const soldEntry = soldOrganics.find(
+            s => s.species === sp.species && s.timestamp > sp.timestamp
+          )
+          const wasBioSold = !!soldEntry
+          // Death loses all unsold biological data
+          const isLostToDeath = !wasBioSold && latestDeath && sp.timestamp <= latestDeath
+          const isBioSold = wasBioSold || isLostToDeath
+
+          const isFirstFootfall = body.isFirstDiscoverer === true
+          const ffMultiplier = isFirstFootfall ? FIRST_FOOTFALL_MULTIPLIER : 1
+
+          return {
+            species: sp.species,
+            genus: sp.genus,
+            reward: sp.reward === UNKNOWN_VALUE ? sp.reward : sp.reward * ffMultiplier,
+            baseReward: sp.reward,
+            isFirstFootfall,
+            isSold: isBioSold,
+            isLostToDeath: !!isLostToDeath,
+            scanTimestamp: sp.timestamp
+          }
+        })
+      }
+    }
+
+    // 8. Build the response: array of systems with their bodies
+    const inventory = []
+    let totalValue = 0
+    let totalSoldValue = 0
+    let totalUnsoldValue = 0
+    let totalUnsoldExploration = 0
+    let totalUnsoldBio = 0
+    let totalBodies = 0
+    let totalBiologicals = 0
+
+    for (const [sysKey, sys] of Object.entries(systems)) {
+      const bodies = Object.values(sys.bodies)
+      // Skip systems where everything is sold
+      const hasUnsold = bodies.some(b =>
+        !b.isSold || (b.organics ?? []).some(o => !o.isSold)
+      )
+
+      let systemValue = 0
+      let systemUnsoldValue = 0
+      let systemSoldValue = 0
+      let systemBodies = 0
+      let systemBiologicals = 0
+
+      const bodyItems = []
+      for (const body of bodies) {
+        const bodyValue = body.value
+        const bioValue = (body.organics ?? []).reduce((sum, o) => sum + (o.reward === UNKNOWN_VALUE ? 0 : o.reward), 0)
+        const unsoldBioValue = (body.organics ?? []).filter(o => !o.isSold).reduce((sum, o) => sum + (o.reward === UNKNOWN_VALUE ? 0 : o.reward), 0)
+        const soldBioValue = bioValue - unsoldBioValue
+
+        const bodyTotalValue = bodyValue + bioValue
+        const bodyUnsoldValue = (body.isSold ? 0 : bodyValue) + unsoldBioValue
+        const bodySoldValue = (body.isSold ? bodyValue : 0) + soldBioValue
+
+        systemValue += bodyTotalValue
+        systemUnsoldValue += bodyUnsoldValue
+        systemSoldValue += bodySoldValue
+        if (!body.isSold) systemBodies++
+        systemBiologicals += (body.organics ?? []).filter(o => !o.isSold).length
+
+        bodyItems.push({
+          name: body.name,
+          bodyId: body.bodyId,
+          type: body.type,
+          subType: body.subType,
+          isStar: body.isStar,
+          isTerraformable: body.isTerraformable,
+          distanceToArrival: body.distanceToArrival,
+          isFirstDiscoverer: body.isFirstDiscoverer,
+          isFirstMapped: body.isFirstMapped,
+          wasScanned: body.wasScanned,
+          wasMapped: body.wasMapped,
+          scanValue: body.scanValue,
+          mappedValue: body.mappedValue,
+          value: body.value,
+          isSold: body.isSold,
+          isLostToDeath: body.isLostToDeath,
+          organics: body.organics ?? [],
+          totalValue: bodyTotalValue,
+          unsoldValue: bodyUnsoldValue
+        })
+      }
+
+      // Sort bodies: unsold first, then by value descending
+      bodyItems.sort((a, b) => {
+        if (a.isSold !== b.isSold) return a.isSold ? 1 : -1
+        return b.unsoldValue - a.unsoldValue
+      })
+
+      totalValue += systemValue
+      totalUnsoldValue += systemUnsoldValue
+      totalSoldValue += systemSoldValue
+      totalUnsoldExploration += bodyItems.reduce((sum, b) => sum + (b.isSold ? 0 : b.value), 0)
+      totalUnsoldBio += bodyItems.reduce((sum, b) => sum + (b.organics ?? []).filter(o => !o.isSold).reduce((s, o) => s + (o.reward === UNKNOWN_VALUE ? 0 : o.reward), 0), 0)
+      totalBodies += systemBodies
+      totalBiologicals += systemBiologicals
+
+      // Determine if system contains any valuable body or biological
+      const hasValuableBody = bodyItems.some(b => b.value >= minBodyValue)
+      const hasValuableBio = bodyItems.some(b =>
+        (b.organics ?? []).some(o => o.reward !== UNKNOWN_VALUE && o.reward >= minBioValue)
+      )
+      const isValuable = hasValuableBody || hasValuableBio
+
+      inventory.push({
+        name: sys.name,
+        address: sys.address,
+        position: sys.position,
+        bodies: bodyItems,
+        totalValue: systemValue,
+        unsoldValue: systemUnsoldValue,
+        soldValue: systemSoldValue,
+        unsoldBodies: systemBodies,
+        unsoldBiologicals: systemBiologicals,
+        allSold: !hasUnsold,
+        isValuable
+      })
+    }
+
+    // Sort systems: unsold first, then by unsold value descending
+    inventory.sort((a, b) => {
+      if (a.allSold !== b.allSold) return a.allSold ? 1 : -1
+      return b.unsoldValue - a.unsoldValue
+    })
+
+    return {
+      cmdrName,
+      systems: inventory,
+      totals: {
+        systems: inventory.filter(s => !s.allSold).length,
+        bodies: totalBodies,
+        biologicals: totalBiologicals,
+        value: totalValue,
+        unsoldValue: totalUnsoldValue,
+        unsoldExplorationValue: totalUnsoldExploration,
+        unsoldBioValue: totalUnsoldBio,
+        soldValue: totalSoldValue
+      }
+    }
+  }
+
   getHandlers () {
     return {
       getExplorationRoute: (args) => this.getExplorationRoute(args),
       getExplorationSystem: (args) => this.getExplorationSystem(args),
-      getExplorationBiologicals: () => this.getExplorationBiologicals()
+      getExplorationBiologicals: () => this.getExplorationBiologicals(),
+      getExplorationInventory: (args) => this.getExplorationInventory(args)
     }
   }
 }

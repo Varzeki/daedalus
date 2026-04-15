@@ -609,3 +609,270 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   font-size: .75rem;
   margin-top: .1rem;
 }
+
+/* ============================================================
+   Exploration Inventory Page
+   ============================================================ */
+
+/* Summary KPIs */
+.exploration-inventory__summary {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3rem;
+  padding: .5rem 0 .75rem;
+}
+
+.exploration-inventory__kpi {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .15rem;
+}
+
+.exploration-inventory__kpi-value {
+  font-size: 2.5rem;
+  font-weight: bold;
+  line-height: 1.1;
+}
+
+.exploration-inventory__kpi-label {
+  font-size: 1.15rem;
+  text-transform: uppercase;
+  letter-spacing: .1rem;
+  opacity: 0.8;
+}
+
+.exploration-inventory__kpi--sub .exploration-inventory__kpi-value {
+  font-size: 1.8rem;
+}
+
+.exploration-inventory__kpi--sub .exploration-inventory__kpi-label {
+  font-size: 1rem;
+}
+
+.exploration-inventory__kpi-separator {
+  width: .1rem;
+  align-self: stretch;
+  margin: .25rem 0;
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .2);
+}
+
+/* Toolbar (show sold toggle) */
+.exploration-inventory__toolbar {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  padding: .25rem 0 .5rem;
+  border-bottom: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .15);
+  margin-bottom: .75rem;
+}
+
+.exploration-inventory__toggle {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: 1.1rem;
+  cursor: pointer;
+  user-select: none;
+  color: var(--color-primary);
+  opacity: 0.7;
+}
+
+.exploration-inventory__toggle:hover {
+  opacity: 1;
+}
+
+.exploration-inventory__toggle input[type='checkbox'] {
+  accent-color: var(--color-primary);
+}
+
+/* Section headings (Valuable / Non-Valuable) */
+.exploration-inventory__section {
+  margin-bottom: 1.5rem;
+}
+
+.exploration-inventory__section-heading {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08rem;
+  margin: .5rem 0 .75rem;
+  padding-bottom: .4rem;
+  border-bottom: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .15);
+}
+
+.exploration-inventory__section-heading .icon {
+  font-size: 1.5rem;
+}
+
+.exploration-inventory__section-heading--non-valuable {
+  color: var(--color-info);
+  text-shadow: none;
+}
+
+.exploration-inventory__section-count {
+  font-size: 1rem;
+  opacity: 0.5;
+  font-weight: 400;
+  margin-left: .25rem;
+}
+
+.exploration-inventory__section-count::before { content: '('; }
+.exploration-inventory__section-count::after { content: ')'; }
+
+/* System groups */
+.exploration-inventory__systems {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.exploration-inventory__system-group {
+  border: .2rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .25);
+  border-radius: .35rem;
+  overflow: hidden;
+}
+
+.exploration-inventory__system-group--sold {
+  opacity: 0.45;
+}
+
+.exploration-inventory__system-header {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  padding: .75rem 1rem;
+  cursor: pointer;
+  user-select: none;
+  background: rgba(0, 0, 0, .2);
+  transition: background .15s ease;
+  font-size: 1.5rem;
+}
+
+.exploration-inventory__system-header:hover {
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .08);
+}
+
+.exploration-inventory__system-toggle {
+  font-size: .85rem;
+  opacity: 0.5;
+  width: 1rem;
+  text-align: center;
+}
+
+.exploration-inventory__system-stats {
+  margin-left: auto;
+  font-size: 1.4rem;
+  display: flex;
+  align-items: center;
+  gap: .25rem;
+}
+
+/* Body table inside system group */
+.exploration-inventory__table {
+  table-layout: fixed;
+  font-size: var(--base-font-size);
+  width: 100%;
+}
+
+.exploration-inventory__table thead tr {
+  border-top: none;
+}
+
+.exploration-inventory__table thead tr th:after {
+  border-bottom-width: .1rem !important;
+  box-shadow: none !important;
+}
+
+.exploration-inventory__body-name {
+  display: inline-flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+/* Sold body rows — dimmed */
+.exploration-inventory__body-row--sold td {
+  opacity: 0.4;
+}
+
+/* Organic sub-rows */
+.exploration-inventory__organic-row td {
+  padding-top: .1rem !important;
+  padding-bottom: .1rem !important;
+  border: none !important;
+  font-size: 1em;
+  line-height: 1.6;
+  background: rgba(0, 0, 0, 0.25);
+}
+
+.exploration-inventory__organic-row--sold td {
+  opacity: 0.4;
+}
+
+.exploration-inventory__organic-indent {
+  display: inline-flex;
+  align-items: center;
+  padding-left: 1rem;
+}
+
+.exploration-inventory__organic-branch {
+  font-family: monospace;
+  color: #555;
+  margin-right: .5rem;
+  font-size: 1.1em;
+  line-height: 1;
+}
+
+/* SOLD badge */
+.exploration-inventory__sold-badge {
+  font-size: .9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05rem;
+  padding: .1rem .4rem;
+  border-radius: .15rem;
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .08);
+  color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .4);
+}
+
+.exploration-inventory__lost-badge {
+  font-size: .9rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: .05rem;
+  padding: .1rem .4rem;
+  border-radius: .15rem;
+  background: rgba(252, 72, 72, .12);
+  color: var(--color-danger);
+}
+
+/* Hover color overrides for body rows */
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__body-row.table__row--highlight-primary-hover:hover td .text-info,
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__body-row.table__row--highlight-primary-hover:hover td .text-primary,
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__body-row.table__row--highlight-primary-hover:hover td .text-secondary,
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__body-row.table__row--highlight-primary-hover:hover td .text-success,
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__body-row.table__row--highlight-primary-hover:hover td .text-muted,
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__body-row.table__row--highlight-primary-hover:hover td .icon {
+  color: var(--color-primary-dark) !important;
+}
+
+/* Hover for organic sub-rows */
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__organic-row:hover td {
+  background: var(--color-primary) !important;
+  color: var(--color-primary-dark) !important;
+  text-shadow: none;
+  transition: background-color .1s ease, color .1s ease;
+}
+
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__organic-row:hover td .text-info,
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__organic-row:hover td .text-primary,
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__organic-row:hover td .text-secondary,
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__organic-row:hover td .text-success,
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__organic-row:hover td .text-muted,
+table:not(.table--inline).table--interactive tbody tr.exploration-inventory__organic-row:hover td .icon {
+  color: var(--color-primary-dark) !important;
+}

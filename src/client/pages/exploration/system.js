@@ -103,7 +103,6 @@ function BodyRow ({ body, cmdrName, systemName, minBodyValue, minBioValue }) {
           <div className='text-no-wrap exploration-system__body-name'>
             <BodyIcon body={body} />
             {shortName}
-            <BodyStatusIcons body={body} />
           </div>
         </td>
         {/* Type */}
