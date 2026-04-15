@@ -420,6 +420,7 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
+  padding-right: 1rem;
 }
 
 .bio-tracker__right::-webkit-scrollbar {
@@ -591,9 +592,15 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   opacity: .4;
 }
 
-/* Hover on dim entries — stays dim */
+/* Hover on dim entries — dark red background matching system table */
 .bio-list__entry--dim:hover {
-  border-color: rgba(102, 102, 102, .35);
+  background: var(--color-primary-dark) !important;
+  border-color: var(--color-primary-dark);
+  text-shadow: none;
+}
+
+.bio-list__entry--dim:hover .bio-list__thumb {
+  opacity: 1;
 }
 
 /* Hover on valuable entries — bright highlight */

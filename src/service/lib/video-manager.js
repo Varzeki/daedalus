@@ -11,7 +11,10 @@ const { BROADCAST_EVENT: broadcastEvent } = global
 // Paths
 // ---------------------------------------------------------------------------
 
-const CACHE_DIR = path.join(os.homedir(), 'AppData', 'Local', 'DAEDALUS Terminal', 'VideoCache')
+const CACHE_DIR = path.join(
+  process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'),
+  'DAEDALUS Terminal', 'VideoCache'
+)
 
 // yt-dlp binary — in pkg builds, look next to the running .exe;
 // in development, look in the project resources/ directory.
@@ -71,7 +74,7 @@ function probeChannel (channelUrl) {
       '--no-warnings',
       '--no-check-certificates'
     ]
-    const proc = spawn(YTDLP_BIN, args, { windowsHide: true })
+    const proc = spawn(YTDLP_BIN, args, { windowsHide: true, cwd: CACHE_DIR })
     let stdout = ''
     proc.stdout.on('data', d => { stdout += d.toString() })
     proc.on('close', code => {
@@ -105,7 +108,7 @@ function search (query, maxResults = 8) {
       '--no-check-certificates'
     ]
 
-    const proc = spawn(YTDLP_BIN, args, { windowsHide: true })
+    const proc = spawn(YTDLP_BIN, args, { windowsHide: true, cwd: CACHE_DIR })
     let stdout = ''
     let stderr = ''
 
@@ -170,7 +173,7 @@ function getVideoInfo (urlOrId) {
       '--no-check-certificates'
     ]
 
-    const proc = spawn(YTDLP_BIN, args, { windowsHide: true })
+    const proc = spawn(YTDLP_BIN, args, { windowsHide: true, cwd: CACHE_DIR })
     let stdout = ''
     let stderr = ''
 
@@ -212,7 +215,7 @@ function getChannelVideos (channelUrl, maxResults = 12) {
       '--no-check-certificates'
     ]
 
-    const proc = spawn(YTDLP_BIN, args, { windowsHide: true })
+    const proc = spawn(YTDLP_BIN, args, { windowsHide: true, cwd: CACHE_DIR })
     let stdout = ''
     let stderr = ''
 
@@ -298,7 +301,7 @@ function download (urlOrId) {
       '--newline' // Force progress on new lines (easier to parse)
     ]
 
-    const proc = spawn(YTDLP_BIN, args, { windowsHide: true })
+    const proc = spawn(YTDLP_BIN, args, { windowsHide: true, cwd: CACHE_DIR })
     _activeDownload = { proc, videoId }
 
     let stderr = ''

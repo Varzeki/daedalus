@@ -939,7 +939,7 @@ class Exploration {
               genus: pred.genus,
               species: pred.species,
               reward: reward * ffMultiplier,
-              isConfirmed: false,
+              isConfirmed: probability >= 100,
               probability
             })
           }
@@ -1313,8 +1313,9 @@ class Exploration {
 
             // Resolve images for predictions too
             for (const pred of predictions) {
+              const fullSpecies = pred.genus + ' ' + pred.species
               for (const [name, url] of Object.entries(codexImages)) {
-                if (name.startsWith(pred.species + ' - ') || name === pred.species) {
+                if (name.startsWith(fullSpecies + ' - ') || name === fullSpecies) {
                   pred.imageUrl = url
                   break
                 }

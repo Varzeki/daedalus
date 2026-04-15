@@ -53,16 +53,13 @@ function DiscovererCell ({ body, cmdrName }) {
 
 function SpeciesRow ({ species, isFirstDiscoverer, isLast, minBioValue }) {
   const isDim = species.reward < minBioValue
-  const isScanned = species.isConfirmed
-  const rowClass = `exploration-system__species-row${isDim ? ' exploration-system__species-row--dim' : ''}${isScanned ? ' exploration-system__species-row--scanned' : ''}`
+  const rowClass = `exploration-system__species-row${isDim ? ' exploration-system__species-row--dim' : ''}`
   return (
     <tr className={rowClass}>
       <td colSpan={5}>
         <span className='exploration-system__species-indent'>
           <span className='exploration-system__species-branch'>{isLast ? '└' : '│'}</span>
-          {species.isConfirmed
-            ? <i className='icon daedalus-terminal-scan' title='Confirmed' style={{ fontSize: '1.4rem', marginRight: '.35rem' }} />
-            : <i className='icon daedalus-terminal-plant text-muted' style={{ fontSize: '1.4rem', marginRight: '.35rem' }} />}
+          <i className='icon daedalus-terminal-plant' title={species.isConfirmed ? 'Confirmed' : 'Predicted'} style={{ fontSize: '1.4rem', marginRight: '.35rem' }} />
           <span>{species.genus} {species.species}</span>
         </span>
       </td>
@@ -70,9 +67,7 @@ function SpeciesRow ({ species, isFirstDiscoverer, isLast, minBioValue }) {
         <span>{species.reward.toLocaleString()} Cr</span>
       </td>
       <td className='text-center hidden-small'>
-        {species.isConfirmed
-          ? <span>✓</span>
-          : <span className='text-muted'>{species.probability}%</span>}
+        <span className={species.isConfirmed ? '' : 'text-muted'}>{species.isConfirmed ? '100' : species.probability}%</span>
       </td>
       <td className='text-center hidden-small' style={{ width: '2.5rem' }}>
         {isFirstDiscoverer && <i className='icon daedalus-terminal-star text-secondary' title='First Footfall — bonus rewards' style={{ fontSize: '1.4rem' }} />}
