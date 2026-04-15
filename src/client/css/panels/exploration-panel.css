@@ -420,7 +420,7 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   overflow-y: auto;
   scrollbar-width: none;
   -ms-overflow-style: none;
-  padding-right: 1rem;
+  padding: 1.5rem 1rem 2rem 0;
 }
 
 .bio-tracker__right::-webkit-scrollbar {
@@ -516,6 +516,55 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   display: flex;
   flex-direction: column;
   gap: .5rem;
+}
+
+.bio-list--fading-out {
+  animation: bioListFadeOut .6s ease forwards;
+}
+
+.bio-list--fading-in {
+  animation: bioListFadeIn .6s ease forwards;
+}
+
+@keyframes bioListFadeOut {
+  0% { opacity: 1; }
+  100% { opacity: 0; }
+}
+
+@keyframes bioListFadeIn {
+  0% { opacity: 0; }
+  100% { opacity: 1; }
+}
+
+/* Scan complete overlay */
+.bio-scan-complete {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  gap: 1rem;
+  animation: bioScanCompleteAppear .8s ease forwards;
+}
+
+.bio-scan-complete__icon {
+  font-size: 4rem;
+  color: var(--color-secondary);
+  opacity: 0.8;
+}
+
+.bio-scan-complete__text {
+  font-size: 2.4rem;
+  font-weight: bold;
+  text-transform: uppercase;
+  letter-spacing: .15rem;
+  color: var(--color-secondary);
+}
+
+@keyframes bioScanCompleteAppear {
+  0% { opacity: 0; transform: scale(0.8); }
+  40% { opacity: 0; transform: scale(0.8); }
+  100% { opacity: 1; transform: scale(1); }
 }
 
 .bio-list__entry {
@@ -687,6 +736,25 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
 .bio-list__image-placeholder {
   font-size: 2rem;
   color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .2);
+}
+
+.bio-list__description {
+  font-size: 1.4rem;
+  line-height: 1.4;
+  max-width: 30rem;
+}
+
+.bio-list__terrain {
+  font-size: 1.3rem;
+  color: var(--color-info);
+  margin-top: .2rem;
+}
+
+.bio-list__row-terrain {
+  font-size: 1.2rem;
+  opacity: 0.6;
+  margin-top: .1rem;
+  white-space: normal;
 }
 
 .bio-list__active-details {

@@ -342,7 +342,7 @@ class EliteLog {
 
   // Helper: start a periodic safety-net scan that catches missed events and
   // detects new journal files.
-  #startSafetyNet (reader, intervalMs = 10000) {
+  #startSafetyNet (reader, intervalMs = 1000) {
     this.watchFilesInterval = setInterval(async () => {
       const files = await this.#getFiles()
       if (files.length === 0) return

@@ -199,6 +199,14 @@ function getCodexImages () {
   return _codexImages
 }
 
+let _codexDescriptions = null
+function getCodexDescriptions () {
+  if (!_codexDescriptions) {
+    try { _codexDescriptions = require('../codex-descriptions.json') } catch (e) { _codexDescriptions = {} }
+  }
+  return _codexDescriptions
+}
+
 class Exploration {
   constructor ({ eliteLog, eliteJson, system, shipStatus }) {
     this.eliteLog = eliteLog
@@ -239,6 +247,12 @@ class Exploration {
       lon: StatusJson.Longitude,
       timestamp: logEvent.timestamp
     })
+
+    // When scan is complete (Analyse), clear the exclusion zone positions
+    // so the radar no longer shows zones for this finished organism
+    if (scanType === 'Analyse') {
+      delete this._bioScanPositions[key]
+    }
   }
 
   // For the current system, merge journal data onto EDSM bodies to get
@@ -1093,6 +1107,7 @@ class Exploration {
     // 4. Build organism list for current body
     const organisms = []
     const codexImages = getCodexImages()
+    const codexDescriptions = getCodexDescriptions()
 
     if (currentBodyId != null && organicByBody[currentBodyId]) {
       const scans = organicByBody[currentBodyId]
@@ -1165,6 +1180,11 @@ class Exploration {
         const posKey = `${currentBodyId}:${speciesKey}`
         const captured = this._bioScanPositions[posKey]
         organism.scanPositions = captured?.scans ?? []
+
+        // Resolve description
+        const descData = codexDescriptions[speciesKey] || codexDescriptions[genusName] || {}
+        organism.description = descData.description || null
+        organism.terrain = descData.terrain || null
 
         organisms.push(organism)
       }
@@ -1328,6 +1348,11 @@ class Exploration {
                   }
                 }
               }
+
+              // Resolve description
+              const predDesc = codexDescriptions[fullSpecies] || codexDescriptions[pred.genus] || {}
+              pred.description = predDesc.description || null
+              pred.terrain = predDesc.terrain || null
             }
           }
         }

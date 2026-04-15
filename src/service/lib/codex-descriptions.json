@@ -1,0 +1,94 @@
+{
+  "Aleoida": {
+    "description": "Upright structured organisms with branching forms resembling alien flora.",
+    "terrain": "Open plains and flat terrain on rocky worlds"
+  },
+  "Bacterium": {
+    "description": "Colony-forming organisms visible on rock surfaces. The most diverse genus, found in nearly all atmospheric types.",
+    "terrain": "Rocky surfaces, rock faces and outcrops — very adaptable"
+  },
+  "Cactoida": {
+    "description": "Large cactus-like organisms with spiny columnar structures rising from the surface.",
+    "terrain": "Rocky outcrops and exposed terrain on rocky worlds"
+  },
+  "Clypeus": {
+    "description": "Shield or disk-shaped organisms growing from rock surfaces, resembling large fungal brackets.",
+    "terrain": "Rocky outcrops and cliff faces"
+  },
+  "Concha": {
+    "description": "Shell-like organisms with distinctive spiral or folded structures.",
+    "terrain": "Rocky terrain, often near geological features"
+  },
+  "Electricae": {
+    "description": "Bioluminescent organisms that emit visible electrical glow. Found exclusively near volcanic activity.",
+    "terrain": "Near volcanic vents and fumaroles — requires volcanism"
+  },
+  "Fonticulua": {
+    "description": "Fountain-like upward growths splitting into multiple fronds or tendrils.",
+    "terrain": "Open plains and flat terrain"
+  },
+  "Frutexa": {
+    "description": "Small bush-like organisms growing close to the ground with spreading branches.",
+    "terrain": "Open sunny plains with minimal rock cover"
+  },
+  "Fumerola": {
+    "description": "Organisms thriving around volcanic vents, deriving energy from heat and gases.",
+    "terrain": "Directly on or adjacent to volcanic fumaroles — requires volcanism"
+  },
+  "Fungoida": {
+    "description": "Mushroom-like organisms with distinct cap and stem structures.",
+    "terrain": "Rocky terrain, often in sheltered areas"
+  },
+  "Osseus": {
+    "description": "Bone-like organisms with hard calcified structures protruding from the surface.",
+    "terrain": "Rocky outcrops and exposed surfaces"
+  },
+  "Recepta": {
+    "description": "Complex geometric organisms with angular, crystalline-looking structures.",
+    "terrain": "Rocky terrain on various world types"
+  },
+  "Stratum": {
+    "description": "Low-lying photosynthetic organisms that bond tightly to rock surfaces with tough proto-leaves.",
+    "terrain": "Open, flat terrain and low-lying rocky outcrops"
+  },
+  "Tubus": {
+    "description": "Tube-shaped organisms with hollow cylindrical structures rising in clusters.",
+    "terrain": "Open plains, often in groups"
+  },
+  "Tussock": {
+    "description": "Grass or tuft-like organisms forming clusters on the ground.",
+    "terrain": "Open plains and grassland-like terrain"
+  },
+  "Stratum Araneamus": {
+    "description": "Vaguely octopoid shape with pale semi-translucent domes revealing colourful inner organisms. Extremely rare — only Emerald variant recorded.",
+    "terrain": "Open, flat terrain on rocky worlds with sulphur dioxide atmosphere"
+  },
+  "Stratum Cucumisis": {
+    "description": "Fleshy ovoid shapes connected in narrow patterns, covered with round photosynthetic cells.",
+    "terrain": "Open, flat terrain on rocky worlds"
+  },
+  "Stratum Excutitus": {
+    "description": "Tight concentric ring patterns with mottled proto-leaves in dark hues.",
+    "terrain": "Open, flat terrain on rocky worlds"
+  },
+  "Stratum Frigus": {
+    "description": "Broad interconnected ring structures composed of narrow ridges to capture sunlight.",
+    "terrain": "Open, flat terrain on rocky worlds"
+  },
+  "Stratum Laminamus": {
+    "description": "Overlapping rock plateau appearance with narrow bands of colouration.",
+    "terrain": "Open, flat terrain on rocky worlds with ammonia atmosphere"
+  },
+  "Stratum Limaxus": {
+    "description": "Unconnected ovoid shapes — protruding tips of a larger subterranean organism.",
+    "terrain": "Open, flat terrain on rocky worlds"
+  },
+  "Stratum Paleas": {
+    "description": "Thick overlapping vines with irregular growths, colours appearing in bands or streaks.",
+    "terrain": "Open, flat terrain on rocky worlds"
+  },
+  "Stratum Tectonicas": {
+    "description": "Thick rock-like outer shell covered with an irregular lattice of brighter photosynthetic cells.",
+    "terrain": "Open, flat terrain on high metal content worlds"
+  }
+}
