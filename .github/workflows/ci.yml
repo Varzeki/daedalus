@@ -35,6 +35,13 @@ jobs:
 
       - run: npm ci --loglevel=error
 
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: src/client/.next/cache
+          key: nextjs-${{ hashFiles('src/client/**/*.js', 'src/client/**/*.css') }}
+          restore-keys: nextjs-
+
       - name: Build client
         run: cd src/client && npx next build && npx next export -o ../../build/client
 

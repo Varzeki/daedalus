@@ -7,7 +7,38 @@ permissions:
   contents: write
 
 jobs:
-  build:
+  # ── Parallel job 1: Build Next.js client on fast Ubuntu runner ──
+  build-client:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - run: npm ci --loglevel=error
+
+      - name: Cache Next.js build
+        uses: actions/cache@v4
+        with:
+          path: src/client/.next/cache
+          key: nextjs-${{ hashFiles('src/client/**/*.js', 'src/client/**/*.css') }}
+          restore-keys: nextjs-
+
+      - name: Build client
+        run: npm run build:client
+
+      - name: Upload client build
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-client
+          path: build/client
+          retention-days: 1
+
+  # ── Parallel job 2: Build Go app on Windows ──
+  build-app:
     runs-on: windows-latest
     steps:
       - uses: actions/checkout@v4
@@ -15,12 +46,72 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '24'
+          cache: 'npm'
 
       - uses: actions/setup-go@v5
         with:
           go-version: 'stable'
           cache: true
           cache-dependency-path: src/app/go.sum
+
+      - run: npm ci --loglevel=error
+
+      - name: Cache UPX
+        id: cache-upx
+        uses: actions/cache@v4
+        with:
+          path: |
+            C:\ProgramData\chocolatey\lib\upx
+            C:\ProgramData\chocolatey\bin\upx.exe
+          key: upx-v1
+
+      - name: Install UPX
+        if: steps.cache-upx.outputs.cache-hit != 'true'
+        run: choco install upx -y
+
+      - name: Build app
+        run: npm run build:app
+
+      - name: Upload app build
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-app
+          path: |
+            build/bin/DAEDALUS Terminal.exe
+            build/bin/icon.ico
+          retention-days: 1
+
+  # ── Sequential: Assemble service, package installer, create release ──
+  assemble:
+    needs: [build-client, build-app]
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: 'npm'
+
+      - run: npm ci --loglevel=error
+
+      - name: Download client build
+        uses: actions/download-artifact@v4
+        with:
+          name: build-client
+          path: build/client
+
+      - name: Download app build
+        uses: actions/download-artifact@v4
+        with:
+          name: build-app
+          path: build/bin
+
+      - name: Cache pkg node binary
+        uses: actions/cache@v4
+        with:
+          path: ~/.pkg-cache
+          key: pkg-node24-win-x64-v1
 
       - name: Cache NSIS and UPX
         id: cache-tools
@@ -36,33 +127,16 @@ jobs:
         if: steps.cache-tools.outputs.cache-hit != 'true'
         run: choco install nsis upx -y
 
-      - name: Cache node_modules
-        id: cache-deps
-        uses: actions/cache@v4
-        with:
-          path: node_modules
-          key: node-modules-${{ hashFiles('package-lock.json') }}
-
-      - name: Install dependencies
-        if: steps.cache-deps.outputs.cache-hit != 'true'
-        run: npm ci --loglevel=error
-
-      - name: Get version from package.json
-        id: version
-        shell: bash
-        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
-
       - name: Download yt-dlp
         shell: bash
         run: |
           curl -L -o resources/yt-dlp.exe https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe
           ls -la resources/yt-dlp.exe
 
-      - name: Build client
-        run: npm run build:client
-
-      - name: Build app
-        run: npm run build:app
+      - name: Get version from package.json
+        id: version
+        shell: bash
+        run: echo "version=$(node -p "require('./package.json').version")" >> "$GITHUB_OUTPUT"
 
       - name: Build service
         run: npm run build:service
