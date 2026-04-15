@@ -43,7 +43,7 @@ class EventHandlers {
     this.blueprints = this._register(new Blueprints({ engineers: this.engineers, materials: this.materials, shipStatus: this.shipStatus }))
     this.navRoute = this._register(new NavRoute({ eliteLog, eliteJson, system: this.system }))
     this.exploration = this._register(new Exploration({ eliteLog, eliteJson, system: this.system, shipStatus: this.shipStatus }))
-    this.powerplay = this._register(new Powerplay({ eliteLog }))
+    this.powerplay = this._register(new Powerplay({ eliteLog, shipStatus: this.shipStatus }))
     this.keybinds = this._register(new Keybinds())
     this.video = this._register(new Video())
     this.textToSpeech = new TextToSpeech({ eliteLog, eliteJson, cmdrStatus: this.cmdrStatus, shipStatus: this.shipStatus })

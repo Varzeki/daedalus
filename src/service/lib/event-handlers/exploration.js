@@ -1,5 +1,5 @@
 const distance = require('../../../shared/distance')
-const { getBodyValue, getExpectedBioValue, getSystemValue, isStarClass, GENUS_MAX_VALUES, normalizeDssGenus } = require('../exploration-value')
+const { getBodyValue, getExpectedBioValue, getSystemValue, isStarClass, GENUS_MAX_VALUES, normalizeDssGenus, _bayesianGenusWeights } = require('../exploration-value')
 const { UNKNOWN_VALUE } = require('../../../shared/consts')
 const EDSM = require('../edsm')
 const { predictSpecies } = require('../bio-predictor')
@@ -435,7 +435,11 @@ class Exploration {
       seenSpecies.add(speciesName)
 
       const reward = SPECIES_REWARDS[speciesName] ?? UNKNOWN_VALUE
-      knownSpecies.push({ genus, species: speciesName, reward })
+      // Strip genus prefix from species name — the client prepends genus separately
+      const speciesEpithet = speciesName.startsWith(genus + ' ')
+        ? speciesName.slice(genus.length + 1)
+        : speciesName
+      knownSpecies.push({ genus, species: speciesEpithet, reward })
     }
 
     if (knownSpecies.length > 0) body._knownSpecies = knownSpecies
@@ -804,30 +808,61 @@ class Exploration {
         if (predictedSpecies) {
           const knownGenera = new Set(knownSpecies.map(s => s.genus?.toLowerCase()))
 
-          // When DSS genera are confirmed, recalculate probabilities per genus:
-          // - Genus with 1 predicted species → 100%
-          // - Genus with N predicted species → proportional by hitCount within that genus
-          const hasDssGenera = (confirmedGenuses?.length > 0)
-          let genusProbabilities = null
-          if (hasDssGenera) {
-            // Group predictions by genus and compute intra-genus probabilities
-            const genusGroups = new Map()
-            for (const pred of predictedSpecies) {
-              const gk = pred.genus?.toLowerCase()
-              if (knownGenera.has(gk)) continue
-              if (!genusGroups.has(gk)) genusGroups.set(gk, [])
-              genusGroups.get(gk).push(pred)
-            }
-            genusProbabilities = new Map()
+          // Count remaining signal slots and unique predicted genera (excluding already-confirmed genera)
+          const remainingSlots = bioSignals - knownSpecies.length
+          const unconfirmedPredGenera = new Set()
+          for (const pred of predictedSpecies) {
+            const gk = pred.genus?.toLowerCase()
+            if (!knownGenera.has(gk)) unconfirmedPredGenera.add(gk)
+          }
+
+          // Group predictions by genus (excluding already-confirmed genera)
+          const genusGroups = new Map()
+          for (const pred of predictedSpecies) {
+            const gk = pred.genus?.toLowerCase()
+            if (knownGenera.has(gk)) continue
+            if (!genusGroups.has(gk)) genusGroups.set(gk, [])
+            genusGroups.get(gk).push(pred)
+          }
+
+          // Recalculate display probabilities using Bayesian conditioning.
+          // We know exactly `remainingSlots` genera must be present from the signal count.
+          // _bayesianGenusWeights computes P(genus_i present | exactly N genera present)
+          // accounting for each genus's raw probability. When genera ≤ slots, all are 100%.
+          // Within each genus, species probabilities are proportional by hitCount.
+          const allGeneraGuaranteed = (confirmedGenuses?.length > 0) ||
+            (remainingSlots > 0 && unconfirmedPredGenera.size <= remainingSlots)
+
+          let genusProbabilities = new Map()
+          if (allGeneraGuaranteed && remainingSlots > 0) {
+            // Build genus-level probability inputs for Bayesian weighting
+            const genusEntries = []
             for (const [gk, members] of genusGroups) {
+              // Genus-level probability = sum of species probabilities (capped at 100)
+              const genusProbability = Math.min(members.reduce((s, m) => s + (m.probability ?? 0), 0), 100)
+              genusEntries.push({ gk, members, genusProbability })
+            }
+
+            // Compute Bayesian conditional probability per genus
+            const bayesWeights = _bayesianGenusWeights(
+              genusEntries.map(e => ({ genusProbability: e.genusProbability })),
+              remainingSlots
+            )
+
+            for (let i = 0; i < genusEntries.length; i++) {
+              const { members } = genusEntries[i]
+              const genusWeight = bayesWeights[i] // 0–1 conditional probability that genus is present
+              const genusWeightPct = Math.round(genusWeight * 1000) / 10 // as percentage
+
               if (members.length === 1) {
-                genusProbabilities.set(`${members[0].genus}|${members[0].species}`, 100)
+                // Sole species in genus — its probability equals the genus probability
+                genusProbabilities.set(`${members[0].genus}|${members[0].species}`, genusWeightPct)
               } else {
+                // Multiple species — distribute genus probability by hitCount
                 const genusTotal = members.reduce((s, m) => s + (m.hitCount || 1), 0)
                 for (const m of members) {
-                  const pct = genusTotal > 0
-                    ? Math.round(((m.hitCount || 1) / genusTotal) * 1000) / 10
-                    : Math.round(1000 / members.length) / 10
+                  const speciesFraction = genusTotal > 0 ? (m.hitCount || 1) / genusTotal : 1 / members.length
+                  const pct = Math.round(genusWeightPct * speciesFraction * 10) / 10
                   genusProbabilities.set(`${m.genus}|${m.species}`, pct)
                 }
               }
@@ -838,8 +873,8 @@ class Exploration {
             if (knownGenera.has(pred.genus?.toLowerCase())) continue
             const fullName = `${pred.genus} ${pred.species}`
             const reward = SPECIES_REWARDS[fullName] ?? SPECIES_REWARDS[pred.species] ?? 0
-            const probability = genusProbabilities
-              ? (genusProbabilities.get(`${pred.genus}|${pred.species}`) ?? Math.round(pred.probability * 10) / 10)
+            const probability = genusProbabilities.has(`${pred.genus}|${pred.species}`)
+              ? genusProbabilities.get(`${pred.genus}|${pred.species}`)
               : Math.round(pred.probability * 10) / 10
             speciesDetail.push({
               genus: pred.genus,

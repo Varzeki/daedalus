@@ -1,3 +1,5 @@
+import CopyOnClick from 'components/copy-on-click'
+
 // ─── Rank thresholds ─────────────────────────────────────────────────────────
 function getMeritsForRank (rank) {
   if (rank <= 1) return 0
@@ -30,20 +32,75 @@ const RANK_TICKS = [0, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
 // ─── Activity category display order ─────────────────────────────────────────
 const CATEGORY_ORDER = ['Combat', 'Finance', 'Social', 'Covert']
 
-// ─── Power pledge bonuses (passive benefits while pledged) ───────────────────
-const POWER_BONUSES = {
-  'Jerome Archer':        'Ship & on-foot combat bond payouts +25% in controlled systems',
-  'Arissa Lavigny-Duval': 'Bounty voucher payouts +50% in controlled systems',
-  'Aisling Duval':        'Passenger mission payouts +50%;  Notoriety −1 per week automatically',
-  'Denton Patreus':       'Weapons & defence module outfitting −30% in controlled systems',
-  'Felicia Winters':      'Federal Navy mission payouts +50%',
-  'Edmund Mahon':         'Commodity trade profits +10% in Alliance-controlled systems',
-  'Nakato Kaine':         'Cartography & exploration data payouts +50%',
-  'Li Yong-Rui':          'Trade profits +10% in LYR-controlled systems',
-  'Zemina Torval':        'Mining refined yields +25% (extra processed resources)',
-  'Pranav Antal':         'Tech broker material costs −10%',
-  'Archon Delaine':       'Illegal cargo sale profits +25% in controlled systems',
-  'Yuri Grom':            'Ship & on-foot combat bond payouts +25% in Grom-controlled systems'
+// ─── Universal perks (all powers) ────────────────────────────────────────────
+const UNIVERSAL_PERKS = [
+  { name: 'Rank decal',                            tiers: [{ rank: 1, value: '✓' }] },
+  { name: 'Reduced rebuy (killed by opposing power)', tiers: [{ rank: 11, value: '−33%' }, { rank: 29, value: '−66%' }, { rank: 60, value: '−100%' }] },
+  { name: 'Reduced rebuy in own territory',         tiers: [{ rank: 2, value: '−20%' }, { rank: 8, value: '−40%' }, { rank: 17, value: '−60%' }, { rank: 27, value: '−80%' }, { rank: 36, value: '−100%' }] }
+]
+
+// ─── Power-specific pledge perks (passive benefits while pledged) ────────────
+// Each perk has a name and tiers: [{rank, value}] where value is displayed as-is
+const POWER_PERKS = {
+  'Jerome Archer': [
+    { name: 'Bounty payouts',                       tiers: [{ rank: 5, value: '+10%' }, { rank: 14, value: '+20%' }, { rank: 22, value: '+30%' }, { rank: 32, value: '+40%' }, { rank: 48, value: '+50%' }, { rank: 55, value: '+60%' }, { rank: 67, value: '+70%' }, { rank: 73, value: '+80%' }, { rank: 86, value: '+90%' }, { rank: 100, value: '+100%' }] },
+    { name: 'Weapon module cost (own territory)',    tiers: [{ rank: 24, value: '−10%' }, { rank: 42, value: '−15%' }, { rank: 52, value: '−20%' }, { rank: 78, value: '−25%' }, { rank: 94, value: '−30%' }] }
+  ],
+  'Arissa Lavigny-Duval': [
+    { name: 'Bounty payouts',                       tiers: [{ rank: 5, value: '+10%' }, { rank: 14, value: '+20%' }, { rank: 22, value: '+30%' }, { rank: 32, value: '+40%' }, { rank: 48, value: '+50%' }, { rank: 55, value: '+60%' }, { rank: 67, value: '+70%' }, { rank: 73, value: '+80%' }, { rank: 86, value: '+90%' }, { rank: 100, value: '+100%' }] },
+    { name: 'Weapon module cost (own territory)',    tiers: [{ rank: 24, value: '−10%' }, { rank: 42, value: '−15%' }, { rank: 52, value: '−20%' }, { rank: 78, value: '−25%' }, { rank: 94, value: '−30%' }] }
+  ],
+  'Aisling Duval': [
+    { name: 'Search & rescue payouts',              tiers: [{ rank: 5, value: '+20%' }, { rank: 14, value: '+40%' }, { rank: 22, value: '+60%' }, { rank: 32, value: '+80%' }, { rank: 48, value: '+100%' }, { rank: 55, value: '+120%' }, { rank: 67, value: '+140%' }, { rank: 73, value: '+160%' }, { rank: 86, value: '+180%' }, { rank: 100, value: '+200%' }] },
+    { name: 'Minor faction reputation',             tiers: [{ rank: 24, value: '+20%' }, { rank: 42, value: '+40%' }, { rank: 52, value: '+60%' }, { rank: 78, value: '+80%' }, { rank: 94, value: '+100%' }] }
+  ],
+  'Denton Patreus': [
+    { name: 'Weapon module cost (own territory)',    tiers: [{ rank: 5, value: '−5%' }, { rank: 14, value: '−10%' }, { rank: 22, value: '−15%' }, { rank: 32, value: '−20%' }, { rank: 48, value: '−25%' }, { rank: 55, value: '−30%' }, { rank: 67, value: '−35%' }, { rank: 73, value: '−40%' }] },
+    { name: 'Bounty payouts',                       tiers: [{ rank: 24, value: '+20%' }, { rank: 42, value: '+35%' }, { rank: 52, value: '+50%' }, { rank: 78, value: '+65%' }, { rank: 94, value: '+80%' }] },
+    { name: 'Rearm cost (own territory)',            tiers: [{ rank: 86, value: '−40%' }, { rank: 100, value: '−90%' }] }
+  ],
+  'Felicia Winters': [
+    { name: 'Salvage profit',                       tiers: [{ rank: 5, value: '+10%' }, { rank: 14, value: '+20%' }, { rank: 22, value: '+30%' }, { rank: 32, value: '+40%' }, { rank: 48, value: '+50%' }, { rank: 55, value: '+60%' }, { rank: 67, value: '+70%' }, { rank: 73, value: '+80%' }, { rank: 86, value: '+90%' }, { rank: 100, value: '+100%' }] },
+    { name: 'Minor faction reputation',             tiers: [{ rank: 24, value: '+20%' }, { rank: 42, value: '+40%' }, { rank: 52, value: '+60%' }, { rank: 78, value: '+80%' }, { rank: 94, value: '+100%' }] },
+    { name: 'Food & medicine profit',               tiers: [{ rank: 73, value: '+20%' }, { rank: 86, value: '+40%' }, { rank: 100, value: '+60%' }] }
+  ],
+  'Edmund Mahon': [
+    { name: 'Trade bond sales',                     tiers: [{ rank: 5, value: '+5%' }, { rank: 14, value: '+10%' }, { rank: 22, value: '+15%' }, { rank: 32, value: '+20%' }, { rank: 48, value: '+25%' }] },
+    { name: 'Minor faction reputation',             tiers: [{ rank: 24, value: '+20%' }, { rank: 42, value: '+40%' }, { rank: 52, value: '+60%' }, { rank: 78, value: '+80%' }, { rank: 94, value: '+100%' }] },
+    { name: 'Rare goods trade profit',              tiers: [{ rank: 55, value: '+10%' }, { rank: 67, value: '+20%' }, { rank: 73, value: '+30%' }, { rank: 86, value: '+40%' }, { rank: 100, value: '+50%' }] }
+  ],
+  'Nakato Kaine': [
+    { name: 'Minor faction reputation',             tiers: [{ rank: 5, value: '+75%' }, { rank: 14, value: '+90%' }, { rank: 22, value: '+105%' }, { rank: 32, value: '+120%' }, { rank: 48, value: '+135%' }, { rank: 55, value: '+150%' }] },
+    { name: 'Search & rescue payouts',              tiers: [{ rank: 24, value: '+40%' }, { rank: 42, value: '+60%' }, { rank: 52, value: '+80%' }, { rank: 78, value: '+100%' }, { rank: 94, value: '+120%' }] },
+    { name: 'Mining commodity payouts',             tiers: [{ rank: 55, value: '+10%' }, { rank: 67, value: '+20%' }, { rank: 73, value: '+30%' }, { rank: 86, value: '+40%' }, { rank: 100, value: '+50%' }] }
+  ],
+  'Li Yong-Rui': [
+    { name: 'Exploration data sales',               tiers: [{ rank: 5, value: '+20%' }, { rank: 14, value: '+30%' }, { rank: 22, value: '+40%' }, { rank: 32, value: '+50%' }, { rank: 48, value: '+60%' }, { rank: 55, value: '+70%' }, { rank: 67, value: '+80%' }, { rank: 73, value: '+90%' }, { rank: 86, value: '+100%' }] },
+    { name: 'Trade bond sales',                     tiers: [{ rank: 24, value: '+5%' }, { rank: 42, value: '+10%' }, { rank: 52, value: '+15%' }, { rank: 78, value: '+20%' }, { rank: 94, value: '+25%' }] },
+    { name: 'Rearm cost (own territory)',            tiers: [{ rank: 86, value: '−50%' }, { rank: 100, value: '−100%' }] },
+    { name: 'Refuel cost (own territory)',           tiers: [{ rank: 86, value: '−50%' }, { rank: 100, value: '−100%' }] },
+    { name: 'Repair cost (own territory)',           tiers: [{ rank: 86, value: '−50%' }, { rank: 100, value: '−100%' }] }
+  ],
+  'Zemina Torval': [
+    { name: 'Mining commodity payouts',             tiers: [{ rank: 5, value: '+10%' }, { rank: 14, value: '+15%' }, { rank: 22, value: '+20%' }, { rank: 32, value: '+25%' }, { rank: 48, value: '+30%' }, { rank: 55, value: '+35%' }, { rank: 67, value: '+40%' }, { rank: 73, value: '+45%' }] },
+    { name: 'Imperial slaves commodity payouts',    tiers: [{ rank: 24, value: '+10%' }, { rank: 42, value: '+20%' }, { rank: 52, value: '+30%' }, { rank: 78, value: '+40%' }, { rank: 94, value: '+50%' }] },
+    { name: 'Trade bond sales',                     tiers: [{ rank: 86, value: '+10%' }, { rank: 100, value: '+20%' }] }
+  ],
+  'Pranav Antal': [
+    { name: 'Minor faction reputation',             tiers: [{ rank: 5, value: '+75%' }, { rank: 14, value: '+90%' }, { rank: 22, value: '+105%' }, { rank: 32, value: '+120%' }, { rank: 48, value: '+135%' }, { rank: 55, value: '+150%' }] },
+    { name: 'Organics data sales',                  tiers: [{ rank: 24, value: '+10%' }, { rank: 42, value: '+15%' }, { rank: 52, value: '+20%' }, { rank: 78, value: '+25%' }, { rank: 94, value: '+30%' }] },
+    { name: 'Technology commodity profit',           tiers: [{ rank: 55, value: '+10%' }, { rank: 67, value: '+20%' }, { rank: 73, value: '+30%' }, { rank: 86, value: '+40%' }, { rank: 100, value: '+50%' }] }
+  ],
+  'Archon Delaine': [
+    { name: 'Bounty value (own territory)',         tiers: [{ rank: 5, value: '−10%' }, { rank: 14, value: '−20%' }, { rank: 22, value: '−30%' }, { rank: 32, value: '−40%' }, { rank: 48, value: '−50%' }, { rank: 55, value: '−60%' }, { rank: 67, value: '−70%' }, { rank: 73, value: '−80%' }, { rank: 86, value: '−90%' }, { rank: 100, value: '−100%' }] },
+    { name: 'Black market profits',                 tiers: [{ rank: 24, value: '+10%' }, { rank: 42, value: '+15%' }, { rank: 52, value: '+20%' }, { rank: 78, value: '+25%' }, { rank: 94, value: '+30%' }] }
+  ],
+  'Yuri Grom': [
+    { name: 'Bounty payouts',                       tiers: [{ rank: 5, value: '+2%' }, { rank: 14, value: '+5%' }, { rank: 22, value: '+7%' }, { rank: 32, value: '+10%' }, { rank: 48, value: '+13%' }, { rank: 55, value: '+15%' }, { rank: 67, value: '+20%' }, { rank: 73, value: '+30%' }, { rank: 86, value: '+40%' }, { rank: 100, value: '+60%' }] },
+    { name: 'Exploration data sales',               tiers: [{ rank: 5, value: '+2%' }, { rank: 14, value: '+5%' }, { rank: 22, value: '+7%' }, { rank: 32, value: '+10%' }, { rank: 48, value: '+13%' }, { rank: 55, value: '+15%' }] },
+    { name: 'Trade bond sales',                     tiers: [{ rank: 5, value: '+2%' }, { rank: 14, value: '+5%' }, { rank: 22, value: '+7%' }, { rank: 32, value: '+10%' }, { rank: 48, value: '+13%' }, { rank: 55, value: '+15%' }] },
+    { name: 'Weapon module cost (own territory)',    tiers: [{ rank: 24, value: '−10%' }, { rank: 42, value: '−15%' }, { rank: 52, value: '−20%' }, { rank: 78, value: '−25%' }, { rank: 94, value: '−30%' }] }
+  ]
 }
 
 // ─── Power rank module unlocks ────────────────────────────────────────────────
@@ -230,14 +287,15 @@ const SYSTEM_TYPE_CLASS = {
 // Brief contextual description per system type
 const SYSTEM_TYPE_INFO = {
   reinforcement: 'Your power controls this system. Activities earn merits and control points, building toward Fortified (20Ly acquisition range) or Stronghold (30Ly).',
-  acquisition:   'Unoccupied system within your acquisition range. Reach 120,000 control points before a rival power to claim it. If contested by two powers, PP Combat Zones are active.',
+  acquisition:   'Unoccupied system within your acquisition range. Reach 120,000 control points before a rival power to claim it.',
+  contested:     'Multiple powers are competing for control of this system. Powerplay Combat Zones may be active. Earn merits and control points to push your power ahead.',
   undermining:   "Enemy power's controlled system. Reduce their control points to push it into Turmoil, opening it for your power to acquire."
 }
 
 // ─── HeroSection ─────────────────────────────────────────────────────────────
 function HeroSection ({ power, rank, merits, timePledged, systemType }) {
   const portraitId = POWER_PORTRAIT_IDS[power]
-  const ethos = systemType ? POWER_ETHOS[power]?.[systemType] : null
+  const allEthos = POWER_ETHOS[power]
 
   const currentThreshold = getMeritsForRank(rank)
   const nextThreshold = rank < 100 ? getMeritsForRank(rank + 1) : null
@@ -290,12 +348,16 @@ function HeroSection ({ power, rank, merits, timePledged, systemType }) {
               <span className='powerplay-panel__hero-stat-value text-info'>{formatTimePledged(timePledged)}</span>
             </div>
           )}
-          {ethos && (
-            <div className='powerplay-panel__hero-stat'>
-              <span className='powerplay-panel__hero-stat-label text-muted'>Ethos bonus</span>
-              <span className={`powerplay-panel__hero-stat-value powerplay-panel__cat--${ethos.toLowerCase()}`}>
-                {ethos} <span className='text-secondary'>+50%</span>
-              </span>
+          {allEthos && (
+            <div className='powerplay-panel__hero-ethos'>
+              {['reinforcement', 'acquisition', 'undermining'].map(type => (
+                <div key={type} className={`powerplay-panel__hero-ethos-item${systemType === type ? ' powerplay-panel__hero-ethos-item--active' : ''}`}>
+                  <span className='powerplay-panel__hero-ethos-label text-muted'>{SYSTEM_TYPE_LABEL[type]}</span>
+                  <span className={`powerplay-panel__hero-ethos-value powerplay-panel__cat--${allEthos[type].toLowerCase()}`}>
+                    {allEthos[type]}
+                  </span>
+                </div>
+              ))}
             </div>
           )}
         </div>
@@ -344,8 +406,47 @@ function HeroSection ({ power, rank, merits, timePledged, systemType }) {
   )
 }
 
+// ─── NearbySourcesSection ─────────────────────────────────────────────────────
+function NearbySourcesSection ({ nearbySources }) {
+  if (!nearbySources?.groups?.length) return null
+
+  return (
+    <div className='powerplay-panel__nearby-sources'>
+      <h5 className='powerplay-panel__nearby-heading text-primary'>{nearbySources.label}</h5>
+      <p className='powerplay-panel__nearby-desc text-muted'>{nearbySources.description}</p>
+      <div className='powerplay-panel__nearby-groups'>
+        {nearbySources.groups.map(group => (
+          <div key={group.power} className='powerplay-panel__nearby-group'>
+            {nearbySources.groups.length > 1 && (
+              <span className='powerplay-panel__nearby-group-power text-secondary'>{group.power}</span>
+            )}
+            <div className='powerplay-panel__nearby-list'>
+              {group.systems.map((sys, i) => {
+                const isAlt = i > 0
+                return (
+                  <div key={sys.name} className={`powerplay-panel__nearby-row${!sys.hasLargePad ? ' powerplay-panel__nearby-row--no-pad' : ''}`}>
+                    <span className='powerplay-panel__nearby-name'>
+                      {!sys.hasLargePad && <span className='powerplay-panel__pad-warn text-danger' title='No large landing pad'>▲</span>}
+                      {isAlt && <span className='powerplay-panel__pad-alt text-muted' title='Alternative with large pad'>↳ </span>}
+                      <CopyOnClick><span className='text-info'>{sys.name}</span></CopyOnClick>
+                    </span>
+                    <span className='text-muted'>
+                      {sys.distance != null ? `${sys.distance} Ly` : ''}
+                      {sys.powerState ? ` · ${sys.powerState}` : ''}
+                    </span>
+                  </div>
+                )
+              })}
+            </div>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 // ─── SystemSection ────────────────────────────────────────────────────────────
-function SystemSection ({ currentSystem, playerPower }) {
+function SystemSection ({ currentSystem, playerPower, nearbySources }) {
   if (!currentSystem?.name) {
     return (
       <div>
@@ -375,7 +476,7 @@ function SystemSection ({ currentSystem, playerPower }) {
         </div>
         {currentSystem.powers?.length > 0 && (
           <div className='powerplay-panel__row'>
-            <span className='text-primary'>Controlling power</span>
+            <span className='text-primary'>{isContested ? 'Powers present' : currentSystem.powers.length > 1 ? 'Powers present' : 'Controlling power'}</span>
             <span className='text-info'>{currentSystem.powers.join(', ')}</span>
           </div>
         )}
@@ -389,7 +490,7 @@ function SystemSection ({ currentSystem, playerPower }) {
           <div className='powerplay-panel__row'>
             <span className='text-primary'>Activity type</span>
             <span className={`powerplay-panel__type-badge ${SYSTEM_TYPE_CLASS[systemType]}`}>
-              {SYSTEM_TYPE_LABEL[systemType]}
+              {SYSTEM_TYPE_LABEL[systemType]}{isContested ? ' (Contested)' : ''}
             </span>
           </div>
         )}
@@ -407,9 +508,11 @@ function SystemSection ({ currentSystem, playerPower }) {
         )}
       </div>
 
+      <NearbySourcesSection nearbySources={nearbySources} />
+
       {systemType && (
         <p className='powerplay-panel__system-type-note text-muted'>
-          {SYSTEM_TYPE_INFO[systemType]}
+          {isContested ? SYSTEM_TYPE_INFO.contested : SYSTEM_TYPE_INFO[systemType]}
         </p>
       )}
 
@@ -500,14 +603,80 @@ function SalarySection () {
 
 // ─── PowerBonusSection ────────────────────────────────────────────────────────
 function PowerBonusSection ({ power, rank, merits }) {
-  const bonus = POWER_BONUSES[power]
+  const perks = POWER_PERKS[power] ?? []
   const order = POWER_MODULE_ORDER[power] ?? []
   const nextIdx = order.findIndex((_, i) => MODULE_UNLOCK_RANKS[i] > rank)
+
+  // Find the current active tier for a perk (highest tier whose rank <= player rank)
+  function getActiveTierIdx (tiers) {
+    let active = -1
+    for (let i = 0; i < tiers.length; i++) {
+      if (rank >= tiers[i].rank) active = i
+    }
+    return active
+  }
 
   return (
     <div>
       <h4 className='powerplay-panel__section-title text-primary'>Pledge Benefits</h4>
-      {bonus && <p className='powerplay-panel__pledge-bonus text-info'>{bonus}</p>}
+
+      {/* Universal perks */}
+      <div className='powerplay-panel__perk-list'>
+        {UNIVERSAL_PERKS.map(perk => {
+          const activeIdx = getActiveTierIdx(perk.tiers)
+          return (
+            <div key={perk.name} className='powerplay-panel__perk-row'>
+              <span className={`powerplay-panel__perk-name ${activeIdx >= 0 ? 'text-info' : 'text-muted'}`}>{perk.name}</span>
+              <div className='powerplay-panel__perk-tiers'>
+                {perk.tiers.map((tier, i) => {
+                  const isActive = i === activeIdx
+                  const isPast = i < activeIdx
+                  const isLocked = i > activeIdx
+                  return (
+                    <span
+                      key={tier.rank}
+                      className={`powerplay-panel__perk-tier${isActive ? ' powerplay-panel__perk-tier--active' : ''}${isPast ? ' powerplay-panel__perk-tier--past' : ''}${isLocked ? ' powerplay-panel__perk-tier--locked' : ''}`}
+                    >
+                      <span className='powerplay-panel__perk-tier-value'>{tier.value}</span>
+                      <span className='powerplay-panel__perk-tier-rank'>R{tier.rank}</span>
+                    </span>
+                  )
+                })}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {/* Power-specific perks */}
+      {perks.length > 0 && (
+        <div className='powerplay-panel__perk-list' style={{ marginTop: '.75rem' }}>
+          {perks.map(perk => {
+            const activeIdx = getActiveTierIdx(perk.tiers)
+            return (
+              <div key={perk.name} className='powerplay-panel__perk-row'>
+                <span className={`powerplay-panel__perk-name ${activeIdx >= 0 ? 'text-info' : 'text-muted'}`}>{perk.name}</span>
+                <div className='powerplay-panel__perk-tiers'>
+                  {perk.tiers.map((tier, i) => {
+                    const isActive = i === activeIdx
+                    const isPast = i < activeIdx
+                    const isLocked = i > activeIdx
+                    return (
+                      <span
+                        key={tier.rank}
+                        className={`powerplay-panel__perk-tier${isActive ? ' powerplay-panel__perk-tier--active' : ''}${isPast ? ' powerplay-panel__perk-tier--past' : ''}${isLocked ? ' powerplay-panel__perk-tier--locked' : ''}`}
+                      >
+                        <span className='powerplay-panel__perk-tier-value'>{tier.value}</span>
+                        <span className='powerplay-panel__perk-tier-rank'>R{tier.rank}</span>
+                      </span>
+                    )
+                  })}
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
 
       <div className='powerplay-panel__module-track'>
         <h5 className='powerplay-panel__activities-heading text-primary' style={{ marginTop: '.75rem' }}>Module Unlocks</h5>
@@ -529,7 +698,7 @@ function PowerBonusSection ({ power, rank, merits }) {
                 </span>
                 <span className='powerplay-panel__reward-status'>
                   {unlocked
-                    ? <span className='text-success'>✓</span>
+                    ? <span className='text-success'>Unlocked</span>
                     : isNext && meritsLeft != null
                       ? <span className='text-muted'>{meritsLeft.toLocaleString()}</span>
                       : null
@@ -586,7 +755,7 @@ export default function PowerplayPanel ({ powerplay }) {
       />
       <hr />
       <div className='powerplay-panel__main'>
-        <SystemSection currentSystem={powerplay.currentSystem} playerPower={powerplay.power} />
+        <SystemSection currentSystem={powerplay.currentSystem} playerPower={powerplay.power} nearbySources={powerplay.nearbySources} />
         <div className='powerplay-panel__right-col'>
           <PowerBonusSection power={powerplay.power} rank={powerplay.rank ?? 0} merits={powerplay.merits} />
           <hr style={{ margin: '1.25rem 0' }} />

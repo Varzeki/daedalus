@@ -33,6 +33,9 @@ class TextToSpeech {
       if (this.currentCmdrStatus?.flags?.silentRunning !== previousCmdStatus?.flags?.silentRunning) {
         covasPlayer.handleStatusChange('silentRunning', this.currentCmdrStatus?.flags?.silentRunning)
       }
+      if (previousCmdStatus?.flags?.scoopingFuel && !this.currentCmdrStatus?.flags?.scoopingFuel) {
+        covasPlayer.handleStatusChange('scoopingFuel', false)
+      }
 
       // FSD charging — fire charging wav on charge start; countdown fires on StartJump journal event
       if (this.currentCmdrStatus?.flags?.fsdCharging && !previousCmdStatus?.flags?.fsdCharging) {

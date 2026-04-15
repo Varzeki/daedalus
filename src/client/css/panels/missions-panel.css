@@ -95,6 +95,40 @@
   font-size: 2rem;
 }
 
+/* ── Ethos display in header ─────────────────────────────────────────────── */
+.powerplay-panel__hero-ethos {
+  display: flex;
+  gap: 2.5rem;
+  margin: .9rem 0 0;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  padding-right: 1.5rem;
+}
+
+.powerplay-panel__hero-ethos-item {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .15rem;
+  opacity: .5;
+  transition: opacity .2s;
+}
+
+.powerplay-panel__hero-ethos-item--active {
+  opacity: 1;
+}
+
+.powerplay-panel__hero-ethos-label {
+  font-size: 1.3rem;
+  text-transform: uppercase;
+  letter-spacing: .08em;
+}
+
+.powerplay-panel__hero-ethos-value {
+  font-size: 1.9rem;
+  font-weight: 600;
+}
+
 /* ── Progress section (bottom of hero) ───────────────────────────────────── */
 .powerplay-panel__progress-section {
   margin-top: auto;
@@ -327,11 +361,144 @@
   border-left: .2rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .25);
 }
 
+/* ── Nearby commodity sources ─────────────────────────────────────────────── */
+.powerplay-panel__nearby-sources {
+  margin-top: .75rem;
+}
+
+.powerplay-panel__nearby-heading {
+  font-size: 1.25rem;
+  letter-spacing: .08em;
+  text-transform: uppercase;
+  margin: 0 0 .2rem;
+  opacity: .75;
+}
+
+.powerplay-panel__nearby-desc {
+  font-size: 1.15rem;
+  line-height: 1.5;
+  margin: 0 0 .4rem;
+}
+
+.powerplay-panel__nearby-groups {
+  display: flex;
+  flex-direction: column;
+  gap: .35rem;
+}
+
+.powerplay-panel__nearby-group-power {
+  display: block;
+  font-size: 1.1rem;
+  font-weight: 600;
+  padding: .2rem 0 0;
+}
+
+.powerplay-panel__nearby-list {
+  border-top: 1px solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .12);
+}
+
+.powerplay-panel__nearby-row {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: .35rem 0;
+  border-bottom: 1px solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .08);
+  font-size: 1.35rem;
+  gap: 1rem;
+}
+
+.powerplay-panel__nearby-row > span:last-child {
+  text-align: right;
+  font-size: 1.2rem;
+  white-space: nowrap;
+}
+
+.powerplay-panel__nearby-name {
+  display: flex;
+  align-items: center;
+  gap: .3rem;
+}
+
+.powerplay-panel__nearby-name .selectable-wrapper {
+  cursor: pointer;
+}
+
+.powerplay-panel__pad-warn {
+  font-size: 1rem;
+  line-height: 1;
+}
+
+.powerplay-panel__pad-alt {
+  font-size: 1.1rem;
+  opacity: .6;
+}
+
 /* ── Pledge bonus text ──────────────────────────────────────────────────────── */
 .powerplay-panel__pledge-bonus {
   font-size: 1.4rem;
   line-height: 1.5;
   margin: 0 0 .25rem;
+}
+
+/* ── Perk tier rows ────────────────────────────────────────────────────────── */
+.powerplay-panel__perk-list {
+  border-top: 1px solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .12);
+}
+
+.powerplay-panel__perk-row {
+  padding: .35rem 0;
+  border-bottom: 1px solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .08);
+}
+
+.powerplay-panel__perk-row:last-child {
+  border-bottom: none;
+}
+
+.powerplay-panel__perk-name {
+  display: block;
+  font-size: 1.25rem;
+  margin-bottom: .2rem;
+}
+
+.powerplay-panel__perk-tiers {
+  display: flex;
+  flex-wrap: wrap;
+  gap: .15rem .5rem;
+}
+
+.powerplay-panel__perk-tier {
+  display: inline-flex;
+  align-items: baseline;
+  gap: .25rem;
+  font-size: 1.15rem;
+}
+
+.powerplay-panel__perk-tier-value {
+  font-weight: 700;
+}
+
+.powerplay-panel__perk-tier-rank {
+  font-size: 1rem;
+  opacity: .5;
+}
+
+/* Active tier — current value */
+.powerplay-panel__perk-tier--active .powerplay-panel__perk-tier-value {
+  color: var(--color-info);
+}
+
+/* Past (surpassed) tiers — greyed out */
+.powerplay-panel__perk-tier--past {
+  opacity: .3;
+}
+
+/* Locked (not yet reached) tiers — dimmed */
+.powerplay-panel__perk-tier--locked {
+  opacity: .35;
+}
+
+.powerplay-panel__perk-tier--locked .powerplay-panel__perk-tier-value {
+  color: var(--color-muted, rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .5));
 }
 
 /* ── Module reward track ───────────────────────────────────────────────────── */
@@ -412,21 +579,21 @@
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  padding: 3rem 1rem 1rem;
+  padding: 8rem 1rem 1rem;
   text-align: center;
   opacity: .4;
 }
 
 .powerplay-panel__no-pp-icon {
-  font-size: 7rem;
+  font-size: 56rem;
   display: block;
-  margin-bottom: 1.25rem;
+  margin-bottom: 2rem;
 }
 
 .powerplay-panel__no-pp-text {
   font-size: 1.3rem;
   line-height: 1.65;
-  max-width: 22rem;
+  max-width: 38rem;
 }
 
 /* ── Mechanics grid (full-width 2×2) ──────────────────────────────────────── */

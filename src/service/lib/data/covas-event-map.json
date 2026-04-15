@@ -86,7 +86,8 @@
       "landingGearDown_true": { "file": "landing_gear_deployed.wav" },
       "landingGearDown_false": { "file": "landing_gear_retracted.wav" },
       "silentRunning_true": { "file": "silent_running.wav" },
-      "silentRunning_false": { "file": "thermal_signature_restored.wav" }
+      "silentRunning_false": { "file": "thermal_signature_restored.wav" },
+      "scoopingFuel_false": { "file": "fuel_scooping_complete.wav" }
     }
   },
 

@@ -529,5 +529,6 @@ module.exports = {
   EDSM_TYPE_MAP,
   GENUS_MAX_VALUES,
   FIRST_FOOTFALL_MULTIPLIER,
-  normalizeDssGenus
+  normalizeDssGenus,
+  _bayesianGenusWeights
 }
