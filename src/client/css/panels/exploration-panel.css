@@ -129,14 +129,34 @@
    The brief pointer-events:none on the pseudo-transition forces WebView2 to
    re-evaluate :hover state, preventing the stuck-highlight bug. */
 table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row:hover td {
-  background: var(--color-primary-dark) !important;
-  color: var(--color-primary) !important;
+  background: var(--color-primary) !important;
+  color: var(--color-primary-dark) !important;
+  text-shadow: none;
   transition: background-color .1s ease, color .1s ease;
 }
 
 table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row:not(:hover) td {
   transition: background-color .15s ease, color .15s ease;
   pointer-events: auto;
+}
+
+/* Body & species row hover: invert text utility classes for readability on primary bg */
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row.table__row--highlight-primary-hover:hover td .text-info,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row.table__row--highlight-primary-hover:hover td .text-primary,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row.table__row--highlight-primary-hover:hover td .text-secondary,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row.table__row--highlight-primary-hover:hover td .text-success,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row.table__row--highlight-primary-hover:hover td .text-muted,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__body-row.table__row--highlight-primary-hover:hover td .icon {
+  color: var(--color-primary-dark) !important;
+}
+
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row:hover td .text-info,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row:hover td .text-primary,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row:hover td .text-secondary,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row:hover td .text-success,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row:hover td .text-muted,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row:hover td .icon {
+  color: var(--color-primary-dark) !important;
 }
 
 
@@ -278,6 +298,21 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__body-r
 .exploration-system__species-row--dim td .text-success,
 .exploration-system__species-row--dim td .text-muted,
 .exploration-system__species-row--dim td .icon {
+  color: #666 !important;
+}
+
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row--dim:hover td {
+  background: var(--color-primary-dark) !important;
+  color: #666 !important;
+  text-shadow: none;
+}
+
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row--dim:hover td .text-info,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row--dim:hover td .text-primary,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row--dim:hover td .text-secondary,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row--dim:hover td .text-success,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row--dim:hover td .text-muted,
+table:not(.table--inline).table--interactive tbody tr.exploration-system__species-row--dim:hover td .icon {
   color: #666 !important;
 }
 

@@ -45,8 +45,8 @@ table thead tr th:after {
   top: 2.6rem;
   left: 0;
   right: 0;
-  border-bottom: .2rem solid var(--color-primary);
-  box-shadow: 0 .03rem .5rem var(--color-primary);
+  border-bottom: .1rem solid var(--color-primary);
+  box-shadow: none;
 }
 
 table td {
