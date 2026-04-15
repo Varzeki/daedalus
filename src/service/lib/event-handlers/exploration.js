@@ -279,12 +279,20 @@ class Exploration {
       ...journalScans.map(s => s.BodyName).filter(Boolean)
     ])]
 
+    // Get SystemAddress for the current system to scope ScanOrganic queries
+    // (body IDs repeat across systems — unfiltered queries cause cross-system contamination)
+    const systemScan = journalScans.find(s => s.SystemAddress != null)
+    const sysAddress = systemScan?.SystemAddress ?? null
+    const organicQuery = sysAddress
+      ? { event: 'ScanOrganic', SystemAddress: sysAddress }
+      : { event: 'ScanOrganic' }
+
     // Batch-fetch signal and mapping data for all bodies at once
     const [allFSSBodySignals, allSAASignalsFound, allSAAScanComplete, allScanOrganic] = await Promise.all([
       this.eliteLog._query({ event: 'FSSBodySignals', BodyName: { $in: allBodyNames } }),
       this.eliteLog._query({ event: 'SAASignalsFound', BodyName: { $in: allBodyNames } }),
       this.eliteLog._query({ event: 'SAAScanComplete', BodyName: { $in: allBodyNames } }),
-      this.eliteLog._query({ event: 'ScanOrganic' })
+      this.eliteLog._query(organicQuery)
     ])
 
     // Build lookup maps
@@ -866,13 +874,14 @@ class Exploration {
       if (bioSignals > 0 && (predictedSpecies || knownSpecies.length > 0)) {
         speciesDetail = []
 
-        // Add confirmed species first
+        // Add confirmed species first (actually scanned via Analyse)
         for (const sp of knownSpecies) {
           speciesDetail.push({
             genus: sp.genus,
             species: sp.species,
             reward: sp.reward * ffMultiplier,
             isConfirmed: true,
+            isScanned: true,
             probability: 100
           })
         }
@@ -954,6 +963,7 @@ class Exploration {
               species: pred.species,
               reward: reward * ffMultiplier,
               isConfirmed: probability >= 100,
+              isScanned: false,
               probability
             })
           }
@@ -1079,8 +1089,14 @@ class Exploration {
     const locationEvent = FSDJump || Location
     const systemName = locationEvent?.StarSystem ?? null
 
-    // 3. Get all ScanOrganic events for current body
-    const allScanOrganic = await this.eliteLog._query({ event: 'ScanOrganic' })
+    // 3. Get ScanOrganic events for current system only
+    //    Body IDs repeat across systems — filtering by SystemAddress prevents
+    //    scans from previous systems bleeding into the current body.
+    const systemAddress = locationEvent?.SystemAddress ?? null
+    const organicQuery = systemAddress
+      ? { event: 'ScanOrganic', SystemAddress: systemAddress }
+      : { event: 'ScanOrganic' }
+    const allScanOrganic = await this.eliteLog._query(organicQuery)
 
     // Group by body — use Body (bodyId number)
     const organicByBody = {}

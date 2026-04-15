@@ -51,12 +51,14 @@ function getCacheDir () {
 
 /** Return the cached video file path for a given videoId, or null if not cached */
 function getCachedVideoPath (videoId) {
-  // Videos are saved as <videoId>.mp4 (or .webm — we check both)
-  for (const ext of ['.mp4', '.webm', '.mkv']) {
-    const fp = path.join(CACHE_DIR, `${videoId}${ext}`)
-    if (fs.existsSync(fp)) return fp
-  }
-  return null
+  // Scan cache dir for any file matching <videoId>.<ext> — yt-dlp may
+  // produce extensions beyond .mp4/.webm depending on format availability.
+  if (!fs.existsSync(CACHE_DIR)) return null
+  const prefix = videoId + '.'
+  const match = fs.readdirSync(CACHE_DIR).find(f =>
+    f.startsWith(prefix) && !f.endsWith('.part') && !f.endsWith('.ytdl')
+  )
+  return match ? path.join(CACHE_DIR, match) : null
 }
 
 // ---------------------------------------------------------------------------

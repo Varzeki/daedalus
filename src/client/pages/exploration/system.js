@@ -53,7 +53,9 @@ function DiscovererCell ({ body, cmdrName }) {
 
 function SpeciesRow ({ species, isFirstDiscoverer, isLast, minBioValue }) {
   const isDim = species.reward < minBioValue
-  const rowClass = `exploration-system__species-row${isDim ? ' exploration-system__species-row--dim' : ''}`
+  const isScanned = species.isScanned === true
+  let rowClass = `exploration-system__species-row${isDim ? ' exploration-system__species-row--dim' : ''}`
+  if (isScanned) rowClass += ' exploration-system__species-row--scanned'
   return (
     <tr className={rowClass}>
       <td colSpan={5}>
@@ -268,7 +270,7 @@ export default function ExplorationSystemPage () {
       })
     }
   })
-  const scannedValuableBio = totalValuableBio.filter(sp => sp.isConfirmed).length
+  const scannedValuableBio = totalValuableBio.filter(sp => sp.isScanned).length
   const totalTrackable = valuableBodiesList.length + totalValuableBio.length
   const scannedTrackable = scannedValuableBodies + scannedValuableBio
   const surveyComplete = totalTrackable === 0 || scannedTrackable === totalTrackable
