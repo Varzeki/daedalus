@@ -76,6 +76,7 @@
   display: flex;
   gap: 3rem;
   flex-wrap: wrap;
+  align-items: center;
   margin: .9rem 0 0;
 }
 
@@ -95,37 +96,42 @@
   font-size: 2rem;
 }
 
-/* ── Ethos display in header ─────────────────────────────────────────────── */
+/* ── Ethos display — right-aligned in stats row ──────────────────────────── */
 .powerplay-panel__hero-ethos {
   display: flex;
-  gap: 2.5rem;
-  margin: .9rem 0 0;
+  gap: 4rem;
+  margin-left: auto;
+  margin-right: 14rem;
+  margin-top: -2rem;
   flex-wrap: wrap;
-  justify-content: flex-end;
-  padding-right: 1.5rem;
+  justify-content: center;
+  align-self: flex-start;
 }
 
 .powerplay-panel__hero-ethos-item {
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: .15rem;
-  opacity: .5;
-  transition: opacity .2s;
+  gap: .3rem;
+  opacity: .35;
+  transition: opacity .3s, text-shadow .3s;
 }
 
 .powerplay-panel__hero-ethos-item--active {
   opacity: 1;
+  text-shadow:
+    0 0 .6rem currentColor,
+    0 0 1.2rem currentColor;
 }
 
 .powerplay-panel__hero-ethos-label {
-  font-size: 1.3rem;
+  font-size: 1.5rem;
   text-transform: uppercase;
   letter-spacing: .08em;
 }
 
 .powerplay-panel__hero-ethos-value {
-  font-size: 1.9rem;
+  font-size: 2.4rem;
   font-weight: 600;
 }
 
@@ -585,7 +591,8 @@
 }
 
 .powerplay-panel__no-pp-icon {
-  font-size: 56rem;
+  font-size: 7rem !important;
+  line-height: 1;
   display: block;
   margin-bottom: 2rem;
 }

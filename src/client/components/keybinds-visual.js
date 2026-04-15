@@ -272,10 +272,13 @@ function DeviceSvgSection ({ svgFile, devices, query = '', className = '' }) {
       const pos = rawPos ?? positions?.[labelKey]
       // Device-qualified key matches data-label in the SVG (e.g. "SaitekX56Joystick:Joy_1")
       const svgKey = `${posKey}:${rawPos ? btnKey : labelKey}`
-      const mapKey = `${deviceName}-${svgKey}`
+      // Dedup by position so different key names at the same coords merge (e.g. GamePad_FaceUp + Pad_Y).
+      // Coordinates alone suffice because labelsMap is scoped to one SVG section.
+      const mapKey = pos ? `${pos.x}-${pos.y}` : `${posKey}-${svgKey}`
       if (pos) {
-        if (!labelsMap.has(mapKey)) labelsMap.set(mapKey, { id: mapKey, svgKey, pos, fns: [] })
+        if (!labelsMap.has(mapKey)) labelsMap.set(mapKey, { id: mapKey, svgKeys: [svgKey], pos, fns: [] })
         const entry = labelsMap.get(mapKey)
+        if (!entry.svgKeys.includes(svgKey)) entry.svgKeys.push(svgKey)
         for (const f of fns) {
           if (!entry.fns.some(e => e.name === f.name)) entry.fns.push(f)
         }
@@ -288,9 +291,12 @@ function DeviceSvgSection ({ svgFile, devices, query = '', className = '' }) {
     if (positions) {
       for (const [positionKey, pos] of Object.entries(positions)) {
         const svgKey = `${posKey}:${positionKey}`
-        const mapKey = `${deviceName}-${svgKey}`
+        const mapKey = `${pos.x}-${pos.y}`
         if (!labelsMap.has(mapKey)) {
-          labelsMap.set(mapKey, { id: mapKey, svgKey, pos, fns: [] })
+          labelsMap.set(mapKey, { id: mapKey, svgKeys: [svgKey], pos, fns: [] })
+        } else {
+          const entry = labelsMap.get(mapKey)
+          if (!entry.svgKeys.includes(svgKey)) entry.svgKeys.push(svgKey)
         }
       }
     }
@@ -308,9 +314,9 @@ function DeviceSvgSection ({ svgFile, devices, query = '', className = '' }) {
 
     // A key is "lit" when ANY label with that svgKey has a binding that matches.
     const litKeys = new Set()
-    for (const { svgKey, fns } of labels) {
+    for (const { svgKeys, fns } of labels) {
       if (fns.length > 0 && (!q || fns.some(f => f.searchName.toLowerCase().includes(q)))) {
-        litKeys.add(svgKey)
+        for (const sk of svgKeys) litKeys.add(sk)
       }
     }
 

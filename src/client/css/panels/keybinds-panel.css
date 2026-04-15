@@ -352,7 +352,8 @@
   pointer-events: none;
   /* Single line, truncate if longer than box width */
   white-space: nowrap;
-  overflow: clip;
+  overflow: hidden;
+  text-overflow: ellipsis;
   font-size: 1rem;
   font-weight: 600;
   color: var(--color-secondary);

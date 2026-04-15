@@ -57,6 +57,10 @@ class EventHandlers {
   // logEventHandler is fired on every in-game log event
   logEventHandler (logEvent) {
     this.textToSpeech.logEventHandler(logEvent)
+    // Capture bio scan positions in real-time
+    if (logEvent.event === 'ScanOrganic') {
+      this.exploration.onScanOrganic(logEvent).catch(e => console.error('onScanOrganic error:', e))
+    }
   }
 
   gameStateChangeHandler (event) {

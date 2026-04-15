@@ -1,7 +1,7 @@
 const fs = require('fs')
 const path = require('path')
 const crypto = require('crypto')
-const glob = require('glob')
+const { glob } = require('glob')
 const retry = require('async-retry')
 const Datastore = require('nedb-promises')
 const db = new Datastore()
@@ -402,33 +402,31 @@ class EliteLog {
   }
 
   // Get path to all log files in dir
-  #getFiles() {
-    return new Promise(resolve => {
+  async #getFiles() {
+    try {
       // Note: Journal.*.log excludes files like JournalAlpha.*.log so that
       // alpha / beta test data doesn't get included by mistake.
-      glob(`${this.dir}/Journal.*.log`, {}, async (error, globFiles) => {
-        if (error) {
-          console.error(error)
-          return resolve([])
-        }
+      const globFiles = await glob(`${this.dir}/Journal.*.log`)
 
-        const files = globFiles.map(name => {
-          const { size, mtime: lastModified } = fs.statSync(name)
-          // Estimate line count from file size to avoid reading entire files
-          // (~200 bytes per journal line on average)
-          const lineCount = Math.max(1, Math.ceil(size / 200))
-          return new File({ name, lastModified, size, lineCount })
-        })
-
-        // Track most (mostly recently modified) log file
-        if (files.length > 0) {
-          const activeLogFile = files.sort((a, b) => b.lastModified - a.lastModified)[0]
-          this.lastActiveLogFileName = activeLogFile.name
-        }
-
-        resolve(files)
+      const files = globFiles.map(name => {
+        const { size, mtime: lastModified } = fs.statSync(name)
+        // Estimate line count from file size to avoid reading entire files
+        // (~200 bytes per journal line on average)
+        const lineCount = Math.max(1, Math.ceil(size / 200))
+        return new File({ name, lastModified, size, lineCount })
       })
-    })
+
+      // Track most (mostly recently modified) log file
+      if (files.length > 0) {
+        const activeLogFile = files.sort((a, b) => b.lastModified - a.lastModified)[0]
+        this.lastActiveLogFileName = activeLogFile.name
+      }
+
+      return files
+    } catch (error) {
+      console.error(error)
+      return []
+    }
   }
 
   // Load log file and parse into an array of objects

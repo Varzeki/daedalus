@@ -34,7 +34,7 @@ const CATEGORY_ORDER = ['Combat', 'Finance', 'Social', 'Covert']
 
 // ─── Universal perks (all powers) ────────────────────────────────────────────
 const UNIVERSAL_PERKS = [
-  { name: 'Rank decal',                            tiers: [{ rank: 1, value: '✓' }] },
+  { name: 'Rank decal',                            tiers: [{ rank: 1, value: 'Unlocked' }] },
   { name: 'Reduced rebuy (killed by opposing power)', tiers: [{ rank: 11, value: '−33%' }, { rank: 29, value: '−66%' }, { rank: 60, value: '−100%' }] },
   { name: 'Reduced rebuy in own territory',         tiers: [{ rank: 2, value: '−20%' }, { rank: 8, value: '−40%' }, { rank: 17, value: '−60%' }, { rank: 27, value: '−80%' }, { rank: 36, value: '−100%' }] }
 ]

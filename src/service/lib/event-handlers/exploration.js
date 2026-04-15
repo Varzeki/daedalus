@@ -175,12 +175,70 @@ function projectRouteFuel (route, jumpProfile, currentSystemName) {
   return { route: projectedRoute, fuelRunOutSystem }
 }
 
+// Colony exclusion radius (meters) per genus — from SRVSurvey
+const GENUS_COLONY_DISTANCE = {
+  Fumerola: 100,
+  Aleoida: 150, Clypeus: 150, Concha: 150, Frutexa: 150, Recepta: 150,
+  Tussock: 200,
+  Cactoida: 300, Fungoida: 300,
+  Bacterium: 500, Fonticulua: 500, Stratum: 500,
+  Osseus: 800, Tubus: 800,
+  Electricae: 1000,
+  'Amphora Plant': 100, Anemone: 100, 'Bark Mounds': 100,
+  'Brain Tree': 100, 'Crystalline Shards': 100, 'Sinuous Tubers': 100,
+  Radicoida: 15
+}
+const DEFAULT_COLONY_DISTANCE = 50
+
+// Codex image lookup (english_name → image URL)
+let _codexImages = null
+function getCodexImages () {
+  if (!_codexImages) {
+    try { _codexImages = require('../codex-images.json') } catch (e) { _codexImages = {} }
+  }
+  return _codexImages
+}
+
 class Exploration {
   constructor ({ eliteLog, eliteJson, system, shipStatus }) {
     this.eliteLog = eliteLog
     this.eliteJson = eliteJson
     this.system = system
     this.shipStatus = shipStatus
+
+    // In-memory bio scan position store: key = 'bodyId:species:scanType' → { lat, lon }
+    // Captured in real-time from Status.json when ScanOrganic events fire
+    this._bioScanPositions = {}
+  }
+
+  // Called by event-handlers.js when a ScanOrganic event fires in real-time
+  async onScanOrganic (logEvent) {
+    const StatusJson = (await this.eliteJson.json()).Status
+    if (!StatusJson || StatusJson.Latitude == null || StatusJson.Longitude == null) return
+
+    const bodyId = logEvent.Body
+    const species = logEvent.Species_Localised || logEvent.Species || ''
+    const scanType = logEvent.ScanType // Log, Sample, Analyse
+    const genus = logEvent.Genus_Localised || (species).split(' ')[0]
+    const variant = logEvent.Variant_Localised || ''
+
+    const key = `${bodyId}:${species}`
+    if (!this._bioScanPositions[key]) {
+      this._bioScanPositions[key] = {
+        genus,
+        species,
+        variant,
+        bodyId,
+        scans: []
+      }
+    }
+
+    this._bioScanPositions[key].scans.push({
+      scanType,
+      lat: StatusJson.Latitude,
+      lon: StatusJson.Longitude,
+      timestamp: logEvent.timestamp
+    })
   }
 
   // For the current system, merge journal data onto EDSM bodies to get
@@ -966,10 +1024,216 @@ class Exploration {
     }
   }
 
+  // --- Biologicals tracking ---
+
+  // Haversine distance on a sphere (lat/lon in degrees, radius in meters)
+  _surfaceDistance (lat1, lon1, lat2, lon2, planetRadius) {
+    const toRad = Math.PI / 180
+    const dLat = (lat2 - lat1) * toRad
+    const dLon = (lon2 - lon1) * toRad
+    const a = Math.sin(dLat / 2) ** 2 +
+              Math.cos(lat1 * toRad) * Math.cos(lat2 * toRad) * Math.sin(dLon / 2) ** 2
+    return 2 * planetRadius * Math.asin(Math.min(1, Math.sqrt(a)))
+  }
+
+  async getExplorationBiologicals () {
+    // 1. Get current player position from Status.json
+    const StatusJson = (await this.eliteJson.json()).Status
+    const playerLat = StatusJson?.Latitude ?? null
+    const playerLon = StatusJson?.Longitude ?? null
+    const planetRadius = StatusJson?.PlanetRadius ?? null
+    const heading = StatusJson?.Heading ?? null
+    const altitude = StatusJson?.Altitude ?? null
+    const bodyName = StatusJson?.BodyName ?? null
+
+    // 2. Get current system from journal
+    const Location = await this.eliteLog.getEvent('Location')
+    const FSDJump = Location
+      ? (await this.eliteLog.getEventsFromTimestamp('FSDJump', Location.timestamp, 1))?.[0]
+      : null
+    const locationEvent = FSDJump || Location
+    const systemName = locationEvent?.StarSystem ?? null
+
+    // 3. Get all ScanOrganic events for current body
+    const allScanOrganic = await this.eliteLog._query({ event: 'ScanOrganic' })
+
+    // Group by body — use Body (bodyId number)
+    const organicByBody = {}
+    for (const e of allScanOrganic) {
+      if (!organicByBody[e.Body]) organicByBody[e.Body] = []
+      organicByBody[e.Body].push(e)
+    }
+
+    // Identify current body ID from Status.json BodyName or journal
+    let currentBodyId = null
+    if (bodyName) {
+      // Try to find body ID from ScanOrganic events matching this body name
+      const touchdownEvent = await this.eliteLog.getEvent('Touchdown')
+      const approachBodyEvent = await this.eliteLog.getEvent('ApproachBody')
+      currentBodyId = approachBodyEvent?.BodyID ?? touchdownEvent?.BodyID ?? null
+
+      // If no approach/touchdown, try to match from Scan events
+      if (currentBodyId == null) {
+        const scan = await this.eliteLog._query({ event: 'Scan', BodyName: bodyName }, 1)
+        currentBodyId = scan?.[0]?.BodyID ?? null
+      }
+    }
+
+    // 4. Build organism list for current body
+    const organisms = []
+    const codexImages = getCodexImages()
+
+    if (currentBodyId != null && organicByBody[currentBodyId]) {
+      const scans = organicByBody[currentBodyId]
+
+      // Group scans by species
+      const speciesMap = {}
+      for (const scan of scans) {
+        const speciesKey = scan.Species_Localised || scan.Species || ''
+        if (!speciesKey) continue
+
+        if (!speciesMap[speciesKey]) {
+          const genus = scan.Genus_Localised || speciesKey.split(' ')[0]
+          speciesMap[speciesKey] = {
+            genus,
+            species: speciesKey,
+            variant: scan.Variant_Localised || '',
+            reward: SPECIES_REWARDS[speciesKey] ?? UNKNOWN_VALUE,
+            colonyDistance: GENUS_COLONY_DISTANCE[genus] ?? DEFAULT_COLONY_DISTANCE,
+            scanProgress: [],
+            isComplete: false,
+            imageUrl: null
+          }
+        }
+
+        speciesMap[speciesKey].scanProgress.push({
+          scanType: scan.ScanType,
+          timestamp: scan.timestamp
+        })
+
+        if (scan.ScanType === 'Analyse') {
+          speciesMap[speciesKey].isComplete = true
+        }
+
+        // Update variant from most recent scan
+        if (scan.Variant_Localised) {
+          speciesMap[speciesKey].variant = scan.Variant_Localised
+        }
+      }
+
+      // Resolve images and build scan positions from in-memory store
+      for (const [speciesKey, organism] of Object.entries(speciesMap)) {
+        // Try variant match first, then species match, then genus
+        const variantName = organism.variant
+        const speciesName = organism.species
+        const genusName = organism.genus
+
+        organism.imageUrl = codexImages[variantName] || null
+
+        // Fall back to first matching species image if no variant match
+        if (!organism.imageUrl) {
+          for (const [name, url] of Object.entries(codexImages)) {
+            if (name.startsWith(speciesName + ' - ') || name === speciesName) {
+              organism.imageUrl = url
+              break
+            }
+          }
+        }
+
+        // Fall back further to first genus image
+        if (!organism.imageUrl) {
+          for (const [name, url] of Object.entries(codexImages)) {
+            if (name.startsWith(genusName + ' ')) {
+              organism.imageUrl = url
+              break
+            }
+          }
+        }
+
+        // Attach scan positions from real-time captured data
+        const posKey = `${currentBodyId}:${speciesKey}`
+        const captured = this._bioScanPositions[posKey]
+        organism.scanPositions = captured?.scans ?? []
+
+        organisms.push(organism)
+      }
+    }
+
+    // 5. Also get bio signal count from journal (how many species expected on this body)
+    let bioSignalCount = 0
+    if (currentBodyId != null) {
+      const saaSignals = await this.eliteLog._query({ event: 'SAASignalsFound', BodyID: currentBodyId }, 1)
+      const fssSignals = await this.eliteLog._query({ event: 'FSSBodySignals', BodyID: currentBodyId }, 1)
+      const signals = saaSignals?.[0]?.Signals || fssSignals?.[0]?.Signals || []
+      const bioSignal = signals.find(s => s.Type === '$SAA_SignalType_Biological;')
+      bioSignalCount = bioSignal?.Count ?? 0
+    }
+
+    // 6. Get predicted species for this body (from bio-predictor)
+    let predictions = []
+    if (currentBodyId != null && systemName) {
+      try {
+        const scan = await this.eliteLog._query({ event: 'Scan', BodyID: currentBodyId }, 1)
+        if (scan?.[0]) {
+          const body = scan[0]
+          const starPos = locationEvent?.StarPos ?? null
+          const predicted = predictSpecies(body, starPos)
+          if (predicted) {
+            const scannedSpeciesNames = new Set(organisms.map(o => o.species))
+            predictions = predicted
+              .filter(p => !scannedSpeciesNames.has(p.species))
+              .map(p => ({
+                genus: p.genus,
+                species: p.species,
+                colonyDistance: GENUS_COLONY_DISTANCE[p.genus] ?? DEFAULT_COLONY_DISTANCE,
+                reward: SPECIES_REWARDS[p.species] ?? UNKNOWN_VALUE,
+                imageUrl: null
+              }))
+
+            // Resolve images for predictions too
+            for (const pred of predictions) {
+              for (const [name, url] of Object.entries(codexImages)) {
+                if (name.startsWith(pred.species + ' - ') || name === pred.species) {
+                  pred.imageUrl = url
+                  break
+                }
+              }
+              if (!pred.imageUrl) {
+                for (const [name, url] of Object.entries(codexImages)) {
+                  if (name.startsWith(pred.genus + ' ')) {
+                    pred.imageUrl = url
+                    break
+                  }
+                }
+              }
+            }
+          }
+        }
+      } catch (e) { /* prediction failure is non-fatal */ }
+    }
+
+    return {
+      systemName,
+      bodyName,
+      currentBodyId,
+      planetRadius,
+      player: {
+        lat: playerLat,
+        lon: playerLon,
+        heading,
+        altitude
+      },
+      bioSignalCount,
+      organisms,
+      predictions
+    }
+  }
+
   getHandlers () {
     return {
       getExplorationRoute: (args) => this.getExplorationRoute(args),
-      getExplorationSystem: (args) => this.getExplorationSystem(args)
+      getExplorationSystem: (args) => this.getExplorationSystem(args),
+      getExplorationBiologicals: () => this.getExplorationBiologicals()
     }
   }
 }

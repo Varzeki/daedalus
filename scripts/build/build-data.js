@@ -1,5 +1,5 @@
 // Convert files from raw data to useable / enriched JSON
-const glob = require('glob')
+const { glob } = require('glob')
 const csv = require('csvtojson')
 const fs = require('fs')
 const path = require('path')
@@ -17,27 +17,22 @@ const ROOT_OUTPUT_DATA_DIR = path.join('src', 'service', 'data')
 ;(async () => {
   await fdevids()
   coriolisDataBlueprints()
-  coriolisDataModules()
+  await coriolisDataModules()
   materialUses()
   await codexArticles()
 })()
 
-function fdevids () {
-  return new Promise((resolve, reject) => {
-      // This a sync task, as codexArticles depends on it's output
-      // Data from https://github.com/EDCD/FDevIDs
-      const dataDir = 'edcd/fdevids'
-      fs.mkdirSync(`${ROOT_OUTPUT_DATA_DIR}/${dataDir}`, { recursive: true })
-      glob(`${ROOT_INPUT_DATA_DIR}/${dataDir}/*.csv`, {}, async (error, files) => {
-        if (error) return console.error(error)
-        for (const pathToFile of files) {
-          const jsonOutput = await csv().fromFile(pathToFile)
-          const basename = path.basename(pathToFile, '.csv')
-          fs.writeFileSync(`${ROOT_OUTPUT_DATA_DIR}/${dataDir}/${basename}.json`, JSON.stringify(jsonOutput, null, 2))
-        }
-        resolve()
-      })
-  })
+async function fdevids () {
+  // This a sync task, as codexArticles depends on it's output
+  // Data from https://github.com/EDCD/FDevIDs
+  const dataDir = 'edcd/fdevids'
+  fs.mkdirSync(`${ROOT_OUTPUT_DATA_DIR}/${dataDir}`, { recursive: true })
+  const files = await glob(`${ROOT_INPUT_DATA_DIR}/${dataDir}/*.csv`)
+  for (const pathToFile of files) {
+    const jsonOutput = await csv().fromFile(pathToFile)
+    const basename = path.basename(pathToFile, '.csv')
+    fs.writeFileSync(`${ROOT_OUTPUT_DATA_DIR}/${dataDir}/${basename}.json`, JSON.stringify(jsonOutput, null, 2))
+  }
 }
 
 function coriolisDataBlueprints () {
@@ -91,24 +86,23 @@ function coriolisDataBlueprints () {
   fs.writeFileSync(`${outputDir}/blueprints.json`, JSON.stringify(output, null, 2))
 }
 
-function coriolisDataModules () {
+async function coriolisDataModules () {
   // https://github.com/EDCD/coriolis-data
   const dataDir = 'edcd/coriolis/modules'
   const outputDir = `${ROOT_OUTPUT_DATA_DIR}/edcd/coriolis`
   fs.mkdirSync(outputDir, { recursive: true })
 
-  glob(`${ROOT_INPUT_DATA_DIR}/${dataDir}/**/*.json`, {}, async (error, files) => {
-    if (error) return console.error(error)
+  const files = await glob(`${ROOT_INPUT_DATA_DIR}/${dataDir}/**/*.json`)
 
-    let modules = []
-    files.forEach(async (name) => {
-      const fileContents = JSON.parse(fs.readFileSync(name))
-      Object.keys(fileContents).forEach(key => {
-        modules = modules.concat(fileContents[key])
-      })
+  let modules = []
+  for (const name of files) {
+    const fileContents = JSON.parse(fs.readFileSync(name))
+    Object.keys(fileContents).forEach(key => {
+      modules = modules.concat(fileContents[key])
     })
+  }
 
-    modules.forEach(module => {
+  modules.forEach(module => {
       if (module.ukDiscript) {
         module.description = module.ukDiscript
         delete module.ukDiscript
@@ -124,7 +118,6 @@ function coriolisDataModules () {
     })
 
     fs.writeFileSync(`${outputDir}/modules.json`, JSON.stringify(modules, null, 2))
-  })
 }
 
 function materialUses () {

@@ -364,3 +364,248 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
 .exploration-system__species-row--dim.exploration-system__species-row--scanned td .icon {
   color: rgba(var(--color-secondary-r), var(--color-secondary-g), var(--color-secondary-b), 0.35) !important;
 }
+
+/* ============================================================
+   Biologicals Tracker Page
+   ============================================================ */
+
+.bio-tracker-panel {
+  display: flex;
+  flex-direction: column;
+}
+
+.bio-tracker {
+  max-width: 72rem;
+  margin: 0 auto;
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+.bio-tracker__empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  text-align: center;
+}
+
+.bio-tracker__content {
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.bio-tracker__section-title {
+  font-size: 1.1rem;
+  font-weight: 900;
+  text-transform: uppercase;
+  letter-spacing: .04rem;
+  color: var(--color-primary);
+  margin: 0 0 .75rem;
+}
+
+.bio-tracker__card-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(28rem, 1fr));
+  gap: 1rem;
+}
+
+/* Radar Map */
+.bio-tracker__map-section {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: .5rem;
+}
+
+.bio-tracker__player-info {
+  font-size: .85rem;
+  font-family: monospace;
+  letter-spacing: .03rem;
+}
+
+.bio-radar {
+  width: 100%;
+  max-width: 32rem;
+}
+
+.bio-radar__svg {
+  width: 100%;
+  height: auto;
+  border: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .2);
+  border-radius: .25rem;
+}
+
+.bio-radar__legend {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+  margin-top: .5rem;
+  font-size: .8rem;
+  color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .5);
+}
+
+.bio-radar__legend-item {
+  display: flex;
+  align-items: center;
+  gap: .35rem;
+}
+
+.bio-radar__legend-dot {
+  width: .6rem;
+  height: .6rem;
+  border-radius: 50%;
+}
+
+.bio-radar__legend-dot--clear {
+  background: rgba(60, 255, 160, 0.6);
+}
+
+.bio-radar__legend-dot--inside {
+  background: rgba(255, 60, 60, 0.6);
+}
+
+/* Organism Cards */
+.bio-card {
+  display: flex;
+  gap: 1rem;
+  padding: .75rem 1rem;
+  border: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .15);
+  border-radius: .25rem;
+  background: rgba(0, 0, 0, .15);
+  transition: border-color .2s ease, background .2s ease;
+}
+
+.bio-card:hover {
+  border-color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .35);
+}
+
+.bio-card--active {
+  border-color: var(--color-primary);
+  border-width: .15rem;
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .05);
+}
+
+.bio-card--complete {
+  border-color: rgba(var(--color-secondary-r), var(--color-secondary-g), var(--color-secondary-b), .3);
+}
+
+.bio-card--prediction {
+  opacity: .55;
+}
+
+.bio-card__image-container {
+  flex-shrink: 0;
+  width: 7rem;
+  height: 7rem;
+  border-radius: .2rem;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .3);
+}
+
+.bio-card__image {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bio-card__image-placeholder {
+  font-size: 2.5rem;
+  color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .2);
+}
+
+.bio-card__info {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: .2rem;
+  min-width: 0;
+}
+
+.bio-card__name {
+  font-size: 1.05rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.bio-card__genus {
+  text-transform: uppercase;
+  letter-spacing: .03rem;
+}
+
+.bio-card__variant {
+  font-size: .8rem;
+}
+
+.bio-card__reward {
+  font-size: .9rem;
+  color: var(--color-primary);
+}
+
+/* Scan progress pips */
+.bio-card__progress {
+  display: flex;
+  align-items: center;
+  gap: .4rem;
+  margin-top: .15rem;
+}
+
+.bio-card__progress-step {
+  width: 2rem;
+  height: 2rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .25);
+  border-radius: .15rem;
+  font-size: .85rem;
+}
+
+.bio-card__progress-step--done {
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .15);
+  border-color: var(--color-primary);
+  color: var(--color-primary);
+}
+
+.bio-card__progress-step--analyse {
+  background: rgba(var(--color-secondary-r), var(--color-secondary-g), var(--color-secondary-b), .15);
+  border-color: var(--color-secondary);
+  color: var(--color-secondary);
+}
+
+.bio-card__progress-label {
+  margin-left: .4rem;
+  font-size: .85rem;
+}
+
+/* Distance indicator */
+.bio-card__distance {
+  font-size: .85rem;
+  font-weight: 700;
+  padding: .2rem .5rem;
+  border-radius: .15rem;
+  margin-top: .15rem;
+  display: inline-block;
+  max-width: fit-content;
+}
+
+.bio-card__distance--inside {
+  color: var(--color-danger);
+  background: rgba(252, 72, 72, .1);
+}
+
+.bio-card__distance--clear {
+  color: var(--color-success);
+  background: rgba(77, 255, 201, .1);
+}
+
+.bio-card__colony-distance {
+  font-size: .75rem;
+  margin-top: .1rem;
+}
