@@ -358,9 +358,25 @@ class EliteLog {
   // ---------------------------------------------------------------------------
   // Tier 1: Native watcher — uses @parcel/watcher with ReadDirectoryChangesW
   // on Windows for near-instant file change detection (~5-10ms latency).
+  //
+  // In pkg builds, require('@parcel/watcher') fails because it can't resolve
+  // the native .node addon from the virtual filesystem. We handle this by
+  // trying the normal require first, then falling back to manually loading
+  // watcher.node from beside the exe and constructing the wrapper ourselves.
   // ---------------------------------------------------------------------------
   async #startNativeWatch (callback) {
-    const parcelWatcher = require('@parcel/watcher')
+    let parcelWatcher
+    try {
+      parcelWatcher = require('@parcel/watcher')
+    } catch (_) {
+      // pkg build — native addon can't be resolved via normal require.
+      // Load the .node file from beside the exe and wrap it manually.
+      const exeDir = path.dirname(process.execPath)
+      const watcherPath = path.join(exeDir, 'watcher.node')
+      const binding = require(watcherPath)
+      const { createWrapper } = require('@parcel/watcher/wrapper')
+      parcelWatcher = createWrapper(binding)
+    }
     const reader = this.#createIncrementalReader(callback)
     await this.#initReaderState(reader)
 
