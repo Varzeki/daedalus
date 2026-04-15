@@ -53,12 +53,19 @@ function getCacheDir () {
 function getCachedVideoPath (videoId) {
   // Scan cache dir for any file matching <videoId>.<ext> — yt-dlp may
   // produce extensions beyond .mp4/.webm depending on format availability.
+  // Skip intermediate fragment files (e.g. videoId.f137.mp4) left by
+  // interrupted downloads — prefer the shortest matching filename (the
+  // final merged output like videoId.mp4).
   if (!fs.existsSync(CACHE_DIR)) return null
   const prefix = videoId + '.'
-  const match = fs.readdirSync(CACHE_DIR).find(f =>
+  const matches = fs.readdirSync(CACHE_DIR).filter(f =>
     f.startsWith(prefix) && !f.endsWith('.part') && !f.endsWith('.ytdl')
   )
-  return match ? path.join(CACHE_DIR, match) : null
+  if (matches.length === 0) return null
+  // Sort by name length so the merged file (videoId.mp4) wins over
+  // fragment files (videoId.f137.mp4, videoId.f140.m4a).
+  matches.sort((a, b) => a.length - b.length)
+  return path.join(CACHE_DIR, matches[0])
 }
 
 // ---------------------------------------------------------------------------
@@ -297,6 +304,7 @@ function download (urlOrId) {
       target,
       '-f', 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best',
       '--merge-output-format', 'mp4',
+      '--postprocessor-args', 'ffmpeg:-movflags +faststart',
       '-o', outputTemplate,
       '--no-warnings',
       '--no-check-certificates',

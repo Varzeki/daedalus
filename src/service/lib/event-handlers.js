@@ -24,6 +24,7 @@ const TextToSpeech = require('./event-handlers/text-to-speech')
 const Powerplay = require('./event-handlers/powerplay')
 const Keybinds = require('./event-handlers/keybinds')
 const Video = require('./event-handlers/video')
+const Galnet = require('./event-handlers/galnet')
 const covasPlayer = require('./covas-player')
 
 class EventHandlers {
@@ -46,6 +47,7 @@ class EventHandlers {
     this.powerplay = this._register(new Powerplay({ eliteLog, shipStatus: this.shipStatus }))
     this.keybinds = this._register(new Keybinds())
     this.video = this._register(new Video())
+    this.galnet = this._register(new Galnet())
     this.textToSpeech = new TextToSpeech({ eliteLog, eliteJson, cmdrStatus: this.cmdrStatus, shipStatus: this.shipStatus })
   }
 
@@ -60,6 +62,22 @@ class EventHandlers {
     // Capture bio scan positions in real-time
     if (logEvent.event === 'ScanOrganic') {
       this.exploration.onScanOrganic(logEvent).catch(e => console.error('onScanOrganic error:', e))
+    }
+    if (logEvent.event === 'Disembark') {
+      this.exploration.onDisembark(logEvent).catch(e => console.error('onDisembark error:', e))
+    }
+    if (logEvent.event === 'Embark') {
+      this.exploration.onEmbark()
+    }
+    // Invalidate bio scanner cache when events change body/system/signal state.
+    // ScanOrganic, Disembark, Embark already invalidate in their own handlers.
+    const BIO_CACHE_EVENTS = [
+      'Touchdown', 'Liftoff', 'Location', 'FSDJump',
+      'ApproachBody', 'LeaveBody',
+      'FSSBodySignals', 'SAASignalsFound', 'SAAScanComplete'
+    ]
+    if (BIO_CACHE_EVENTS.includes(logEvent.event)) {
+      this.exploration.invalidateBioCache()
     }
   }
 

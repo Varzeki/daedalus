@@ -76,7 +76,7 @@ function useSmoothPosition (target) {
 }
 
 // ----- Radar Map Component -----
-function BioRadarMap ({ player: rawPlayer, organisms, planetRadius }) {
+function BioRadarMap ({ player: rawPlayer, organisms, planetRadius, shipPosition }) {
   const player = useSmoothPosition(rawPlayer)
   if (!player?.lat || !planetRadius) return null
 
@@ -88,6 +88,11 @@ function BioRadarMap ({ player: rawPlayer, organisms, planetRadius }) {
       maxRange = Math.max(maxRange, dist + org.colonyDistance)
     }
     maxRange = Math.max(maxRange, org.colonyDistance * 1.5)
+  }
+  // Include ship position in range calculation
+  if (shipPosition?.lat != null) {
+    const shipDist = surfaceDistance(player.lat, player.lon, shipPosition.lat, shipPosition.lon, planetRadius)
+    maxRange = Math.max(maxRange, shipDist * 1.3)
   }
 
   maxRange *= 1.2 // 20% padding
@@ -153,6 +158,23 @@ function BioRadarMap ({ player: rawPlayer, organisms, planetRadius }) {
           })
         )}
 
+        {/* Ship position marker */}
+        {shipPosition?.lat != null && (() => {
+          const shipPos = toSvg(shipPosition.lat, shipPosition.lon)
+          const shipDist = surfaceDistance(player.lat, player.lon, shipPosition.lat, shipPosition.lon, planetRadius)
+          return (
+            <g>
+              <polygon
+                points={`${shipPos.x},${shipPos.y - 8} ${shipPos.x - 6},${shipPos.y + 6} ${shipPos.x},${shipPos.y + 3} ${shipPos.x + 6},${shipPos.y + 6}`}
+                fill='rgba(100, 180, 255, 0.8)'
+                stroke='rgba(100, 180, 255, 1)'
+                strokeWidth='1'
+              />
+              <text x={shipPos.x + 10} y={shipPos.y + 4} fill='rgba(100, 180, 255, 0.8)' fontSize='8' fontFamily='monospace'>{formatDistance(shipDist)}</text>
+            </g>
+          )
+        })()}
+
         {/* Player position triangle */}
         <polygon
           points={`${center},${center - 12} ${center - 8},${center + 8} ${center + 8},${center + 8}`}
@@ -171,6 +193,12 @@ function BioRadarMap ({ player: rawPlayer, organisms, planetRadius }) {
           <span className='bio-radar__legend-dot bio-radar__legend-dot--inside' />
           Inside exclusion
         </span>
+        {shipPosition?.lat != null && (
+          <span className='bio-radar__legend-item'>
+            <span className='bio-radar__legend-dot bio-radar__legend-dot--ship' />
+            Ship
+          </span>
+        )}
         <span className='bio-radar__legend-item bio-radar__legend-item--range'>
           Range: {formatDistance(maxRange)}
         </span>
@@ -364,12 +392,14 @@ export default function ExplorationBiologicalsPage () {
   const prevActiveRef = useRef(null)
   const [scanCompletePhase, setScanCompletePhase] = useState(null) // null | 'fading-out' | 'complete' | 'fading-in'
   const [completedSpecies, setCompletedSpecies] = useState(null)
+  const dataRef = useRef(data)
+  dataRef.current = data
 
   useEffect(() => {
     const prevSpecies = prevActiveRef.current
     if (prevSpecies && !activeOrganism) {
       // We had an active organism that's now gone — check if it completed
-      const org = data?.organisms?.find(o => o.species === prevSpecies)
+      const org = dataRef.current?.organisms?.find(o => o.species === prevSpecies)
       if (org?.isComplete) {
         setCompletedSpecies(prevSpecies)
         setScanCompletePhase('fading-out')
@@ -381,7 +411,7 @@ export default function ExplorationBiologicalsPage () {
       }
     }
     prevActiveRef.current = activeOrganism?.species || null
-  }, [activeOrganism, data?.organisms])
+  }, [activeOrganism])
 
   // Build combined list: scanned organisms first, then predictions
   const combinedBios = []
@@ -442,6 +472,7 @@ export default function ExplorationBiologicalsPage () {
                         player={data.player}
                         organisms={(data.organisms || []).filter(o => !o.isComplete && o.scanPositions?.length > 0)}
                         planetRadius={data.planetRadius}
+                        shipPosition={data.shipPosition}
                       />
                       <div className='bio-tracker__player-info text-muted'>
                         Lat {data.player.lat?.toFixed(4)}° Lon {data.player.lon?.toFixed(4)}°

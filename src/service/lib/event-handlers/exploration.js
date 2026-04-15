@@ -3,6 +3,16 @@ const { getBodyValue, getExpectedBioValue, getSystemValue, isStarClass, GENUS_MA
 const { UNKNOWN_VALUE } = require('../../../shared/consts')
 const EDSM = require('../edsm')
 const { predictSpecies } = require('../bio-predictor')
+const fs = require('fs')
+const os = require('os')
+const path = require('path')
+
+// Persistent file for bio scan positions so they survive app restarts
+const BIO_POSITIONS_DIR = path.join(
+  process.env.LOCALAPPDATA || path.join(os.homedir(), 'AppData', 'Local'),
+  'DAEDALUS Terminal'
+)
+const BIO_POSITIONS_FILE = path.join(BIO_POSITIONS_DIR, 'bio-scan-positions.json')
 
 // Limit concurrent EDSM requests to avoid hammering the API
 const MAX_CONCURRENT = 4
@@ -118,7 +128,11 @@ async function fetchBodiesForSystems (systemNames) {
 
 function getJumpFuelUse (hopDistance, shipMass, jumpProfile) {
   if (!Number.isFinite(hopDistance) || hopDistance <= 0) return 0
-  return jumpProfile.fuelMultiplier * Math.pow((hopDistance * shipMass) / jumpProfile.optimalMass, jumpProfile.fuelPower)
+  // The Guardian FSD Booster provides free range that doesn't consume fuel.
+  // Subtract it so only the FSD-powered portion is costed.
+  const fsdDistance = Math.max(hopDistance - (jumpProfile.guardianBoosterRange || 0), 0)
+  if (fsdDistance <= 0) return 0
+  return jumpProfile.fuelMultiplier * Math.pow((fsdDistance * shipMass) / jumpProfile.optimalMass, jumpProfile.fuelPower)
 }
 
 function projectRouteFuel (route, jumpProfile, currentSystemName) {
@@ -216,11 +230,63 @@ class Exploration {
 
     // In-memory bio scan position store: key = 'bodyId:species:scanType' → { lat, lon }
     // Captured in real-time from Status.json when ScanOrganic events fire
-    this._bioScanPositions = {}
+    // Persisted to disk so positions survive app restarts
+    this._bioScanPositions = this._loadBioPositions()
+
+    // Ship position — recorded on Disembark, cleared on Embark
+    this._shipPosition = null
+
+    // Cache for getExplorationBiologicals — avoids re-running heavy DB queries
+    // and prediction pipeline on every 500ms poll.  Only position data from
+    // Status.json changes at high frequency; the rest only changes on journal events.
+    this._bioCache = null
+    this._bioCacheDirty = true
+  }
+
+  /** Mark getExplorationBiologicals cache as stale so the next call recomputes. */
+  invalidateBioCache () {
+    this._bioCacheDirty = true
+  }
+
+  /** Load bio scan positions from disk (returns {} on any failure). */
+  _loadBioPositions () {
+    try {
+      if (fs.existsSync(BIO_POSITIONS_FILE)) {
+        return JSON.parse(fs.readFileSync(BIO_POSITIONS_FILE, 'utf8'))
+      }
+    } catch (e) {
+      console.error('Failed to load bio scan positions:', e.message)
+    }
+    return {}
+  }
+
+  /** Persist bio scan positions to disk. */
+  _saveBioPositions () {
+    try {
+      if (!fs.existsSync(BIO_POSITIONS_DIR)) fs.mkdirSync(BIO_POSITIONS_DIR, { recursive: true })
+      fs.writeFileSync(BIO_POSITIONS_FILE, JSON.stringify(this._bioScanPositions))
+    } catch (e) {
+      console.error('Failed to save bio scan positions:', e.message)
+    }
+  }
+
+  // Called by event-handlers.js when a Disembark event fires
+  async onDisembark (logEvent) {
+    const StatusJson = (await this.eliteJson.json()).Status
+    if (!StatusJson || StatusJson.Latitude == null || StatusJson.Longitude == null) return
+    this._shipPosition = { lat: StatusJson.Latitude, lon: StatusJson.Longitude }
+    this._bioCacheDirty = true
+  }
+
+  // Called by event-handlers.js when an Embark event fires
+  onEmbark () {
+    this._shipPosition = null
+    this._bioCacheDirty = true
   }
 
   // Called by event-handlers.js when a ScanOrganic event fires in real-time
   async onScanOrganic (logEvent) {
+    this._bioCacheDirty = true
     const StatusJson = (await this.eliteJson.json()).Status
     if (!StatusJson || StatusJson.Latitude == null || StatusJson.Longitude == null) return
 
@@ -253,6 +319,8 @@ class Exploration {
     if (scanType === 'Analyse') {
       delete this._bioScanPositions[key]
     }
+
+    this._saveBioPositions()
   }
 
   // For the current system, merge journal data onto EDSM bodies to get
@@ -1072,7 +1140,7 @@ class Exploration {
   }
 
   async getExplorationBiologicals () {
-    // 1. Get current player position from Status.json
+    // 1. Get current player position from Status.json (always fresh)
     const StatusJson = (await this.eliteJson.json()).Status
     const playerLat = StatusJson?.Latitude ?? null
     const playerLon = StatusJson?.Longitude ?? null
@@ -1081,7 +1149,22 @@ class Exploration {
     const altitude = StatusJson?.Altitude ?? null
     const bodyName = StatusJson?.BodyName ?? null
 
-    // 2. Get current system from journal
+    // 2. If the cache is valid and the body hasn't changed, return cached
+    //    bio data overlaid with fresh position.  This avoids ~10 DB queries
+    //    and the full prediction pipeline on every 500ms poll.
+    if (this._bioCache && !this._bioCacheDirty && this._bioCache.bodyName === bodyName) {
+      return {
+        ...this._bioCache,
+        planetRadius,
+        player: { lat: playerLat, lon: playerLon, heading, altitude },
+        shipPosition: this._shipPosition
+      }
+    }
+
+    // 3. Cache miss — full recompute
+    this._bioCacheDirty = false
+
+    // Get current system from journal
     const Location = await this.eliteLog.getEvent('Location')
     const FSDJump = Location
       ? (await this.eliteLog.getEventsFromTimestamp('FSDJump', Location.timestamp, 1))?.[0]
@@ -1089,7 +1172,7 @@ class Exploration {
     const locationEvent = FSDJump || Location
     const systemName = locationEvent?.StarSystem ?? null
 
-    // 3. Get ScanOrganic events for current system only
+    // Get ScanOrganic events for current system only
     //    Body IDs repeat across systems — filtering by SystemAddress prevents
     //    scans from previous systems bleeding into the current body.
     const systemAddress = locationEvent?.SystemAddress ?? null
@@ -1375,7 +1458,7 @@ class Exploration {
       } catch (e) { /* prediction failure is non-fatal */ }
     }
 
-    return {
+    const result = {
       systemName,
       bodyName,
       currentBodyId,
@@ -1387,10 +1470,13 @@ class Exploration {
         heading,
         altitude
       },
+      shipPosition: this._shipPosition,
       bioSignalCount,
       organisms,
       predictions
     }
+    this._bioCache = result
+    return result
   }
 
   // ── Data Inventory ──────────────────────────────────────────────────────────

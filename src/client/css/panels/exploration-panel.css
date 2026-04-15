@@ -511,6 +511,10 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   background: rgba(255, 60, 60, 0.6);
 }
 
+.bio-radar__legend-dot--ship {
+  background: rgba(100, 180, 255, 0.8);
+}
+
 /* Biological List */
 .bio-list {
   display: flex;

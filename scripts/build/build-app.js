@@ -32,13 +32,47 @@ const COMPRESS_FINAL_BUILD = true
 function clean () {
   if (!fs.existsSync(BUILD_DIR)) fs.mkdirSync(BUILD_DIR, { recursive: true })
   if (!fs.existsSync(BIN_DIR)) fs.mkdirSync(BIN_DIR, { recursive: true })
-  if (fs.existsSync(APP_UNOPTIMIZED_BUILD)) fs.unlinkSync(APP_UNOPTIMIZED_BUILD)
-  if (fs.existsSync(APP_OPTIMIZED_BUILD)) fs.unlinkSync(APP_OPTIMIZED_BUILD)
-  if (fs.existsSync(APP_FINAL_BUILD)) fs.unlinkSync(APP_FINAL_BUILD)
+  for (const f of [APP_UNOPTIMIZED_BUILD, APP_OPTIMIZED_BUILD]) {
+    unlinkRetry(f)
+  }
+  // Try to clean the final build, but don't fail if it's locked —
+  // copy() will overwrite it
+  try { unlinkRetry(APP_FINAL_BUILD) } catch (_) {}
+  // Clean up any leftover .old files from previous locked builds
+  for (const f of fs.readdirSync(BIN_DIR)) {
+    if (f.endsWith('.old')) {
+      try { fs.unlinkSync(path.join(BIN_DIR, f)) } catch (_) {}
+    }
+  }
   // Remove legacy DLLs no longer needed with go-webview2
   for (const dll of ['webview.dll', 'WebView2Loader.dll']) {
     const dllPath = path.join(BIN_DIR, dll)
-    if (fs.existsSync(dllPath)) fs.unlinkSync(dllPath)
+    unlinkRetry(dllPath)
+  }
+}
+
+function unlinkRetry (filePath, retries = 10, delayMs = 2000) {
+  for (let i = 0; i < retries; i++) {
+    if (!fs.existsSync(filePath)) return
+    try {
+      fs.unlinkSync(filePath)
+      return
+    } catch (err) {
+      if (err.code === 'EBUSY' && i < retries - 1) {
+        // Try rename-then-delete — renaming often succeeds when unlink can't
+        const tmp = filePath + '.old.' + Date.now()
+        try {
+          fs.renameSync(filePath, tmp)
+          try { fs.unlinkSync(tmp) } catch (_) { /* will be cleaned up next build */ }
+          return
+        } catch (_) { /* rename also failed, wait and retry */ }
+        console.log(`File locked, retrying in ${delayMs}ms: ${path.basename(filePath)}`)
+        const end = Date.now() + delayMs
+        while (Date.now() < end) { /* busy-wait */ }
+      } else {
+        throw err
+      }
+    }
   }
 }
 
@@ -120,10 +154,34 @@ function injectMetadata (exePath, versionInfo, iconPath) {
 }
 
 function copy () {
-  fs.copyFileSync(APP_OPTIMIZED_BUILD, APP_FINAL_BUILD)
-  // Icon copied to bin dir as used by the terminal at runtime when spawning
-  // new windows so must be shipped alongside the binary.
-  // It's also an embeded resource in each executable but it's easier to access
-  // as a distinct asset (which is why a lot of Win32 programs do this).
+  // If the final exe is locked (e.g. by Windows Defender real-time scanning),
+  // retry with increasing delays — Defender typically releases within 30-60s.
+  const maxAttempts = 20
+  const delayMs = 3000
+  for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+    try {
+      fs.copyFileSync(APP_OPTIMIZED_BUILD, APP_FINAL_BUILD)
+      return postCopy()
+    } catch (err) {
+      if (err.code !== 'EBUSY' || attempt === maxAttempts) {
+        console.error(
+          '\nBuild failed: "DAEDALUS Terminal.exe" is locked by another process.\n' +
+          'This is usually caused by Windows Defender scanning the file.\n' +
+          'Try one of:\n' +
+          '  1. Wait a minute and run the build again\n' +
+          '  2. Add the build\\bin folder to Windows Defender exclusions\n' +
+          '  3. Temporarily disable real-time protection\n'
+        )
+        process.exit(1)
+      }
+      if (attempt === 1) console.log('Final exe locked (likely Windows Defender) — waiting for release…')
+      process.stdout.write(`  Attempt ${attempt}/${maxAttempts} (waiting ${delayMs / 1000}s)…\r`)
+      const end = Date.now() + delayMs
+      while (Date.now() < end) { /* busy-wait */ }
+    }
+  }
+}
+
+function postCopy () {
   fs.copyFileSync(APP_ICON, path.join(BIN_DIR, 'icon.ico'))
 }
