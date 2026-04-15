@@ -372,11 +372,10 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
 .bio-tracker-panel {
   display: flex;
   flex-direction: column;
+  overflow: hidden;
 }
 
 .bio-tracker {
-  max-width: 72rem;
-  margin: 0 auto;
   flex: 1;
   display: flex;
   flex-direction: column;
@@ -392,14 +391,43 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   text-align: center;
 }
 
-.bio-tracker__content {
+.bio-tracker__split {
+  display: flex;
+  gap: 2rem;
+  flex: 1;
+  min-height: 0;
+  height: 0;
+}
+
+.bio-tracker__left {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 2rem;
+  align-items: center;
+  justify-content: center;
+  gap: .5rem;
+  min-width: 0;
+  min-height: 0;
+  padding: 1.5rem 1.5rem 2rem;
+  overflow: hidden;
+}
+
+.bio-tracker__right {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  overflow-y: auto;
+  scrollbar-width: none;
+  -ms-overflow-style: none;
+}
+
+.bio-tracker__right::-webkit-scrollbar {
+  display: none;
 }
 
 .bio-tracker__section-title {
-  font-size: 1.1rem;
+  font-size: 2rem;
   font-weight: 900;
   text-transform: uppercase;
   letter-spacing: .04rem;
@@ -407,34 +435,47 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   margin: 0 0 .75rem;
 }
 
-.bio-tracker__card-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fill, minmax(28rem, 1fr));
-  gap: 1rem;
-}
-
-/* Radar Map */
-.bio-tracker__map-section {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: .5rem;
-}
-
 .bio-tracker__player-info {
-  font-size: .85rem;
+  font-size: 1.6rem;
+  flex-shrink: 0;
   font-family: monospace;
   letter-spacing: .03rem;
 }
 
+.bio-tracker__radar-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  flex: 1;
+  text-align: center;
+  gap: 1rem;
+}
+
+/* Radar Map — fills left panel */
 .bio-radar {
   width: 100%;
-  max-width: 32rem;
+  flex: 1;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.bio-radar__svg-wrap {
+  flex: 1;
+  min-height: 0;
+  position: relative;
 }
 
 .bio-radar__svg {
-  width: 100%;
-  height: auto;
+  position: absolute;
+  top: 0;
+  left: 50%;
+  transform: translateX(-50%);
+  height: 100%;
+  max-width: 100%;
+  aspect-ratio: 1;
   border: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .2);
   border-radius: .25rem;
 }
@@ -444,7 +485,8 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   gap: 1.5rem;
   justify-content: center;
   margin-top: .5rem;
-  font-size: .8rem;
+  flex-shrink: 0;
+  font-size: 1.6rem;
   color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .5);
 }
 
@@ -468,39 +510,140 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   background: rgba(255, 60, 60, 0.6);
 }
 
-/* Organism Cards */
-.bio-card {
+/* Biological List */
+.bio-list {
   display: flex;
+  flex-direction: column;
+  gap: .5rem;
+}
+
+.bio-list__entry {
+  display: flex;
+  align-items: center;
   gap: 1rem;
-  padding: .75rem 1rem;
+  padding: .8rem 1rem;
   border: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .15);
   border-radius: .25rem;
   background: rgba(0, 0, 0, .15);
-  transition: border-color .2s ease, background .2s ease;
+  transition: max-height .4s ease, opacity .4s ease, padding .4s ease, margin .4s ease, border-color .2s ease;
+  overflow: hidden;
+  max-height: 20rem;
+  opacity: 1;
 }
 
-.bio-card:hover {
+.bio-list__entry:hover {
   border-color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .35);
 }
 
-.bio-card--active {
+/* Hidden (filtered out during active scan) */
+.bio-list__entry--hidden {
+  max-height: 0;
+  opacity: 0;
+  padding-top: 0;
+  padding-bottom: 0;
+  margin-top: 0;
+  margin-bottom: 0;
+  border-color: transparent;
+}
+
+/* Active scanning entry — expanded */
+.bio-list__entry--active {
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  max-height: 40rem;
+  padding: 1.5rem;
   border-color: var(--color-primary);
   border-width: .15rem;
   background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .05);
 }
 
-.bio-card--complete {
+/* Completed scan */
+.bio-list__entry--complete {
   border-color: rgba(var(--color-secondary-r), var(--color-secondary-g), var(--color-secondary-b), .3);
 }
 
-.bio-card--prediction {
-  opacity: .55;
+/* Predicted (not yet scanned) */
+.bio-list__entry--predicted {
+  border-style: dashed;
 }
 
-.bio-card__image-container {
+/* Dimmed (non-valuable) — matches system page dim styling */
+.bio-list__entry--dim {
+  opacity: 1;
+}
+
+.bio-list__entry--dim .bio-list__row-info,
+.bio-list__entry--dim .bio-list__row-value,
+.bio-list__entry--dim .bio-list__row-status,
+.bio-list__entry--dim .bio-list__genus,
+.bio-list__entry--dim .bio-list__species-name,
+.bio-list__entry--dim .text-info,
+.bio-list__entry--dim .text-primary,
+.bio-list__entry--dim .text-secondary,
+.bio-list__entry--dim .text-success,
+.bio-list__entry--dim .text-muted,
+.bio-list__entry--dim .icon {
+  color: #666 !important;
+}
+
+.bio-list__entry--dim .bio-list__thumb {
+  opacity: .4;
+}
+
+/* Hover on dim entries — stays dim */
+.bio-list__entry--dim:hover {
+  border-color: rgba(102, 102, 102, .35);
+}
+
+/* Hover on valuable entries — bright highlight */
+.bio-list__entry:not(.bio-list__entry--dim):not(.bio-list__entry--hidden):hover {
+  border-color: var(--color-primary);
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .06);
+}
+
+/* Section headings (Valuable / Non-Valuable) — matches inventory page */
+.bio-list__section {
+  margin-bottom: 1rem;
+}
+
+.bio-list__section-heading {
+  display: flex;
+  align-items: center;
+  gap: .5rem;
+  font-size: 1.4rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: .08rem;
+  margin: .5rem 0 .75rem;
+  padding-bottom: .4rem;
+  border-bottom: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .15);
+}
+
+.bio-list__section-heading .icon {
+  font-size: 1.5rem;
+}
+
+.bio-list__section-heading--non-valuable {
+  color: var(--color-info);
+  text-shadow: none;
+}
+
+.bio-list__section-count {
+  font-size: 1rem;
+  opacity: 0.5;
+  font-weight: 400;
+  margin-left: .25rem;
+}
+
+.bio-list__section-count::before { content: '('; }
+.bio-list__section-count::after { content: ')'; }
+
+/* Thumbnail in list row */
+.bio-list__thumb {
   flex-shrink: 0;
-  width: 7rem;
-  height: 7rem;
+  width: 12rem;
+  height: 12rem;
   border-radius: .2rem;
   overflow: hidden;
   display: flex;
@@ -509,105 +652,137 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   background: rgba(0, 0, 0, .3);
 }
 
-.bio-card__image {
+.bio-list__thumb img {
   width: 100%;
   height: 100%;
   object-fit: cover;
 }
 
-.bio-card__image-placeholder {
-  font-size: 2.5rem;
+/* Active scan large image */
+.bio-list__active-image {
+  width: 14rem;
+  height: 14rem;
+  border-radius: .3rem;
+  overflow: hidden;
+  background: rgba(0, 0, 0, .3);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: .5rem;
+}
+
+.bio-list__active-image img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
+
+.bio-list__image-placeholder {
+  font-size: 2rem;
   color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .2);
 }
 
-.bio-card__info {
-  flex: 1;
+.bio-list__active-details {
   display: flex;
   flex-direction: column;
-  gap: .2rem;
-  min-width: 0;
+  align-items: center;
+  gap: .3rem;
 }
 
-.bio-card__name {
-  font-size: 1.05rem;
+.bio-list__active-name {
+  font-size: 2rem;
   font-weight: 700;
   color: var(--color-primary);
 }
 
-.bio-card__genus {
-  text-transform: uppercase;
-  letter-spacing: .03rem;
-}
-
-.bio-card__variant {
-  font-size: .8rem;
-}
-
-.bio-card__reward {
-  font-size: .9rem;
+.bio-list__active-value {
+  font-size: 1.6rem;
   color: var(--color-primary);
 }
 
+/* Row info */
+.bio-list__row-info {
+  flex: 1;
+  min-width: 0;
+  font-size: 1.5rem;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bio-list__genus {
+  text-transform: uppercase;
+  letter-spacing: .03rem;
+  font-weight: 700;
+  color: var(--color-primary);
+}
+
+.bio-list__species-name {
+  color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .7);
+}
+
+.bio-list__row-value {
+  flex-shrink: 0;
+  font-size: 1.3rem;
+  color: var(--color-primary);
+  text-align: right;
+}
+
+.bio-list__row-status {
+  flex-shrink: 0;
+  font-size: 1.3rem;
+  text-align: right;
+  min-width: 6rem;
+}
+
 /* Scan progress pips */
-.bio-card__progress {
+.bio-list__progress {
   display: flex;
   align-items: center;
   gap: .4rem;
-  margin-top: .15rem;
+  justify-content: center;
 }
 
-.bio-card__progress-step {
-  width: 2rem;
-  height: 2rem;
+.bio-list__progress-pip {
+  width: 2.2rem;
+  height: 2.2rem;
   display: flex;
   align-items: center;
   justify-content: center;
   border: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .25);
   border-radius: .15rem;
-  font-size: .85rem;
+  font-size: .9rem;
 }
 
-.bio-card__progress-step--done {
+.bio-list__progress-pip--done {
   background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .15);
   border-color: var(--color-primary);
   color: var(--color-primary);
 }
 
-.bio-card__progress-step--analyse {
+.bio-list__progress-pip--analyse {
   background: rgba(var(--color-secondary-r), var(--color-secondary-g), var(--color-secondary-b), .15);
   border-color: var(--color-secondary);
   color: var(--color-secondary);
 }
 
-.bio-card__progress-label {
-  margin-left: .4rem;
-  font-size: .85rem;
-}
-
 /* Distance indicator */
-.bio-card__distance {
-  font-size: .85rem;
+.bio-list__distance {
+  font-size: 1.4rem;
   font-weight: 700;
-  padding: .2rem .5rem;
+  padding: .3rem .7rem;
   border-radius: .15rem;
-  margin-top: .15rem;
-  display: inline-block;
-  max-width: fit-content;
+  margin-top: .2rem;
 }
 
-.bio-card__distance--inside {
+.bio-list__distance--inside {
   color: var(--color-danger);
   background: rgba(252, 72, 72, .1);
 }
 
-.bio-card__distance--clear {
+.bio-list__distance--clear {
   color: var(--color-success);
   background: rgba(77, 255, 201, .1);
-}
-
-.bio-card__colony-distance {
-  font-size: .75rem;
-  margin-top: .1rem;
 }
 
 /* ============================================================

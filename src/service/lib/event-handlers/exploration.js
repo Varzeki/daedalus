@@ -1182,24 +1182,134 @@ class Exploration {
 
     // 6. Get predicted species for this body (from bio-predictor)
     let predictions = []
+    let isFirstFootfall = false
     if (currentBodyId != null && systemName) {
       try {
         const scan = await this.eliteLog._query({ event: 'Scan', BodyID: currentBodyId }, 1)
         if (scan?.[0]) {
-          const body = scan[0]
+          const rawBody = scan[0]
+          isFirstFootfall = rawBody.WasDiscovered === false
           const starPos = locationEvent?.StarPos ?? null
-          const predicted = predictSpecies(body, starPos)
-          if (predicted) {
-            const scannedSpeciesNames = new Set(organisms.map(o => o.species))
-            predictions = predicted
-              .filter(p => !scannedSpeciesNames.has(p.species))
-              .map(p => ({
+          const allScans = await this.eliteLog._query({ event: 'Scan', StarSystem: systemName })
+
+          // Normalize raw journal Scan events to the format buildBodyProps expects
+          // (same transform as _buildSystemBodies Phase 3)
+          const normalizeJournalScan = (s) => ({
+            name: s.BodyName,
+            bodyId: s.BodyID,
+            type: s.StarType ? 'Star' : 'Planet',
+            subType: s.PlanetClass || s.StarType,
+            isMainStar: s.DistanceFromArrivalLS === 0,
+            distanceToArrival: s.DistanceFromArrivalLS,
+            gravity: s.SurfaceGravity ? s.SurfaceGravity / 9.81 : undefined,
+            surfaceTemperature: s.SurfaceTemperature,
+            surfacePressure: s.SurfacePressure ? s.SurfacePressure / 101325 : undefined,
+            atmosphereType: s.AtmosphereType || (s.Atmosphere ? s.Atmosphere.replace(/ atmosphere$/i, '') : 'None'),
+            atmosphereComposition: s.AtmosphereComposition
+              ? Object.fromEntries(s.AtmosphereComposition.map(c => [c.Name, c.Percent]))
+              : null,
+            volcanismType: s.Volcanism || 'No volcanism',
+            materials: s.Materials
+              ? Object.fromEntries(s.Materials.map(m => [m.Name, m.Percent]))
+              : null,
+            parents: s.Parents || null,
+            semiMajorAxis: s.SemiMajorAxis != null ? s.SemiMajorAxis / 149597870700 : null
+          })
+
+          const body = normalizeJournalScan(rawBody)
+          const allBodies = allScans.map(normalizeJournalScan)
+          let predicted = predictSpecies(body, allBodies, starPos)
+          if (predicted && predicted.length > 0) {
+            // Apply the same filtering as the system page (_addPredictedSpecies):
+
+            // 1. Filter by DSS-confirmed genera (from SAASignalsFound) — definitive
+            const saaForFilter = await this.eliteLog._query({ event: 'SAASignalsFound', BodyID: currentBodyId }, 1)
+            const dssGenera = saaForFilter?.[0]?.Genuses
+              ? saaForFilter[0].Genuses.map(g => g.Genus_Localised || g.Genus).filter(Boolean)
+              : null
+            if (dssGenera && dssGenera.length > 0) {
+              const dssSet = new Set(dssGenera.map(g => normalizeDssGenus(g)))
+              predicted = predicted.filter(p => dssSet.has(p.genus?.toLowerCase()))
+            }
+
+            // 2. If all bio signal slots accounted for by scanned genera, restrict to those
+            const scannedGenera = [...new Set(organisms.map(o => o.genus?.toLowerCase()))]
+            if (scannedGenera.length > 0 && scannedGenera.length >= bioSignalCount) {
+              const scannedSet = new Set(scannedGenera)
+              predicted = predicted.filter(p => scannedSet.has(p.genus?.toLowerCase()))
+            }
+
+            // 3. Remove predictions for species already scanned (case-insensitive)
+            const scannedSpeciesNames = new Set(organisms.map(o => o.species?.toLowerCase()))
+            const scannedGeneraConfirmed = new Set(
+              organisms.filter(o => o.isComplete).map(o => o.genus?.toLowerCase())
+            )
+            const filtered = predicted
+              .filter(p => !scannedSpeciesNames.has(p.species?.toLowerCase()))
+              .filter(p => !scannedGeneraConfirmed.has(p.genus?.toLowerCase()))
+
+            // 4. Apply Bayesian conditioning on genus probabilities (same as system page)
+            // Remaining signal slots = total bio signals minus already-scanned organisms
+            const knownGenera = new Set(organisms.map(o => o.genus?.toLowerCase()))
+            const remainingSlots = bioSignalCount - organisms.length
+            const unconfirmedPredGenera = new Set()
+            for (const p of filtered) {
+              const gk = p.genus?.toLowerCase()
+              if (!knownGenera.has(gk)) unconfirmedPredGenera.add(gk)
+            }
+
+            // Group by genus
+            const genusGroups = new Map()
+            for (const p of filtered) {
+              const gk = p.genus?.toLowerCase()
+              if (!genusGroups.has(gk)) genusGroups.set(gk, [])
+              genusGroups.get(gk).push(p)
+            }
+
+            const genusProbabilities = new Map()
+            if (remainingSlots > 0 && genusGroups.size > 0) {
+              const genusEntries = []
+              for (const [gk, members] of genusGroups) {
+                const genusProbability = Math.min(members.reduce((s, m) => s + (m.probability ?? 0), 0), 100)
+                genusEntries.push({ gk, members, genusProbability })
+              }
+
+              const bayesWeights = _bayesianGenusWeights(
+                genusEntries.map(e => ({ genusProbability: e.genusProbability })),
+                remainingSlots
+              )
+
+              for (let i = 0; i < genusEntries.length; i++) {
+                const { members } = genusEntries[i]
+                const genusWeight = bayesWeights[i]
+                const genusWeightPct = Math.round(genusWeight * 1000) / 10
+
+                if (members.length === 1) {
+                  genusProbabilities.set(`${members[0].genus}|${members[0].species}`, genusWeightPct)
+                } else {
+                  const genusTotal = members.reduce((s, m) => s + (m.hitCount || 1), 0)
+                  for (const m of members) {
+                    const speciesFraction = genusTotal > 0 ? (m.hitCount || 1) / genusTotal : 1 / members.length
+                    const pct = Math.round(genusWeightPct * speciesFraction * 10) / 10
+                    genusProbabilities.set(`${m.genus}|${m.species}`, pct)
+                  }
+                }
+              }
+            }
+
+            predictions = filtered.map(p => {
+              const bayesProb = genusProbabilities.get(`${p.genus}|${p.species}`)
+              const fullName = `${p.genus} ${p.species}`
+              const reward = SPECIES_REWARDS[fullName] ?? SPECIES_REWARDS[p.species] ?? UNKNOWN_VALUE
+              return {
                 genus: p.genus,
                 species: p.species,
+                probability: bayesProb != null ? bayesProb : Math.round(p.probability * 10) / 10,
                 colonyDistance: GENUS_COLONY_DISTANCE[p.genus] ?? DEFAULT_COLONY_DISTANCE,
-                reward: SPECIES_REWARDS[p.species] ?? UNKNOWN_VALUE,
+                reward,
                 imageUrl: null
-              }))
+              }
+            })
 
             // Resolve images for predictions too
             for (const pred of predictions) {
@@ -1228,6 +1338,7 @@ class Exploration {
       bodyName,
       currentBodyId,
       planetRadius,
+      isFirstFootfall,
       player: {
         lat: playerLat,
         lon: playerLon,

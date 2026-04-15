@@ -223,7 +223,8 @@ function connect (socketState, setSocketState) {
         }
       } catch (e) { console.log('AUTO_SWITCH_CANCEL_ERROR', e) }
 
-      // Switch to system page when jump completes (FSDJump / Location events)
+      // Switch to appropriate page when arriving (FSDJump / Location events)
+      // If player is on a body surface, switch to biologicals; otherwise system
       try {
         if (socketOptions.explorationAutoSwitch && name === 'newLogEntry') {
           if (message.event === 'FSDJump' || message.event === 'Location') {
@@ -232,12 +233,41 @@ function connect (socketState, setSocketState) {
             socketOptions._autoSwitchCooldown = Date.now()
             persistAutoSwitchState()
             const path = Router.asPath
-            if (path.startsWith('/exploration') && path !== '/exploration/system') {
-              Router.push('/exploration/system')
+            if (path.startsWith('/exploration')) {
+              sendEvent('getCmdrStatus').then(cmdrStatus => {
+                const flags = cmdrStatus?.flags || {}
+                const currentPath = Router.asPath
+                if (!currentPath.startsWith('/exploration')) return
+                if (flags.hasLatLon) {
+                  if (currentPath !== '/exploration/biologicals') Router.push('/exploration/biologicals')
+                } else {
+                  if (currentPath !== '/exploration/system') Router.push('/exploration/system')
+                }
+              }).catch(() => {
+                const currentPath = Router.asPath
+                if (currentPath.startsWith('/exploration') && currentPath !== '/exploration/system') {
+                  Router.push('/exploration/system')
+                }
+              })
             }
           }
         }
       } catch (e) { console.log('AUTO_SWITCH_JUMP_ERROR', e) }
+
+      // Auto-switch to biologicals when approaching a body / back to system when leaving
+      try {
+        if (socketOptions.explorationAutoSwitch && name === 'newLogEntry') {
+          const path = Router.asPath
+          if (path.startsWith('/exploration')) {
+            if (message.event === 'ApproachBody') {
+              if (path !== '/exploration/biologicals') Router.push('/exploration/biologicals')
+            }
+            if (message.event === 'LeaveBody') {
+              if (path !== '/exploration/system') Router.push('/exploration/system')
+            }
+          }
+        }
+      } catch (e) { console.log('AUTO_SWITCH_BODY_ERROR', e) }
     }
     socketDebugMessage('Message received from socket server', requestId, name, message)
   }

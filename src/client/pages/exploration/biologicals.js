@@ -7,6 +7,7 @@ import Panel from 'components/panel'
 const POLL_INTERVAL = 1000 // 1s position polling
 const MAP_SIZE = 400 // SVG viewBox size
 const DEG_TO_RAD = Math.PI / 180
+const DEFAULT_MIN_BIO_VALUE = 7000000 // 7M Cr (matches settings default)
 
 // Haversine distance on a sphere (lat/lon in degrees, radius in meters)
 function surfaceDistance (lat1, lon1, lat2, lon2, planetRadius) {
@@ -70,23 +71,24 @@ function BioRadarMap ({ player, organisms, planetRadius }) {
 
   return (
     <div className='bio-radar'>
-      <svg viewBox={`0 0 ${MAP_SIZE} ${MAP_SIZE}`} className='bio-radar__svg'>
+      <div className='bio-radar__svg-wrap'>
+        <svg viewBox={`0 0 ${MAP_SIZE} ${MAP_SIZE}`} className='bio-radar__svg'>
         <rect x='0' y='0' width={MAP_SIZE} height={MAP_SIZE} fill='rgba(0,0,0,0.3)' rx='4' />
 
         {/* Range rings */}
         {ringDistances.map(d => (
           <g key={d}>
-            <circle cx={center} cy={center} r={d * scale} fill='none' stroke='rgba(250,150,0,0.12)' strokeWidth='0.5' />
-            <text x={center + 3} y={center - d * scale + 10} fill='rgba(250,150,0,0.35)' fontSize='8' fontFamily='monospace'>{formatDistance(d)}</text>
+            <circle cx={center} cy={center} r={d * scale} fill='none' stroke='rgba(250,150,0,0.12)' strokeWidth='1' />
+            <text x={center + 5} y={center - d * scale + 12} fill='rgba(250,150,0,0.45)' fontSize='8' fontFamily='monospace'>{formatDistance(d)}</text>
           </g>
         ))}
 
         {/* Crosshair */}
-        <line x1={center} y1='10' x2={center} y2={MAP_SIZE - 10} stroke='rgba(250,150,0,0.1)' strokeWidth='0.5' />
-        <line x1='10' y1={center} x2={MAP_SIZE - 10} y2={center} stroke='rgba(250,150,0,0.1)' strokeWidth='0.5' />
+        <line x1={center} y1='10' x2={center} y2={MAP_SIZE - 10} stroke='rgba(250,150,0,0.1)' strokeWidth='1' />
+        <line x1='10' y1={center} x2={MAP_SIZE - 10} y2={center} stroke='rgba(250,150,0,0.1)' strokeWidth='1' />
 
         {/* North indicator */}
-        <text x={center} y='14' fill='rgba(250,150,0,0.5)' fontSize='9' fontFamily='monospace' textAnchor='middle'>N</text>
+        <text x={center} y='18' fill='rgba(250,150,0,0.5)' fontSize='9' fontFamily='monospace' textAnchor='middle'>N</text>
 
         {/* Scan exclusion zones */}
         {organisms.map((org, oi) =>
@@ -100,8 +102,8 @@ function BioRadarMap ({ player, organisms, planetRadius }) {
 
             return (
               <g key={`${oi}-${si}`}>
-                <circle cx={pos.x} cy={pos.y} r={radiusPx} fill={fillColor} stroke={strokeColor} strokeWidth='1' strokeDasharray={scan.scanType === 'Analyse' ? 'none' : '3,2'} />
-                <circle cx={pos.x} cy={pos.y} r='2.5' fill={isInside ? 'rgba(255, 60, 60, 0.8)' : 'rgba(60, 255, 160, 0.8)'} />
+                <circle cx={pos.x} cy={pos.y} r={radiusPx} fill={fillColor} stroke={strokeColor} strokeWidth='2' strokeDasharray={scan.scanType === 'Analyse' ? 'none' : '6,4'} />
+                <circle cx={pos.x} cy={pos.y} r='5' fill={isInside ? 'rgba(255, 60, 60, 0.8)' : 'rgba(60, 255, 160, 0.8)'} />
               </g>
             )
           })
@@ -109,12 +111,13 @@ function BioRadarMap ({ player, organisms, planetRadius }) {
 
         {/* Player position triangle */}
         <polygon
-          points={`${center},${center - 6} ${center - 4},${center + 4} ${center + 4},${center + 4}`}
+          points={`${center},${center - 12} ${center - 8},${center + 8} ${center + 8},${center + 8}`}
           fill='rgba(250,150,0,0.9)'
           stroke='rgba(250,150,0,1)'
-          strokeWidth='0.5'
+          strokeWidth='1'
         />
       </svg>
+      </div>
       <div className='bio-radar__legend'>
         <span className='bio-radar__legend-item'>
           <span className='bio-radar__legend-dot bio-radar__legend-dot--clear' />
@@ -132,115 +135,113 @@ function BioRadarMap ({ player, organisms, planetRadius }) {
   )
 }
 
-// ----- Organism Card Component -----
-function OrganismCard ({ organism, player, planetRadius, isActive }) {
-  const scanCount = organism.scanProgress?.length ?? 0
-  const requiredScans = 3
-  const progressSteps = []
-  for (let i = 0; i < requiredScans; i++) {
-    progressSteps.push(organism.scanProgress?.[i] ?? null)
-  }
+// ----- Biological List Entry -----
+function BiologicalEntry ({ bio, isActive, isFiltered, player, planetRadius, isFirstFootfall, minBioValue }) {
+  const isScanned = bio.source === 'scanned'
+  const isComplete = bio.isComplete === true
+  const scanCount = bio.scanProgress?.length ?? 0
+  const baseReward = typeof bio.reward === 'number' ? bio.reward : null
+  const displayReward = baseReward != null && isFirstFootfall ? baseReward * 5 : baseReward
+  const isValuable = displayReward != null && displayReward >= minBioValue
 
-  // Calculate nearest scan distance from player
+  // Distance calculations when actively scanning
   let nearestScanDist = null
   let isInsideExclusion = false
-  if (player?.lat && planetRadius && organism.scanPositions?.length > 0) {
-    for (const scan of organism.scanPositions) {
+  let distanceRemaining = null
+  if (isScanned && player?.lat && planetRadius && bio.scanPositions?.length > 0) {
+    for (const scan of bio.scanPositions) {
       const dist = surfaceDistance(player.lat, player.lon, scan.lat, scan.lon, planetRadius)
-      if (nearestScanDist === null || dist < nearestScanDist) {
-        nearestScanDist = dist
-      }
+      if (nearestScanDist === null || dist < nearestScanDist) nearestScanDist = dist
     }
-    isInsideExclusion = nearestScanDist < organism.colonyDistance
+    isInsideExclusion = nearestScanDist < bio.colonyDistance
+    distanceRemaining = Math.max(0, bio.colonyDistance - nearestScanDist)
   }
 
-  const distanceRemaining = nearestScanDist != null
-    ? Math.max(0, organism.colonyDistance - nearestScanDist)
-    : null
+  let entryClass = 'bio-list__entry'
+  if (isActive) entryClass += ' bio-list__entry--active'
+  if (isFiltered) entryClass += ' bio-list__entry--hidden'
+  if (isComplete) entryClass += ' bio-list__entry--complete'
+  if (!isScanned) entryClass += ' bio-list__entry--predicted'
+  if (!isValuable && !isActive) entryClass += ' bio-list__entry--dim'
 
-  return (
-    <div className={`bio-card${isActive ? ' bio-card--active' : ''}${organism.isComplete ? ' bio-card--complete' : ''}`}>
-      <div className='bio-card__image-container'>
-        {organism.imageUrl
-          ? <img src={organism.imageUrl} alt={organism.species} className='bio-card__image' loading='lazy' />
-          : <div className='bio-card__image-placeholder'><i className='icon daedalus-terminal-plant' /></div>}
-      </div>
-
-      <div className='bio-card__info'>
-        <div className='bio-card__name'>
-          <span className='bio-card__genus'>{organism.genus}</span>
-          {' '}
-          <span className='bio-card__species'>{organism.species.replace(organism.genus + ' ', '')}</span>
+  // Active scanning — expanded view with large image and details
+  if (isActive) {
+    return (
+      <div className={entryClass}>
+        <div className='bio-list__active-image'>
+          {bio.imageUrl
+            ? <img src={bio.imageUrl} alt={bio.species} />
+            : <div className='bio-list__image-placeholder'><i className='icon daedalus-terminal-plant' /></div>}
         </div>
-
-        {organism.variant && organism.variant !== organism.species && (
-          <div className='bio-card__variant text-muted'>{organism.variant}</div>
-        )}
-
-        <div className='bio-card__reward'>
-          {typeof organism.reward === 'number'
-            ? <span>{organism.reward.toLocaleString()} Cr</span>
-            : <span className='text-muted'>Unknown value</span>}
-        </div>
-
-        {/* Scan progress pips */}
-        <div className='bio-card__progress'>
-          {progressSteps.map((step, i) => (
-            <div
-              key={i}
-              className={`bio-card__progress-step${step ? ' bio-card__progress-step--done' : ''}${step?.scanType === 'Analyse' ? ' bio-card__progress-step--analyse' : ''}`}
-              title={step?.scanType || `Scan ${i + 1}`}
-            >
-              {step ? <i className='icon daedalus-terminal-scan' /> : <span className='text-muted'>{i + 1}</span>}
-            </div>
-          ))}
-          <span className='bio-card__progress-label'>
-            {organism.isComplete
-              ? <span className='text-success'>Complete</span>
-              : <span>{scanCount} / {requiredScans}</span>}
-          </span>
-        </div>
-
-        {/* Distance to exclusion zone */}
-        {!organism.isComplete && nearestScanDist != null && (
-          <div className={`bio-card__distance${isInsideExclusion ? ' bio-card__distance--inside' : ' bio-card__distance--clear'}`}>
-            {isInsideExclusion
-              ? <>Move {formatDistance(distanceRemaining)} to clear zone</>
-              : <>Clear — {formatDistance(nearestScanDist - organism.colonyDistance)} beyond exclusion</>}
+        <div className='bio-list__active-details'>
+          <div className='bio-list__active-name'>
+            <span className='bio-list__genus'>{bio.genus}</span>
+            {' '}
+            <span className='bio-list__species-name'>{bio.species.replace(bio.genus + ' ', '')}</span>
           </div>
-        )}
-
-        <div className='bio-card__colony-distance text-muted'>
-          Exclusion: {formatDistance(organism.colonyDistance)}
+          {bio.variant && bio.variant !== bio.species && (
+            <div className='text-muted' style={{ fontSize: '1.6rem' }}>{bio.variant}</div>
+          )}
+          <div className='bio-list__active-value'>
+            {isFirstFootfall && <i className='icon daedalus-terminal-star text-secondary' title='First Footfall ×5 bonus' style={{ marginRight: '.3rem' }} />}
+            {isValuable && <i className='icon daedalus-terminal-credits text-success' style={{ marginRight: '.3rem' }} />}
+            {displayReward != null
+              ? <span>{displayReward.toLocaleString()} Cr</span>
+              : <span className='text-muted'>Unknown value</span>}
+          </div>
+          <div className='bio-list__progress'>
+            {[0, 1, 2].map(i => (
+              <div
+                key={i}
+                className={`bio-list__progress-pip${bio.scanProgress?.[i] ? ' bio-list__progress-pip--done' : ''}${bio.scanProgress?.[i]?.scanType === 'Analyse' ? ' bio-list__progress-pip--analyse' : ''}`}
+              >
+                {bio.scanProgress?.[i]
+                  ? <i className='icon daedalus-terminal-scan' />
+                  : <span className='text-muted'>{i + 1}</span>}
+              </div>
+            ))}
+            <span style={{ marginLeft: '.4rem', fontSize: '.9rem' }}>{scanCount} / 3</span>
+          </div>
+          {nearestScanDist != null && (
+            <div className={`bio-list__distance${isInsideExclusion ? ' bio-list__distance--inside' : ' bio-list__distance--clear'}`}>
+              {isInsideExclusion
+                ? <>Move {formatDistance(distanceRemaining)} to clear zone</>
+                : <>Clear — {formatDistance(nearestScanDist - bio.colonyDistance)} beyond exclusion</>}
+            </div>
+          )}
+          <div className='text-muted' style={{ fontSize: '1.4rem' }}>
+            Exclusion zone: {formatDistance(bio.colonyDistance)}
+          </div>
         </div>
       </div>
-    </div>
-  )
-}
+    )
+  }
 
-// ----- Prediction Card Component -----
-function PredictionCard ({ prediction }) {
+  // Standard row view
   return (
-    <div className='bio-card bio-card--prediction'>
-      <div className='bio-card__image-container'>
-        {prediction.imageUrl
-          ? <img src={prediction.imageUrl} alt={prediction.species} className='bio-card__image' loading='lazy' />
-          : <div className='bio-card__image-placeholder'><i className='icon daedalus-terminal-plant' /></div>}
+    <div className={entryClass}>
+      <div className='bio-list__thumb'>
+        {bio.imageUrl
+          ? <img src={bio.imageUrl} alt={bio.species} loading='lazy' />
+          : <div className='bio-list__image-placeholder'><i className='icon daedalus-terminal-plant' /></div>}
       </div>
-      <div className='bio-card__info'>
-        <div className='bio-card__name text-muted'>
-          <span>{prediction.genus}</span>
-          {' '}
-          <span>{prediction.species.replace(prediction.genus + ' ', '')}</span>
-        </div>
-        <div className='bio-card__reward text-muted'>
-          {typeof prediction.reward === 'number'
-            ? <span>{prediction.reward.toLocaleString()} Cr</span>
-            : <span>Unknown value</span>}
-        </div>
-        <div className='bio-card__colony-distance text-muted'>
-          Exclusion: {formatDistance(prediction.colonyDistance)}
-        </div>
+      <div className='bio-list__row-info'>
+        <span className='bio-list__genus'>{bio.genus}</span>
+        {' '}
+        <span className='bio-list__species-name'>{bio.species.replace(bio.genus + ' ', '')}</span>
+      </div>
+      <div className='bio-list__row-value'>
+        {isFirstFootfall && <i className='icon daedalus-terminal-star text-secondary' title='First Footfall ×5' style={{ marginRight: '.3rem' }} />}
+        {isValuable && <i className='icon daedalus-terminal-credits text-success' style={{ marginRight: '.3rem' }} />}
+        {displayReward != null
+          ? <span>{displayReward.toLocaleString()} Cr</span>
+          : <span className='text-muted'>—</span>}
+      </div>
+      <div className='bio-list__row-status'>
+        {isComplete && <span className='text-success'>Complete</span>}
+        {isScanned && !isComplete && <span className='text-primary'>{scanCount}/3</span>}
+        {!isScanned && bio.probability != null && <span className='text-muted'>{bio.probability}%</span>}
+        {!isScanned && bio.probability == null && <span className='text-muted'>Predicted</span>}
       </div>
     </div>
   )
@@ -250,6 +251,7 @@ function PredictionCard ({ prediction }) {
 export default function ExplorationBiologicalsPage () {
   const { connected, active, ready } = useSocket()
   const [data, setData] = useState(null)
+  const [minBioValue, setMinBioValue] = useState(DEFAULT_MIN_BIO_VALUE)
   const pollRef = useRef(null)
 
   const fetchData = useCallback(async () => {
@@ -258,6 +260,13 @@ export default function ExplorationBiologicalsPage () {
       setData(result)
     } catch (e) { /* ignore fetch errors */ }
   }, [])
+
+  useEffect(() => {
+    if (!ready) return
+    sendEvent('getPreferences').then(prefs => {
+      if (prefs?.explorationMinBioValue != null) setMinBioValue(prefs.explorationMinBioValue)
+    }).catch(() => {})
+  }, [ready])
 
   useEffect(() => {
     if (!ready) return
@@ -279,11 +288,46 @@ export default function ExplorationBiologicalsPage () {
   const isOnSurface = data?.player?.lat != null && data?.planetRadius
   const hasOrganisms = data?.organisms?.length > 0
   const hasPredictions = data?.predictions?.length > 0
-  const activeOrganism = data?.organisms?.find(o => !o.isComplete && o.scanProgress?.length > 0)
+  const hasBioData = hasOrganisms || hasPredictions
+
+  // Find the actively-scanning organism (in progress, not complete)
+  // If multiple, pick the most recently scanned
+  const activeOrganism = (() => {
+    if (!hasOrganisms) return null
+    const inProgress = data.organisms.filter(o => !o.isComplete && o.scanProgress?.length > 0)
+    if (inProgress.length === 0) return null
+    return inProgress.reduce((latest, o) => {
+      const ts = o.scanProgress[o.scanProgress.length - 1]?.timestamp || ''
+      const latestTs = latest.scanProgress[latest.scanProgress.length - 1]?.timestamp || ''
+      return ts > latestTs ? o : latest
+    })
+  })()
+
+  // Build combined list: scanned organisms first, then predictions
+  const combinedBios = []
+  if (data?.organisms) {
+    for (const org of data.organisms) combinedBios.push({ ...org, source: 'scanned' })
+  }
+  if (data?.predictions) {
+    for (const pred of data.predictions) combinedBios.push({ ...pred, source: 'predicted' })
+  }
+
+  // Split into valuable / non-valuable for sectioned display
+  const isFirstFootfall = data?.isFirstFootfall
+  const valuableBios = combinedBios.filter(bio => {
+    const base = typeof bio.reward === 'number' ? bio.reward : null
+    const display = base != null && isFirstFootfall ? base * 5 : base
+    return display != null && display >= minBioValue
+  })
+  const nonValuableBios = combinedBios.filter(bio => {
+    const base = typeof bio.reward === 'number' ? bio.reward : null
+    const display = base != null && isFirstFootfall ? base * 5 : base
+    return display == null || display < minBioValue
+  })
 
   return (
-    <Layout connected={connected} active={active} ready={ready}>
-      <Panel layout='full-width' scrollable navigation={ExplorationPanelNavItems('Biologicals')} className='bio-tracker-panel'>
+    <Layout connected={connected} active={active} ready={ready} loader={!data}>
+      <Panel layout='full-width' navigation={ExplorationPanelNavItems('Biologicals')} className='bio-tracker-panel'>
         <h2>
           <i className='icon daedalus-terminal-plant' style={{ marginRight: '.5rem' }} />
           Biological Scanner
@@ -291,6 +335,7 @@ export default function ExplorationBiologicalsPage () {
         {data?.bodyName && (
           <p className='text-primary' style={{ marginBottom: '.5rem' }}>
             <span className='text-info'>{data.bodyName}</span>
+            {data?.isFirstFootfall && <i className='icon daedalus-terminal-star text-secondary' title='First Footfall' style={{ marginLeft: '.5rem', fontSize: '1.4rem' }} />}
             {data?.bioSignalCount > 0 && (
               <span className='text-muted'> — {data.bioSignalCount} biological signal{data.bioSignalCount !== 1 ? 's' : ''}</span>
             )}
@@ -298,7 +343,7 @@ export default function ExplorationBiologicalsPage () {
         )}
 
         <div className='bio-tracker'>
-          {!isOnSurface && !hasOrganisms && (
+          {data && !isOnSurface && !hasBioData && (
             <div className='bio-tracker__empty'>
               <i className='icon daedalus-terminal-planet-landable' style={{ fontSize: '4rem', opacity: 0.3, marginBottom: '1rem' }} />
               <p className='text-muted'>Land on a body with biological signals to begin tracking.</p>
@@ -308,53 +353,98 @@ export default function ExplorationBiologicalsPage () {
             </div>
           )}
 
-          {(isOnSurface || hasOrganisms) && (
-            <div className='bio-tracker__content'>
-              {/* Radar map */}
-              {isOnSurface && hasOrganisms && (
-                <div className='bio-tracker__map-section'>
-                  <BioRadarMap
-                    player={data.player}
-                    organisms={data.organisms.filter(o => o.scanPositions?.length > 0)}
-                    planetRadius={data.planetRadius}
-                  />
-                  <div className='bio-tracker__player-info text-muted'>
-                    Lat {data.player.lat?.toFixed(4)}° Lon {data.player.lon?.toFixed(4)}°
-                    {data.player.heading != null && <> Hdg {Math.round(data.player.heading)}°</>}
-                    {data.player.altitude != null && <> Alt {formatDistance(data.player.altitude)}</>}
-                  </div>
-                </div>
-              )}
-
-              {/* Scanned organisms */}
-              {hasOrganisms && (
-                <div className='bio-tracker__organisms'>
-                  <h3 className='bio-tracker__section-title'>Scanned Organisms</h3>
-                  <div className='bio-tracker__card-grid'>
-                    {data.organisms.map((org, i) => (
-                      <OrganismCard
-                        key={`${org.species}-${i}`}
-                        organism={org}
+          {(isOnSurface || hasBioData) && (
+            <div className='bio-tracker__split'>
+              <div className='bio-tracker__left'>
+                {isOnSurface && hasOrganisms
+                  ? <>
+                      <BioRadarMap
                         player={data.player}
+                        organisms={data.organisms.filter(o => o.scanPositions?.length > 0)}
                         planetRadius={data.planetRadius}
-                        isActive={activeOrganism === org}
                       />
-                    ))}
-                  </div>
+                      <div className='bio-tracker__player-info text-muted'>
+                        Lat {data.player.lat?.toFixed(4)}° Lon {data.player.lon?.toFixed(4)}°
+                        {data.player.heading != null && <> Hdg {Math.round(data.player.heading)}°</>}
+                        {data.player.altitude != null && <> Alt {formatDistance(data.player.altitude)}</>}
+                      </div>
+                    </>
+                  : <div className='bio-tracker__radar-empty'>
+                      <i className='icon daedalus-terminal-scan' style={{ fontSize: '3rem', opacity: 0.2 }} />
+                      <p className='text-muted'>Radar activates when scanning organisms on the surface.</p>
+                    </div>
+                }
+              </div>
+              <div className='bio-tracker__right'>
+                <div className='bio-list'>
+                  {activeOrganism
+                    ? <>
+                        <h3 className='bio-tracker__section-title'>Scanning</h3>
+                        {combinedBios.map((bio, i) => (
+                          <BiologicalEntry
+                            key={`${bio.species}-${bio.source}-${i}`}
+                            bio={bio}
+                            isActive={activeOrganism.species === bio.species}
+                            isFiltered={activeOrganism.species !== bio.species}
+                            player={data?.player}
+                            planetRadius={data?.planetRadius}
+                            isFirstFootfall={data?.isFirstFootfall}
+                            minBioValue={minBioValue}
+                          />
+                        ))}
+                      </>
+                    : <>
+                        {valuableBios.length > 0 && (
+                          <div className='bio-list__section'>
+                            <h3 className='bio-list__section-heading text-info'>
+                              <i className='icon daedalus-terminal-credits' />
+                              Valuable Biologicals
+                              <span className='bio-list__section-count'>{valuableBios.length}</span>
+                            </h3>
+                            {valuableBios.map((bio, i) => (
+                              <BiologicalEntry
+                                key={`v-${bio.species}-${bio.source}-${i}`}
+                                bio={bio}
+                                isActive={false}
+                                isFiltered={false}
+                                player={data?.player}
+                                planetRadius={data?.planetRadius}
+                                minBioValue={minBioValue}
+                                isFirstFootfall={data?.isFirstFootfall}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {nonValuableBios.length > 0 && (
+                          <div className='bio-list__section'>
+                            <h3 className='bio-list__section-heading bio-list__section-heading--non-valuable'>
+                              <i className='icon daedalus-terminal-system-orbits' />
+                              Non-Valuable Biologicals
+                              <span className='bio-list__section-count'>{nonValuableBios.length}</span>
+                            </h3>
+                            {nonValuableBios.map((bio, i) => (
+                              <BiologicalEntry
+                                key={`nv-${bio.species}-${bio.source}-${i}`}
+                                bio={bio}
+                                isActive={false}
+                                isFiltered={false}
+                                player={data?.player}
+                                planetRadius={data?.planetRadius}
+                                isFirstFootfall={data?.isFirstFootfall}
+                                minBioValue={minBioValue}
+                              />
+                            ))}
+                          </div>
+                        )}
+                        {combinedBios.length === 0 && (
+                          <p className='text-muted' style={{ textAlign: 'center', padding: '2rem' }}>
+                            No biological data available yet.
+                          </p>
+                        )}
+                      </>
+                  }
                 </div>
-              )}
-
-              {/* Predicted species */}
-              {hasPredictions && (
-                <div className='bio-tracker__predictions'>
-                  <h3 className='bio-tracker__section-title text-muted'>Predicted Species</h3>
-                  <div className='bio-tracker__card-grid'>
-                    {data.predictions.map((pred, i) => (
-                      <PredictionCard key={`pred-${pred.species}-${i}`} prediction={pred} />
-                    ))}
-                  </div>
-                </div>
-              )}
+              </div>
             </div>
           )}
         </div>
