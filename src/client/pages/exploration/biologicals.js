@@ -1,10 +1,10 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
 import { useSocket, sendEvent, eventListener } from 'lib/socket'
 import { ExplorationPanelNavItems } from 'lib/navigation-items'
 import Layout from 'components/layout'
 import Panel from 'components/panel'
 
-const POLL_INTERVAL = 500 // 500ms position polling
+const SAFETY_POLL_INTERVAL = 2000 // 2s safety-net poll (position is push-driven via gameStateChange)
 const MAP_SIZE = 400 // SVG viewBox size
 const DEG_TO_RAD = Math.PI / 180
 const DEFAULT_MIN_BIO_VALUE = 7000000 // 7M Cr (matches settings default)
@@ -45,10 +45,10 @@ function useSmoothPosition (target) {
     currentRef.current = { lat: target.lat, lon: target.lon, heading: target.heading ?? 0 }
   }
 
-  useEffect(() => {
-    let active = true
+  // Start the interpolation loop — runs only while there's a position delta
+  const startLoop = useCallback(() => {
+    if (rafRef.current) return // already running
     const animate = () => {
-      if (!active) return
       const c = currentRef.current
       const t = targetRef.current
       if (c && t?.lat != null) {
@@ -64,13 +64,21 @@ function useSmoothPosition (target) {
           c.lon += lonD * k
           c.heading += hD * k
           setSmooth({ lat: c.lat, lon: c.lon, heading: c.heading, altitude: t.altitude })
+          rafRef.current = requestAnimationFrame(animate)
+          return
         }
       }
-      rafRef.current = requestAnimationFrame(animate)
+      // Converged or no data — stop the loop
+      rafRef.current = null
     }
     rafRef.current = requestAnimationFrame(animate)
-    return () => { active = false; cancelAnimationFrame(rafRef.current) }
   }, [])
+
+  // Kick the loop whenever the target changes
+  useEffect(() => {
+    if (target?.lat != null) startLoop()
+    return () => { if (rafRef.current) { cancelAnimationFrame(rafRef.current); rafRef.current = null } }
+  }, [target, startLoop])
 
   return smooth
 }
@@ -337,12 +345,26 @@ export default function ExplorationBiologicalsPage () {
   const [data, setData] = useState(null)
   const [minBioValue, setMinBioValue] = useState(DEFAULT_MIN_BIO_VALUE)
   const pollRef = useRef(null)
+  const fetchInFlightRef = useRef(false)
+  const fetchQueuedRef = useRef(false)
 
   const fetchData = useCallback(async () => {
+    if (fetchInFlightRef.current) {
+      fetchQueuedRef.current = true
+      return
+    }
+
+    fetchInFlightRef.current = true
     try {
-      const result = await sendEvent('getExplorationBiologicals')
-      setData(result)
+      do {
+        fetchQueuedRef.current = false
+        const result = await sendEvent('getExplorationBiologicals')
+        setData(result)
+      } while (fetchQueuedRef.current)
     } catch (e) { /* ignore fetch errors */ }
+    finally {
+      fetchInFlightRef.current = false
+    }
   }, [])
 
   useEffect(() => {
@@ -355,14 +377,54 @@ export default function ExplorationBiologicalsPage () {
   useEffect(() => {
     if (!ready) return
     fetchData()
-    pollRef.current = setInterval(fetchData, POLL_INTERVAL)
+    pollRef.current = setInterval(fetchData, SAFETY_POLL_INTERVAL)
     return () => clearInterval(pollRef.current)
   }, [ready, fetchData])
 
   useEffect(() => {
     if (!ready) return
+    return eventListener('gameStateChange', (event) => {
+      const status = event?.Status
+      if (!status) return
+
+      setData(prev => {
+        if (!prev) return prev
+
+        const nextPlanetRadius = status.PlanetRadius ?? null
+        const nextBodyName = status.BodyName ?? null
+        const nextPlayer = {
+          lat: status.Latitude ?? null,
+          lon: status.Longitude ?? null,
+          heading: status.Heading ?? null,
+          altitude: status.Altitude ?? null
+        }
+
+        const prevPlayer = prev.player || {}
+        if (
+          prevPlayer.lat === nextPlayer.lat &&
+          prevPlayer.lon === nextPlayer.lon &&
+          prevPlayer.heading === nextPlayer.heading &&
+          prevPlayer.altitude === nextPlayer.altitude &&
+          prev.planetRadius === nextPlanetRadius &&
+          prev.bodyName === nextBodyName
+        ) {
+          return prev
+        }
+
+        return {
+          ...prev,
+          bodyName: nextBodyName,
+          planetRadius: nextPlanetRadius,
+          player: nextPlayer
+        }
+      })
+    })
+  }, [ready, fetchData])
+
+  useEffect(() => {
+    if (!ready) return
     return eventListener('newLogEntry', (log) => {
-      if (['ScanOrganic', 'Touchdown', 'Liftoff', 'Location', 'ApproachBody', 'LeaveBody',
+      if (['ScanOrganic', 'Disembark', 'Embark', 'Touchdown', 'Liftoff', 'Location', 'ApproachBody', 'LeaveBody',
         'FSSBodySignals', 'SAASignalsFound', 'SAAScanComplete'].includes(log.event)) {
         fetchData()
       }
@@ -392,26 +454,31 @@ export default function ExplorationBiologicalsPage () {
   const prevActiveRef = useRef(null)
   const [scanCompletePhase, setScanCompletePhase] = useState(null) // null | 'fading-out' | 'complete' | 'fading-in'
   const [completedSpecies, setCompletedSpecies] = useState(null)
+  const completedOrgRef = useRef(null)
   const dataRef = useRef(data)
   dataRef.current = data
 
-  useEffect(() => {
+  useLayoutEffect(() => {
     const prevSpecies = prevActiveRef.current
     if (prevSpecies && !activeOrganism) {
       // We had an active organism that's now gone — check if it completed
       const org = dataRef.current?.organisms?.find(o => o.species === prevSpecies)
       if (org?.isComplete) {
+        completedOrgRef.current = { ...org }
         setCompletedSpecies(prevSpecies)
         setScanCompletePhase('fading-out')
         const t1 = setTimeout(() => setScanCompletePhase('complete'), 600)
         const t2 = setTimeout(() => setScanCompletePhase('fading-in'), 3000)
-        const t3 = setTimeout(() => { setScanCompletePhase(null); setCompletedSpecies(null) }, 3600)
+        const t3 = setTimeout(() => { setScanCompletePhase(null); setCompletedSpecies(null); completedOrgRef.current = null }, 3600)
         prevActiveRef.current = null
         return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
       }
     }
     prevActiveRef.current = activeOrganism?.species || null
   }, [activeOrganism])
+
+  // During fade-out, keep showing the completed organism as active so it fades smoothly
+  const displayActiveOrganism = activeOrganism || (scanCompletePhase === 'fading-out' ? completedOrgRef.current : null)
 
   // Build combined list: scanned organisms first, then predictions
   const combinedBios = []
@@ -493,14 +560,14 @@ export default function ExplorationBiologicalsPage () {
                       <span className='bio-scan-complete__text'>Scan Complete</span>
                     </div>
                   : <div className={`bio-list${scanCompletePhase === 'fading-out' ? ' bio-list--fading-out' : ''}${scanCompletePhase === 'fading-in' ? ' bio-list--fading-in' : ''}`}>
-                  {activeOrganism
+                  {displayActiveOrganism
                     ? <>
                         {combinedBios.map((bio, i) => (
                           <BiologicalEntry
                             key={`${bio.species}-${bio.source}-${i}`}
                             bio={bio}
-                            isActive={activeOrganism.species === bio.species}
-                            isFiltered={activeOrganism.species !== bio.species}
+                            isActive={displayActiveOrganism.species === bio.species}
+                            isFiltered={displayActiveOrganism.species !== bio.species}
                             player={data?.player}
                             planetRadius={data?.planetRadius}
                             isFirstFootfall={data?.isFirstFootfall}

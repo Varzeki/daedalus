@@ -51,7 +51,8 @@ export default function NavListPage () {
     }
   }), [])
 
-  useEffect(() => eventListener('gameStateChange', async (log) => {
+  useEffect(() => eventListener('gameStateChange', async (event) => {
+    if (event?._changedFile === 'Status') return
     const newNavRoute = await sendEvent('getNavRoute')
     // TODO Check destination system and only update navroute if different
     // to current destination and if it is then execute setScrolled(false) so

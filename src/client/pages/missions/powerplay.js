@@ -28,7 +28,8 @@ export default function MissionsPowerplayPage () {
     }
   }), [])
 
-  useEffect(() => eventListener('gameStateChange', async () => {
+  useEffect(() => eventListener('gameStateChange', async (event) => {
+    if (event?._changedFile === 'Status') return
     setPowerplay(await sendEvent('getPowerplay'))
   }), [])
 

@@ -191,8 +191,13 @@ function getLoadingStatus () {
   }
 }
 
-function eliteJsonCallback (event) {
-  broadcastEvent('gameStateChange')
+function eliteJsonCallback (event, changedFile) {
+  // Include which file changed and its data so clients can react without
+  // round-tripping the server.  Only send the changed file's payload to
+  // avoid broadcasting large files (Market/Outfitting) on every Status tick.
+  const payload = { _changedFile: changedFile }
+  if (changedFile && event[changedFile]) payload[changedFile] = event[changedFile]
+  broadcastEvent('gameStateChange', payload)
   gameStateChangeHandler(event)
 }
 

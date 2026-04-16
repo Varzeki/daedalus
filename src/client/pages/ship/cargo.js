@@ -23,7 +23,8 @@ export default function ShipCargoPage () {
     })()
   }, [connected, ready])
 
-  useEffect(() => eventListener('gameStateChange', async () => {
+  useEffect(() => eventListener('gameStateChange', async (event) => {
+    if (event?._changedFile === 'Status') return
     const newShip = await sendEvent('getShipStatus')
     setShip(newShip)
     setCargo(newShip?.cargo?.inventory ?? [])

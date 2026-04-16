@@ -64,7 +64,8 @@ export default function EngineeringMaterialsPage () {
     }
   }), [])
 
-  useEffect(() => eventListener('gameStateChange', async () => {
+  useEffect(() => eventListener('gameStateChange', async (event) => {
+    if (event?._changedFile === 'Status') return
     const newBlueprints = await sendEvent('getBlueprints')
     setBlueprints(newBlueprints)
     setBlueprintsApplied(newBlueprints.filter(b => b.appliedToModules.length > 0))

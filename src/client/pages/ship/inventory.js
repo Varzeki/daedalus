@@ -21,7 +21,8 @@ export default function ShipInventoryPage () {
     })()
   }, [connected, ready])
 
-  useEffect(() => eventListener('gameStateChange', async () => {
+  useEffect(() => eventListener('gameStateChange', async (event) => {
+    if (event?._changedFile === 'Status') return
     setInventory(await sendEvent('getInventory'))
   }), [])
 

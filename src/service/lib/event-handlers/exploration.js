@@ -241,6 +241,7 @@ class Exploration {
     // Status.json changes at high frequency; the rest only changes on journal events.
     this._bioCache = null
     this._bioCacheDirty = true
+    this._bioCacheTime = 0
   }
 
   /** Mark getExplorationBiologicals cache as stale so the next call recomputes. */
@@ -444,9 +445,12 @@ class Exploration {
     }
 
     // --- Phase 3: Add bodies found in journal Scan events but not in EDSM ---
+    // Re-read the bodies array to catch any concurrent enrichment that may have
+    // pushed entries since we built knownBodies at the top of the function.
+    const currentNames = new Set(bodies.map(b => b.name?.toLowerCase()))
     for (const scan of journalScans) {
-      if (!scan.BodyName || knownBodies.has(scan.BodyName.toLowerCase())) continue
-      knownBodies.add(scan.BodyName.toLowerCase())
+      if (!scan.BodyName || currentNames.has(scan.BodyName.toLowerCase())) continue
+      currentNames.add(scan.BodyName.toLowerCase())
 
       const isNavBeacon = scan.ScanType === 'NavBeaconDetail'
       const journalBody = {
@@ -960,11 +964,6 @@ class Exploration {
 
           // Count remaining signal slots and unique predicted genera (excluding already-confirmed genera)
           const remainingSlots = bioSignals - knownSpecies.length
-          const unconfirmedPredGenera = new Set()
-          for (const pred of predictedSpecies) {
-            const gk = pred.genus?.toLowerCase()
-            if (!knownGenera.has(gk)) unconfirmedPredGenera.add(gk)
-          }
 
           // Group predictions by genus (excluding already-confirmed genera)
           const genusGroups = new Map()
@@ -980,11 +979,9 @@ class Exploration {
           // _bayesianGenusWeights computes P(genus_i present | exactly N genera present)
           // accounting for each genus's raw probability. When genera ≤ slots, all are 100%.
           // Within each genus, species probabilities are proportional by hitCount.
-          const allGeneraGuaranteed = (confirmedGenuses?.length > 0) ||
-            (remainingSlots > 0 && unconfirmedPredGenera.size <= remainingSlots)
 
           let genusProbabilities = new Map()
-          if (allGeneraGuaranteed && remainingSlots > 0) {
+          if (remainingSlots > 0 && genusGroups.size > 0) {
             // Build genus-level probability inputs for Bayesian weighting
             const genusEntries = []
             for (const [gk, members] of genusGroups) {
@@ -1152,7 +1149,8 @@ class Exploration {
     // 2. If the cache is valid and the body hasn't changed, return cached
     //    bio data overlaid with fresh position.  This avoids ~10 DB queries
     //    and the full prediction pipeline on every 500ms poll.
-    if (this._bioCache && !this._bioCacheDirty && this._bioCache.bodyName === bodyName) {
+    if (this._bioCache && !this._bioCacheDirty && this._bioCache.bodyName === bodyName
+        && (Date.now() - this._bioCacheTime) < 1000) {
       return {
         ...this._bioCache,
         planetRadius,
@@ -1163,6 +1161,7 @@ class Exploration {
 
     // 3. Cache miss — full recompute
     this._bioCacheDirty = false
+    this._bioCacheTime = Date.now()
 
     // Get current system from journal
     const Location = await this.eliteLog.getEvent('Location')

@@ -113,10 +113,9 @@ export default function ExplorationRoutePage () {
     }
   }), [])
 
-  useEffect(() => eventListener('gameStateChange', async () => {
-    const data = await fetchRoute()
-    if (data) setExplorationRoute(data)
-  }), [])
+  // gameStateChange fires on every Status.json update (position, heading, etc.)
+  // The route page doesn't display real-time position data, so we don't need
+  // to refetch on every state change — journal events cover all relevant updates.
 
   // Refresh when exploration preferences change
   useEffect(() => eventListener('syncMessage', async (event) => {

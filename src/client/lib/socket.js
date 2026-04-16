@@ -174,54 +174,43 @@ function connect (socketState, setSocketState) {
       } catch (e) { console.log('AUTO_SWITCH_CHARGE_ERROR', e) }
 
       // Early auto-switch: FSD charging while in supercruise = hyperspace jump
+      // Uses pushed Status flags from the broadcast — no server round-trip needed.
       try {
-        if (socketOptions.explorationAutoSwitch && name === 'gameStateChange') {
-          // Skip if within post-jump cooldown (prevents bounce-back from stale gameStateChange)
+        if (socketOptions.explorationAutoSwitch && name === 'gameStateChange' && message?._changedFile === 'Status') {
+          const statusFlags = message?.Status?.Flags ?? 0
+          const statusFlags2 = message?.Status?.Flags2 ?? 0
+          const fsdCharging = (statusFlags & 131072) !== 0
+          const supercruise = (statusFlags & 16) !== 0
+          const fsdHyperdriveCharging = (statusFlags2 & 524288) !== 0
+          const fsdJump = (statusFlags & 1073741824) !== 0
+
           if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) { /* skip */ }
           else {
             const path = Router.asPath
             if (path.startsWith('/exploration') && !socketOptions._autoSwitchFrom) {
-              sendEvent('getCmdrStatus').then(cmdrStatus => {
-                if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) return
-                const flags = cmdrStatus?.flags || {}
-                const currentPath = Router.asPath
-                if (!currentPath.startsWith('/exploration')) return
-                if (flags.fsdCharging && flags.supercruise && flags.fsdHyperdriveCharging && !socketOptions._autoSwitchFrom) {
-                  // FSD charging for hyperspace in supercruise — switch early
-                  socketOptions._autoSwitchFrom = currentPath
-                  persistAutoSwitchState()
-                  if (currentPath !== '/exploration/route') Router.push('/exploration/route')
-                }
-              }).catch(() => {})
+              if (fsdCharging && supercruise && fsdHyperdriveCharging) {
+                socketOptions._autoSwitchFrom = path
+                persistAutoSwitchState()
+                if (path !== '/exploration/route') Router.push('/exploration/route')
+              }
+            }
+          }
+
+          // Cancel auto-switch when FSD charge cancelled (flags clear without jump completing)
+          if (socketOptions._autoSwitchFrom) {
+            if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) { /* skip during cooldown */ }
+            else if (!fsdCharging && !fsdJump && !socketOptions._autoSwitchJumping) {
+              const returnTo = socketOptions._autoSwitchFrom
+              socketOptions._autoSwitchFrom = null
+              persistAutoSwitchState()
+              const currentPath = Router.asPath
+              if (currentPath.startsWith('/exploration') && currentPath !== returnTo) {
+                Router.push(returnTo)
+              }
             }
           }
         }
-      } catch (e) { console.log('AUTO_SWITCH_EARLY_ERROR', e) }
-
-      // Cancel auto-switch when FSD charge cancelled (flags clear without jump completing)
-      try {
-        if (socketOptions.explorationAutoSwitch && name === 'gameStateChange' && socketOptions._autoSwitchFrom) {
-          if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) { /* skip during cooldown */ }
-          else {
-            sendEvent('getCmdrStatus').then(cmdrStatus => {
-              if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) return
-              const flags = cmdrStatus?.flags || {}
-              if (!flags.fsdCharging && !flags.fsdJump && socketOptions._autoSwitchFrom) {
-                if (!socketOptions._autoSwitchJumping) {
-                  // FSD charge cancelled — switch back to previous page
-                  const returnTo = socketOptions._autoSwitchFrom
-                  socketOptions._autoSwitchFrom = null
-                  persistAutoSwitchState()
-                  const currentPath = Router.asPath
-                  if (currentPath.startsWith('/exploration') && currentPath !== returnTo) {
-                    Router.push(returnTo)
-                  }
-                }
-              }
-            }).catch(() => {})
-          }
-        }
-      } catch (e) { console.log('AUTO_SWITCH_CANCEL_ERROR', e) }
+      } catch (e) { console.log('AUTO_SWITCH_STATUS_ERROR', e) }
 
       // Switch to appropriate page when arriving (FSDJump / Location events)
       // If player is on a body surface, switch to biologicals; otherwise system

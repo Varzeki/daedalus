@@ -236,17 +236,10 @@ export default function ExplorationInventoryPage () {
     }
   }), [])
 
-  useEffect(() => eventListener('gameStateChange', async () => {
+  useEffect(() => eventListener('gameStateChange', async (event) => {
+    if (event?._changedFile === 'Status') return
     const data = await fetchInventory()
     if (data) setInventoryData(data)
-  }), [])
-
-  // Refresh when exploration preferences change
-  useEffect(() => eventListener('gameStateChange', async (event) => {
-    if (event?.name === 'preferences') {
-      const data = await fetchInventory()
-      if (data) setInventoryData(data)
-    }
   }), [])
 
   const totals = inventoryData?.totals

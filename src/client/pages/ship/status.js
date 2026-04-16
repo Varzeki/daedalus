@@ -56,11 +56,20 @@ export default function ShipStatusPage () {
     })
   }, [cmdrStatus])
 
-  useEffect(() => eventListener('gameStateChange', async () => {
-    try {
-      setShip(await sendEvent('getShipStatus'))
-      setCmdrStatus(await sendEvent('getCmdrStatus'))
-    } catch (e) { /* timeout or disconnect — will retry on next event */ }
+  useEffect(() => eventListener('gameStateChange', (event) => {
+    // On Status.json ticks, update toggle switches from pushed flags
+    // without round-tripping getShipStatus/getCmdrStatus.
+    // Full refetches are handled by newLogEntry for actual mutations.
+    if (event?._changedFile === 'Status' && event?.Status?.Flags != null) {
+      const f = event.Status.Flags
+      setToggleSwitches({
+        lights: (f & 256) !== 0,
+        nightVision: (f & 268435456) !== 0,
+        cargoHatch: (f & 512) !== 0,
+        landingGear: (f & 4) !== 0,
+        hardpoints: (f & 64) !== 0
+      })
+    }
   }), [])
 
   useEffect(() => eventListener('newLogEntry', async (log) => {
