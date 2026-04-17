@@ -1,6 +1,3 @@
-const EDSM = require('../edsm')
-const SystemMap = require('../system-map')
-
 const distance = require('../../../shared/distance')
 
 class NavRoute {
@@ -36,15 +33,9 @@ class NavRoute {
         jumpsToDestination++
       }
 
-      // Look up system in EDSM (if it's not alrady in cache) to see if it's
-      // a previously explored system
+      // Look up system (uses EDSM + journal enrichment + caching via getSystem)
       if (!global.CACHE.SYSTEMS[system.StarSystem.toLowerCase()]) {
-        const systemFromESDM = await EDSM.system(system.StarSystem)
-        const systemMap = new SystemMap(systemFromESDM)
-        global.CACHE.SYSTEMS[system.StarSystem.toLowerCase()] = {
-          ...systemFromESDM,
-          ...systemMap
-        }
+        await this.system.getSystem({ name: system.StarSystem, useCache: false })
       }
       const cacheResponse = global.CACHE.SYSTEMS[system.StarSystem.toLowerCase()]
       

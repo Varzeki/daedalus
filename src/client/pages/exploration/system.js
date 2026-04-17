@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { useRouter } from 'next/router'
 import animateTableEffect from 'lib/animate-table-effect'
-import { useSocket, sendEvent, eventListener } from 'lib/socket'
+import { useSocket, sendEvent, eventListener, devLog } from 'lib/socket'
 import { ExplorationPanelNavItems } from 'lib/navigation-items'
 import Layout from 'components/layout'
 import Panel from 'components/panel'
@@ -183,12 +183,17 @@ export default function ExplorationSystemPage () {
   }
 
   const fetchSystem = async () => {
+    if (process.env.NODE_ENV === 'development') devLog('[SYS] fetchSystem called')
+    const fetchStart = Date.now()
     const prefs = await sendEvent('getPreferences')
-    return sendEvent('getExplorationSystem', {
+    if (process.env.NODE_ENV === 'development') devLog(`[SYS] getPreferences returned in ${Date.now() - fetchStart}ms`)
+    const result = await sendEvent('getExplorationSystem', {
       minBodyValue: prefs?.explorationMinBodyValue,
       minBioValue: prefs?.explorationMinBioValue,
       includeNonValuable: prefs?.explorationIncludeNonValuable
     })
+    if (process.env.NODE_ENV === 'development') devLog(`[SYS] getExplorationSystem returned in ${Date.now() - fetchStart}ms: ${result?.bodies?.length ?? 0} bodies`)
+    return result
   }
 
   // Re-run table row animation whenever data changes
@@ -196,8 +201,10 @@ export default function ExplorationSystemPage () {
 
   useEffect(() => {
     if (!connected || !router.isReady) return
+    if (process.env.NODE_ENV === 'development') devLog(`[SYS] Initial load effect: connected=${connected} ready=${ready} router.isReady=${router.isReady}`)
     setLoadError(false)
     const timeout = setTimeout(() => {
+      if (process.env.NODE_ENV === 'development') devLog('[SYS] TIMEOUT — 30s elapsed without data')
       setLoadError(true)
       setComponentReady(true)
     }, 30000)
@@ -205,9 +212,15 @@ export default function ExplorationSystemPage () {
       try {
         const data = await fetchSystem()
         clearTimeout(timeout)
-        if (data) setSystemData(data)
+        if (data) {
+          if (process.env.NODE_ENV === 'development') devLog(`[SYS] Initial load complete: ${data?.name} (${data?.bodies?.length ?? 0} bodies)`)
+          setSystemData(data)
+        } else {
+          if (process.env.NODE_ENV === 'development') devLog('[SYS] Initial load returned null/undefined')
+        }
       } catch (e) {
         clearTimeout(timeout)
+        if (process.env.NODE_ENV === 'development') devLog('[SYS] Initial load error:', e)
         setLoadError(true)
       }
       setComponentReady(true)
@@ -217,6 +230,7 @@ export default function ExplorationSystemPage () {
 
   useEffect(() => eventListener('newLogEntry', async (log) => {
     if (['Location', 'FSDJump', 'Scan', 'FSSBodySignals', 'SAASignalsFound', 'SAAScanComplete', 'FSSDiscoveryScan', 'ScanOrganic'].includes(log.event)) {
+      if (process.env.NODE_ENV === 'development') devLog(`[SYS] newLogEntry: ${log.event} — refetching`)
       const data = await fetchSystem()
       if (data) setSystemData(data)
     }
@@ -229,6 +243,7 @@ export default function ExplorationSystemPage () {
   // Refresh when exploration preferences change
   useEffect(() => eventListener('syncMessage', async (event) => {
     if (event.name === 'preferences') {
+      if (process.env.NODE_ENV === 'development') devLog('[SYS] syncMessage(preferences) — refetching')
       const data = await fetchSystem()
       if (data) setSystemData(data)
     }

@@ -109,6 +109,10 @@ const loadFileCallback = (file) => {
 const logEventCallback = (log) => {
   const eventName = log.event
 
+  if (global.DEV_MODE && !loadingInProgress) {
+    global.devLog(`[LOG-EVENT] ${eventName}  journal_ts=${log.timestamp}`)
+  }
+
   // Update stats
   numberOfEventsImported = eliteLog.stats().numberOfEventsImported
 
@@ -131,8 +135,11 @@ const logEventCallback = (log) => {
   }
 
   if (!loadingInProgress) {
+    if (global.DEV_MODE) global.devLog(`[LOG-EVENT] Broadcasting newLogEntry: ${eventName}`)
     broadcastEvent('newLogEntry', log)
     logEventHandler(log)
+  } else if (global.DEV_MODE && eventName !== 'Music') {
+    // Suppressed during loading — helpful to know
   }
 }
 
@@ -192,6 +199,7 @@ function getLoadingStatus () {
 }
 
 function eliteJsonCallback (event, changedFile) {
+  if (global.DEV_MODE) global.devLog(`[JSON-CHANGE] ${changedFile}`)
   // Include which file changed and its data so clients can react without
   // round-tripping the server.  Only send the changed file's payload to
   // avoid broadcasting large files (Market/Outfitting) on every Status tick.

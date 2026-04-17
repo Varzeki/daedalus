@@ -6,6 +6,9 @@ const distance = require('../../../shared/distance')
 class System {
   constructor ({ eliteLog }) {
     this.eliteLog = eliteLog
+    // Set after construction by EventHandlers so we can reuse the
+    // exploration enrichment pipeline for journal-only systems.
+    this.exploration = null
   }
 
   async getCurrentLocation () {
@@ -87,98 +90,68 @@ class System {
     // Check for entry in cache in case we have it already
     // Note: System names are unique (they can change, but will still be unique)
     // so is okay to use them as a key.
-    if (!global.CACHE.SYSTEMS[systemName.toLowerCase()] || useCache === false) {
-      // Get system from EDSM (with fallback if EDSM is unavailable)
-      let system
+    const cached = global.CACHE.SYSTEMS[systemName.toLowerCase()]
+    // A valid cache hit requires stars/planets (SystemMap output) — partial
+    // entries (e.g. bodies-only from fetchBodiesForSystems) are not complete.
+    const isComplete = cached && cached.stars && cached.name && cached.name !== UNKNOWN_VALUE && !cached.unknownSystem
+    const cacheHit = isComplete && useCache !== false
+    if (!cacheHit) {
+      // Start with what we know: the system name and any existing partial data
+      let system = { name: systemName, bodies: [], stations: [] }
+
+      // Try EDSM for rich metadata (stations, population, economy, etc.)
       try {
-        system = await EDSM.system(systemName)
+        const edsmData = await EDSM.system(systemName)
+        if (edsmData) {
+          // Keep EDSM data but always use the real system name
+          system = { ...system, ...edsmData, name: systemName }
+        }
       } catch (e) {
-        console.log(`[EDSM] Failed to fetch system '${systemName}': ${e.message}`)
-        system = { name: systemName, bodies: [], stations: [], edsmError: true }
+        // EDSM unavailable — continue with journal data only
       }
 
-      // TODO Look up recent local data we have in the logs for bodies in the
-      // system and merge data with about bodies and stations from EDSM,
-      // overwriting data from EDSM with with more recent local where there are
-      // conflicts.
+      // Try to get position from journal events if EDSM didn't provide it
+      if (!system.position) {
+        const isCurrentSystem = (systemName.toLowerCase() === currentLocation?.name?.toLowerCase())
+        if (isCurrentSystem && currentLocation?.position) {
+          system.position = currentLocation.position
+          if (currentLocation.address) system.address = currentLocation.address
+        } else {
+          const [fsdJump] = await this.eliteLog._query({ event: 'FSDJump', StarSystem: systemName }, 1)
+          const posEvent = fsdJump || (await this.eliteLog._query({ event: 'Location', StarSystem: systemName }, 1))?.[0]
+          if (posEvent?.StarPos) system.position = posEvent.StarPos
+          if (posEvent?.SystemAddress) system.address = posEvent.SystemAddress
+        }
+      }
 
-      // Merge in local scan data with information about the body
-      if (system?.bodies) {
-        const bodyNames = system.bodies.map(b => b.name)
-        const inhabitedSystem = (system?.population > 0 || system?.stations?.length > 0 || system?.ports?.length > 0 || system?.megaships?.length > 0 || system?.settlements?.length > 0)
+      // Always enrich with journal data — this adds journal-only bodies
+      // (Phase 3 of _enrichBodiesWithJournalData) and enriches any EDSM
+      // bodies with discovery status, signals, materials, etc. (Phase 2).
+      // This is the same enrichment pipeline used by getExplorationSystem.
+      if (this.exploration) {
+        if (!system.bodies) system.bodies = []
+        await this.exploration._enrichBodiesWithJournalData(system.bodies, systemName, system.position)
 
-        // Batch-fetch all relevant journal events for all bodies at once
-        const [allFSSBodySignals, allSAASignalsFound, allScans, allSAAScanComplete] = await Promise.all([
-          this.eliteLog._query({ event: 'FSSBodySignals', BodyName: { $in: bodyNames } }),
-          this.eliteLog._query({ event: 'SAASignalsFound', BodyName: { $in: bodyNames } }),
-          inhabitedSystem ? Promise.resolve([]) : this.eliteLog._query({ event: 'Scan', BodyName: { $in: bodyNames } }),
-          inhabitedSystem ? Promise.resolve([]) : this.eliteLog._query({ event: 'SAAScanComplete', BodyName: { $in: bodyNames } })
-        ])
-
-        // Build lookup maps keyed by body name
-        const fssMap = {}
-        for (const e of allFSSBodySignals) { fssMap[e.BodyName] = e }
-        const saaMap = {}
-        for (const e of allSAASignalsFound) { saaMap[e.BodyName] = e }
-        const scanMap = {}
-        for (const e of allScans) { scanMap[e.BodyName] = e }
-        const saaScanCompleteSet = new Set(allSAAScanComplete.map(e => e.BodyName))
-
+        // Assign synthetic id64 for journal-only bodies so SystemMap dedup works
         for (const body of system.bodies) {
-          body.signals = {
-            geological: 0,
-            biological: 0,
-            human: 0
-          }
-
-          // Merge in body signal scan data
-          const fssEntry = fssMap[body.name]
-          if (fssEntry?.Signals) {
-            for (const signal of fssEntry.Signals) {
-              if (signal?.Type === '$SAA_SignalType_Geological;') body.signals.geological = signal?.Count ?? 0
-              if (signal?.Type === '$SAA_SignalType_Biological;') body.signals.biological = signal?.Count ?? 0
-              if (signal?.Type === '$SAA_SignalType_Human;') body.signals.human = signal?.Count ?? 0
-            }
-          }
-
-          // Merge in surface scan data
-          const saaEntry = saaMap[body.name]
-          if (saaEntry?.Signals) {
-            for (const signal of saaEntry.Signals) {
-              if (signal?.Type === '$SAA_SignalType_Geological;') body.signals.geological = signal?.Count ?? 0
-              if (signal?.Type === '$SAA_SignalType_Biological;') body.signals.biological = signal?.Count ?? 0
-              if (signal?.Type === '$SAA_SignalType_Human;') body.signals.human = signal?.Count ?? 0
-            }
-          }
-
-          // If we have data from a surface scan about the plants, merge it
-          if (body.signals.biological > 0 && saaEntry?.Genuses) {
-            body.biologicalGenuses = saaEntry.Genuses.map(g => g.Genus_Localised)
-          }
-
-          // Only log discovered / mapped if in an uninhabited system
-          // FIXME Suspect this logic isn't entirely correct
-          if (!inhabitedSystem) {
-            const scanEntry = scanMap[body.name]
-            body.discovered = scanEntry?.WasDiscovered ?? false
-            body.mapped = scanEntry?.WasMapped ?? false
-
-            // If there is an SAAScanComplete entry for the body, it has been scanned
-            // (even if the Scan entry says it has not, because it's old data)
-            if (saaScanCompleteSet.has(body.name)) body.mapped = true
+          if (!body.id64 && body.bodyId != null) {
+            body.id64 = `journal-${body.bodyId}`
           }
         }
       }
 
-
       // Generate map data from the system data
       const systemMap = new SystemMap(system)
 
-      // Create/Update cache entry with merged system and system map data
+      // Merge with any existing cache data (e.g. bodies from fetchBodiesForSystems)
+      // rather than overwriting, so partial entries aren't lost
+      const existing = global.CACHE.SYSTEMS[systemName.toLowerCase()] || {}
       global.CACHE.SYSTEMS[systemName.toLowerCase()] = {
+        ...existing,
         ...system,
         ...systemMap
       }
+      const final = global.CACHE.SYSTEMS[systemName.toLowerCase()]
     }
 
     const cacheResponse = global.CACHE.SYSTEMS[systemName.toLowerCase()] // Get entry from cache
@@ -197,27 +170,6 @@ class System {
         numberOfBodiesInSystem = FSSDiscoveryScan?.[0]?.BodyCount
         scanPercentComplete = Math.floor((numberOfBodiesFound / numberOfBodiesInSystem) * 100)
       }
-    }
-
-    // If we don't know what system this is return what we have
-    if (!cacheResponse.name || cacheResponse.name === UNKNOWN_VALUE) {
-      const isCurrentLocation = (systemName.toLowerCase() === currentLocation?.name?.toLowerCase())
-
-      const response = {
-        name: systemName,
-        unknownSystem: true,
-        isCurrentLocation,
-        scanPercentComplete,
-        _cacheTimestamp: new Date().toISOString()
-      }
-
-      if (isCurrentLocation && currentLocation?.position && currentLocation?.address) {
-        response.position = currentLocation.position
-        response.address = currentLocation.address
-        response.distance = 0
-      }
-
-      return response
     }
 
     if (systemName.toLowerCase() === currentLocation?.name?.toLowerCase()) {

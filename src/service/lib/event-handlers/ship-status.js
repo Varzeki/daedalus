@@ -3,7 +3,6 @@ const EDCDShipyard = new (require('../data'))('edcd/fdevids/shipyard')
 const EDCDCommodity = new (require('../data'))('edcd/fdevids/commodity')
 const CoriolisBlueprints = new (require('../data'))('edcd/coriolis/blueprints')
 const CoriolisModules = new (require('../data'))('edcd/coriolis/modules')
-const CmdrStatus = require('./cmdr-status')
 const { UNKNOWN_VALUE } = require('../../../shared/consts')
 
 let lastKnownShipState = null
@@ -78,10 +77,10 @@ function buildJumpProfile ({ modules, mass, fuelLevel, fuelReservoir, fuelCapaci
 }
 
 class ShipStatus {
-  constructor ({ eliteLog, eliteJson }) {
+  constructor ({ eliteLog, eliteJson, cmdrStatus }) {
     this.eliteLog = eliteLog
     this.eliteJson = eliteJson
-    this.cmdrStatus = new CmdrStatus({ eliteLog, eliteJson })
+    this.cmdrStatus = cmdrStatus
   }
 
   async getShipStatus () {

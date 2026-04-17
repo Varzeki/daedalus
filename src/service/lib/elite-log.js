@@ -11,15 +11,40 @@ const INGORED_EVENT_TYPES = [
   'Music'
 ]
 
-// Override PERSISTED_EVENT_TYPES to persist all events to DB (for testing)
-const PERSIST_ALL_EVENTS = true
+// Only persist event types that are actively queried by the enrichment
+// pipeline.  All other events are kept in a lightweight in-memory ring
+// buffer (for the Log page) and as single-instance copies (for getEvent).
+const PERSIST_ALL_EVENTS = false
 
-// These events will be persisted to the database
-// (for all other events, only the most recent copy will be retained in memory)
+// Maximum number of journal entries retained in the Log-page ring buffer.
+// The Controls > Log page loads the most recent 100 on mount and gets
+// live updates via newLogEntry, so 500 gives comfortable scroll-back.
+const LOG_BUFFER_SIZE = 500
+
+// Events actively queried by handlers (via _query / getEventsFromTimestamp).
+// All other events are still persisted (for the Log page) but only these
+// benefit from the indexes on event/StarSystem/BodyName/timestamp.
 const PERSISTED_EVENT_TYPES = [
+  // Exploration enrichment pipeline (body/system queries)
+  'Scan',
   'FSSBodySignals',
   'FSSDiscoveryScan',
-  'FSSSignalDiscovered'
+  'SAASignalsFound',
+  'SAAScanComplete',
+  'ScanOrganic',
+  // Navigation / location (queried by StarSystem)
+  'FSDJump',
+  'Location',
+  // Exploration earnings
+  'SellExplorationData',
+  'MultiSellExplorationData',
+  'SellOrganicData',
+  'Died',
+  // Materials (historical from timestamp)
+  'MaterialCollected',
+  'MaterialDiscarded',
+  'MaterialTrade',
+  'EngineerCraft'
 ]
 
 class EliteLog {
@@ -35,6 +60,10 @@ class EliteLog {
     this._fullLoadComplete = false
     this._fullLoadInProgress = false
     this._fullLoadPromise = null
+
+    // Ring buffer of the most recent LOG_BUFFER_SIZE events (all types)
+    // for the Log page.  Kept sorted newest-first.
+    this._logBuffer = []
 
     // setInterval(() => {
     //   const numberOfFilesBeingWatched = Object.entries(this.files)
@@ -173,24 +202,27 @@ class EliteLog {
     return await db.count({})
   }
 
-  async getNewest(count) {
+  getNewest(count) {
+    // _logBuffer is oldest→newest; return newest-first
     if (count) {
-      return await db.find({}).sort({ timestamp: -1 }).limit(count)
+      return this._logBuffer.slice(-count).reverse()
     } else {
-      return await db.findOne({}).sort({ timestamp: -1 })
+      return this._logBuffer[this._logBuffer.length - 1] ?? null
     }
   }
 
-  async getOldest(count) {
-    if (count) {
-      return await db.find({}).sort({ timestamp: 1 }).limit(count)
-    } else {
-      return await db.findOne({}).sort({ timestamp: 1 })
+  getFromTimestamp(timestamp = new Date().toUTCString(), count = 100) {
+    // Walk backwards (newest→oldest) to collect entries newer than timestamp
+    const results = []
+    for (let i = this._logBuffer.length - 1; i >= 0; i--) {
+      if (this._logBuffer[i].timestamp > timestamp) {
+        results.push(this._logBuffer[i])
+        if (results.length >= count) break
+      } else {
+        break // buffer is sorted, no older entry can match
+      }
     }
-  }
-
-  async getFromTimestamp(timestamp = new Date().toUTCString(), count = 100) {
-    return await db.find({ "timestamp": { $gt: timestamp } }).sort({ timestamp: -1 }).limit(count)
+    return results
   }
 
   async getEvent(event) {
@@ -308,7 +340,9 @@ class EliteLog {
         state.offset = stats.size
 
         if (newLogs.length > 0) {
+          if (global.DEV_MODE) global.devLog(`[JOURNAL-READ] ${path.basename(filePath)}: ${newLogs.length} new line(s)  events=[${newLogs.map(l => l.event).join(',')}]`)
           const ingested = await this.#processLogs(newLogs)
+          if (global.DEV_MODE && ingested.length > 0) global.devLog(`[JOURNAL-INGEST] ${ingested.length} ingested  events=[${ingested.map(l => l.event).join(',')}]`)
           if (callback) ingested.forEach(log => callback(log))
         }
       } catch (e) {
@@ -575,6 +609,13 @@ class EliteLog {
   // database persistence, single-instance events, and callbacks.
   async #processLogs(logs) {
     await db.ensureIndex({ fieldName: '_checksum', unique: true })
+    // Indexes on frequently-queried fields — dramatically reduces query time
+    // for the enrichment pipeline (event+StarSystem, event+BodyName combos).
+    // ensureIndex is idempotent so safe to call on every batch.
+    await db.ensureIndex({ fieldName: 'event' })
+    await db.ensureIndex({ fieldName: 'StarSystem' })
+    await db.ensureIndex({ fieldName: 'BodyName' })
+    await db.ensureIndex({ fieldName: 'timestamp' })
 
     const logsIngested = []
     for (const log of logs) {
@@ -599,6 +640,13 @@ class EliteLog {
 
       // Skip ignored event types (e.g. Music)
       if (INGORED_EVENT_TYPES.includes(eventName)) continue
+
+      // Add to Log-page ring buffer (all non-ignored events, regardless of
+      // whether they are persisted to the DB).  Events arrive chronologically
+      // during initial load, so push to the end (oldest→newest order).
+      // getNewest() reads from the tail to return newest-first.
+      this._logBuffer.push(log)
+      if (this._logBuffer.length > LOG_BUFFER_SIZE) this._logBuffer.shift()
 
       // Only persist supported event types in the databases
       if (PERSIST_ALL_EVENTS === true || PERSISTED_EVENT_TYPES.includes(eventName)) {

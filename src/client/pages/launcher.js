@@ -44,7 +44,10 @@ export default function IndexPage () {
   }
 
   // Display URL (IP address/port) to connect from a browser
-  useEffect(() => { sendEvent('hostInfo').then(setHostInfo) }, [])
+  useEffect(() => {
+    if (!connected) return
+    sendEvent('hostInfo').then(setHostInfo)
+  }, [connected])
 
   useEffect(() => {
     let timeoutId

@@ -93,6 +93,17 @@ function getLogDir () {
 global.PORT = PORT
 global.LOG_DIR = LOG_DIR
 global.BROADCAST_EVENT = broadcastEvent
+global.DEV_MODE = DEVELOPMENT
+
+// Dev-mode timestamped logger — all server [TAG] lines go through this
+// so they can be correlated with journal timestamps and client-side logs.
+global.devLog = DEVELOPMENT
+  ? (...args) => {
+      const now = new Date()
+      const ts = now.toTimeString().slice(0, 8) + '.' + String(now.getMilliseconds()).padStart(3, '0')
+      console.log(ts, ...args)
+    }
+  : () => {}
 
 // Initalise simple in-memory object cache (reset when program restarted)
 // LRU cache for systems to prevent unbounded memory growth in long sessions.
@@ -245,7 +256,9 @@ if (DEVELOPMENT) {
 
 const webSocketServer = new WebSocket.Server({ server: httpServer })
 
-function webSocketDebugMessage () { /* console.log(...arguments) */ }
+function webSocketDebugMessage () {
+  if (global.DEV_MODE) global.devLog('[WS]', ...arguments)
+}
 
 // Bind message event handler to WebSocket server before starting server
 const MAX_WS_MESSAGE_SIZE = 1024 * 1024 // 1MB
@@ -261,7 +274,10 @@ webSocketServer.on('connection', socket => {
       }
       const { requestId, name, message } = JSON.parse(raw)
       if (typeof name !== 'string' || !eventHandlers[name]) return
+      const reqStart = global.DEV_MODE ? Date.now() : 0
+      if (global.DEV_MODE) global.devLog(`[REQ] → ${name}  id=${requestId?.slice(0,8)}`)
       const data = await eventHandlers[name](message || {})
+      if (global.DEV_MODE) global.devLog(`[REQ] ← ${name}  id=${requestId?.slice(0,8)}  ${Date.now() - reqStart}ms`)
       socket.send(JSON.stringify({ requestId, name, message: data }))
     } catch (e) {
       console.error('WebSocket message error:', e.message)
@@ -281,6 +297,17 @@ function broadcastEvent (name, message) {
   // closed and app is in process of shutting down
   try {
     if (!webSocketServer) return
+    const clientCount = [...webSocketServer.clients].filter(c => c !== webSocketServer && c.readyState === WebSocket.OPEN).length
+    if (global.DEV_MODE) {
+      const summary = name === 'gameStateChange'
+        ? `file=${message?._changedFile}`
+        : name === 'newLogEntry'
+          ? `event=${message?.event}`
+          : name === 'loadingProgress'
+            ? `complete=${message?.loadingComplete}`
+            : ''
+      global.devLog(`[BROADCAST] ${name} → ${clientCount} client(s)  ${summary}`)
+    }
     webSocketServer.clients.forEach(client => {
       if (client && client !== webSocketServer && client.readyState === WebSocket.OPEN) {
         client.send(JSON.stringify({ name, message }))

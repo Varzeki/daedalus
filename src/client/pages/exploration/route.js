@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from 'react'
 import { useRouter } from 'next/router'
 import animateTableEffect from 'lib/animate-table-effect'
-import { useSocket, sendEvent, eventListener } from 'lib/socket'
+import { useSocket, sendEvent, eventListener, devLog } from 'lib/socket'
 import { ExplorationPanelNavItems } from 'lib/navigation-items'
 import Layout from 'components/layout'
 import Panel from 'components/panel'
@@ -64,12 +64,16 @@ export default function ExplorationRoutePage () {
 
   // Helper to fetch route with current exploration preferences
   const fetchRoute = async () => {
+    if (process.env.NODE_ENV === 'development') devLog('[ROUTE] fetchRoute called')
+    const fetchStart = Date.now()
     const prefs = await sendEvent('getPreferences')
-    return sendEvent('getExplorationRoute', {
+    const result = await sendEvent('getExplorationRoute', {
       minBodyValue: prefs?.explorationMinBodyValue,
       minBioValue: prefs?.explorationMinBioValue,
       includeNonValuable: prefs?.explorationIncludeNonValuable
     })
+    if (process.env.NODE_ENV === 'development') devLog(`[ROUTE] fetchRoute returned in ${Date.now() - fetchStart}ms: ${result?.route?.length ?? 0} systems`)
+    return result
   }
 
   useEffect(animateTableEffect, [explorationRoute])
@@ -84,8 +88,10 @@ export default function ExplorationRoutePage () {
 
   useEffect(() => {
     if (!connected || !router.isReady) return
+    if (process.env.NODE_ENV === 'development') devLog(`[ROUTE] Initial load: connected=${connected} ready=${ready}`)
     setLoadError(false)
     const timeout = setTimeout(() => {
+      if (process.env.NODE_ENV === 'development') devLog('[ROUTE] TIMEOUT — 30s elapsed without data')
       setLoadError(true)
       setComponentReady(true)
     }, 30000)
@@ -96,6 +102,7 @@ export default function ExplorationRoutePage () {
         if (data) setExplorationRoute(data)
       } catch (e) {
         clearTimeout(timeout)
+        if (process.env.NODE_ENV === 'development') devLog('[ROUTE] Initial load error:', e)
         setLoadError(true)
       }
       setComponentReady(true)
@@ -105,6 +112,7 @@ export default function ExplorationRoutePage () {
 
   useEffect(() => eventListener('newLogEntry', async (log) => {
     if (['Location', 'FSDJump'].includes(log.event)) {
+      if (process.env.NODE_ENV === 'development') devLog(`[ROUTE] newLogEntry: ${log.event} — refetching`)
       const data = await fetchRoute()
       if (data) {
         setExplorationRoute(data)

@@ -70,7 +70,7 @@ export default function PanelNavigation ({ items = [], search = () => {}, exit }
       <div className='secondary-navigation__items'>
         <div className='secondary-navigation__items-scroll'>
           {navigationItems.map((item, i) =>
-            <Fragment key={item.icon}>
+            <Fragment key={item.name}>
               <button
                 tabIndex='2'
                 data-secondary-navigation={i + (searchItem ? 2 : 1)}

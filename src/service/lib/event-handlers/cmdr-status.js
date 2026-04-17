@@ -1,10 +1,8 @@
-const System = require('./system')
-
 class CmdrStatus {
-  constructor ({ eliteJson, eliteLog }) {
+  constructor ({ eliteJson, eliteLog, system }) {
     this.eliteJson = eliteJson
     this.eliteLog = eliteLog
-    this.system = new System({ eliteLog })
+    this.system = system
     this.flags = {
       docked: 1,
       landed: 2,

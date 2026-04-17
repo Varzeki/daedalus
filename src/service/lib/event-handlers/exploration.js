@@ -96,6 +96,9 @@ const SPECIES_REWARDS = {
 async function fetchBodiesForSystems (systemNames) {
   const results = {}
   const queue = [...systemNames]
+  const _start = global.DEV_MODE ? Date.now() : 0
+  const uncached = global.DEV_MODE ? systemNames.filter(n => !global.CACHE.SYSTEMS[n.toLowerCase()]?.bodies) : null
+  if (global.DEV_MODE && uncached.length > 0) global.devLog(`[EDSM] Fetching ${uncached.length} system(s): ${uncached.slice(0, 5).join(', ')}${uncached.length > 5 ? '...' : ''}`)
 
   async function worker () {
     while (queue.length > 0) {
@@ -123,6 +126,7 @@ async function fetchBodiesForSystems (systemNames) {
     workers.push(worker())
   }
   await Promise.all(workers)
+  if (global.DEV_MODE && uncached.length > 0) global.devLog(`[EDSM] fetchBodiesForSystems complete  ${Date.now() - _start}ms`)
   return results
 }
 
@@ -242,11 +246,29 @@ class Exploration {
     this._bioCache = null
     this._bioCacheDirty = true
     this._bioCacheTime = 0
+
+    // Request coalescing: if a getExplorationBiologicals computation is already
+    // in-flight, subsequent callers share the same result instead of running
+    // independent copies of the heavy pipeline.
+    this._bioInflightPromise = null
+
+    // Cache for getExplorationRoute — the enrichment + prediction pipeline
+    // takes 10-12s on cold cache.  Result only changes on FSDJump (new system)
+    // or when a new route is plotted (NavRoute file changes).
+    this._routeCache = null
+    this._routeCacheDirty = true
+    this._routeCacheTime = 0
+    this._routeInflightPromise = null
   }
 
   /** Mark getExplorationBiologicals cache as stale so the next call recomputes. */
   invalidateBioCache () {
     this._bioCacheDirty = true
+  }
+
+  /** Mark getExplorationRoute cache as stale so the next call recomputes. */
+  invalidateRouteCache () {
+    this._routeCacheDirty = true
   }
 
   /** Load bio scan positions from disk (returns {} on any failure). */
@@ -298,27 +320,31 @@ class Exploration {
     const variant = logEvent.Variant_Localised || ''
 
     const key = `${bodyId}:${species}`
-    if (!this._bioScanPositions[key]) {
-      this._bioScanPositions[key] = {
-        genus,
-        species,
-        variant,
-        bodyId,
-        scans: []
-      }
-    }
-
-    this._bioScanPositions[key].scans.push({
-      scanType,
-      lat: StatusJson.Latitude,
-      lon: StatusJson.Longitude,
-      timestamp: logEvent.timestamp
-    })
 
     // When scan is complete (Analyse), clear the exclusion zone positions
-    // so the radar no longer shows zones for this finished organism
+    // so the radar no longer shows zones for this finished organism.
+    // Delete BEFORE any push — the Analyse position serves no purpose
+    // and pushing to the shared scans array would mutate references held
+    // by any in-flight _computeBiologicals result.
     if (scanType === 'Analyse') {
       delete this._bioScanPositions[key]
+    } else {
+      if (!this._bioScanPositions[key]) {
+        this._bioScanPositions[key] = {
+          genus,
+          species,
+          variant,
+          bodyId,
+          scans: []
+        }
+      }
+
+      this._bioScanPositions[key].scans.push({
+        scanType,
+        lat: StatusJson.Latitude,
+        lon: StatusJson.Longitude,
+        timestamp: logEvent.timestamp
+      })
     }
 
     this._saveBioPositions()
@@ -460,6 +486,10 @@ class Exploration {
         subType: scan.PlanetClass || scan.StarType,
         earthMasses: scan.MassEM || undefined,
         solarMasses: scan.StellarMass || undefined,
+        radius: scan.Radius ? scan.Radius / 1000 : undefined,
+        solarRadius: scan.StellarMass ? (scan.Radius ? scan.Radius / 1000 / 696340 : undefined) : undefined,
+        isLandable: scan.Landable ?? false,
+        rings: scan.Rings?.length > 0 ? scan.Rings : undefined,
         terraformingState: scan.TerraformState === 'Terraformable' ? 'Candidate for terraforming' : (scan.TerraformState || ''),
         isMainStar: scan.DistanceFromArrivalLS === 0,
         distanceToArrival: scan.DistanceFromArrivalLS,
@@ -608,6 +638,34 @@ class Exploration {
   }
 
   async getExplorationRoute (options = {}) {
+    const _start = global.DEV_MODE ? Date.now() : 0
+    if (global.DEV_MODE) global.devLog('[EXPLORE] getExplorationRoute called')
+
+    // Return cached result if still valid
+    if (this._routeCache && !this._routeCacheDirty
+        && (Date.now() - this._routeCacheTime) < 30000) {
+      if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationRoute: cache HIT  ${Date.now() - _start}ms`)
+      return this._routeCache
+    }
+
+    // Coalesce onto in-flight request if one exists
+    if (this._routeInflightPromise) {
+      if (global.DEV_MODE) global.devLog('[EXPLORE] getExplorationRoute: coalescing onto in-flight request')
+      return await this._routeInflightPromise
+    }
+
+    if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationRoute: cache MISS (dirty=${this._routeCacheDirty})`)
+    this._routeInflightPromise = this._computeExplorationRoute(options, _start)
+    try {
+      return await this._routeInflightPromise
+    } finally {
+      this._routeInflightPromise = null
+    }
+  }
+
+  async _computeExplorationRoute (options = {}, _start) {
+    if (!_start && global.DEV_MODE) _start = Date.now()
+
     // Get current location from local journal data only — no EDSM calls
     const Location = await this.eliteLog.getEvent('Location')
     const FSDJump = Location
@@ -626,20 +684,23 @@ class Exploration {
     let jumpsToDestination = null
 
     const navRouteData = (await this.eliteJson.json())?.NavRoute?.Route ?? []
+    if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationRoute: initial queries done  ${Date.now() - _start}ms  (${navRouteData.length} systems)`)
 
     // Fetch EDSM body data for all systems on the route (parallel, with concurrency limit)
     const systemNames = navRouteData.map(s => s.StarSystem).filter(Boolean)
     await fetchBodiesForSystems(systemNames)
+    if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationRoute: EDSM fetch done  ${Date.now() - _start}ms`)
 
     // For systems we have journal data for (current + previously visited),
     // enrich EDSM bodies with journal data (discovery status, bio signals, species)
-    for (const sysName of systemNames) {
+    // — run in parallel to avoid a sequential waterfall of DB queries.
+    await Promise.all(systemNames.map(async (sysName) => {
       const key = sysName.toLowerCase()
-      if (!global.CACHE.SYSTEMS[key]) continue
+      if (!global.CACHE.SYSTEMS[key]) return
 
       // Check if we have any journal Scan data for this system
       const hasJournalData = (await this.eliteLog._query({ event: 'Scan', StarSystem: sysName }, 1)).length > 0
-      if (!hasJournalData) continue
+      if (!hasJournalData) return
 
       if (!global.CACHE.SYSTEMS[key].bodies) {
         global.CACHE.SYSTEMS[key].bodies = []
@@ -654,7 +715,8 @@ class Exploration {
       if (journalInfo.bodyCount) {
         global.CACHE.SYSTEMS[key].bodyCount = journalInfo.bodyCount
       }
-    }
+    }))
+    if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationRoute: enrichment done  ${Date.now() - _start}ms`)
 
     // Run bio-predictor for all systems with EDSM data (including those without journal data)
     for (const navEntry of navRouteData) {
@@ -665,6 +727,7 @@ class Exploration {
       const sysStarPos = navEntry.StarPos ?? null
       this._addPredictedSpecies(cached.bodies, sysStarPos)
     }
+    if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationRoute: prediction done  ${Date.now() - _start}ms`)
 
     const route = []
     for (let index = 0; index < navRouteData.length; index++) {
@@ -852,9 +915,11 @@ class Exploration {
       })
     }
 
+    if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationRoute: enrichment+prediction done  ${Date.now() - _start}ms`)
+
     const fuelProjection = projectRouteFuel(route, await this.shipStatus?.getJumpProfile(), currentSystemName)
 
-    return {
+    const result = {
       currentSystem: { name: currentSystemName, position: currentPosition },
       cmdrName,
       destination: route?.[route.length - 1] ?? null,
@@ -863,9 +928,18 @@ class Exploration {
       inSystemOnRoute,
       fuelRunOutSystem: fuelProjection.fuelRunOutSystem
     }
+
+    // Store in cache
+    this._routeCache = result
+    this._routeCacheDirty = false
+    this._routeCacheTime = Date.now()
+    if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationRoute: total  ${Date.now() - _start}ms  (cached)`)
+    return result
   }
 
   async getExplorationSystem (options = {}) {
+    const _start = global.DEV_MODE ? Date.now() : 0
+    if (global.DEV_MODE) global.devLog('[EXPLORE] getExplorationSystem called')
     // Get current location
     const Location = await this.eliteLog.getEvent('Location')
     const FSDJump = Location
@@ -890,6 +964,7 @@ class Exploration {
     const cached = global.CACHE.SYSTEMS[key]
 
     if (!cached) {
+      if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationSystem: no EDSM data for ${currentSystemName}  ${Date.now() - _start}ms`)
       return { name: currentSystemName, cmdrName, bodies: [], bodyCount: 0 }
     }
 
@@ -1112,6 +1187,8 @@ class Exploration {
     // Adjust body counts to exclude belt clusters (consistent with filtered body list)
     const beltClusterCount = cached.bodies.filter(b => b.name?.includes('Belt Cluster')).length
 
+    if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationSystem: complete  ${currentSystemName}  ${bodies.length} bodies  ${Date.now() - _start}ms`)
+
     return {
       name: currentSystemName,
       cmdrName,
@@ -1137,6 +1214,8 @@ class Exploration {
   }
 
   async getExplorationBiologicals () {
+    const _start = global.DEV_MODE ? Date.now() : 0
+    if (global.DEV_MODE) global.devLog('[EXPLORE] getExplorationBiologicals called')
     // 1. Get current player position from Status.json (always fresh)
     const StatusJson = (await this.eliteJson.json()).Status
     const playerLat = StatusJson?.Latitude ?? null
@@ -1150,7 +1229,8 @@ class Exploration {
     //    bio data overlaid with fresh position.  This avoids ~10 DB queries
     //    and the full prediction pipeline on every 500ms poll.
     if (this._bioCache && !this._bioCacheDirty && this._bioCache.bodyName === bodyName
-        && (Date.now() - this._bioCacheTime) < 1000) {
+        && (Date.now() - this._bioCacheTime) < 30000) {
+      if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationBiologicals: cache HIT  ${Date.now() - _start}ms`)
       return {
         ...this._bioCache,
         planetRadius,
@@ -1159,7 +1239,37 @@ class Exploration {
       }
     }
 
-    // 3. Cache miss — full recompute
+    // 3. Cache miss — if a computation is already in-flight, coalesce onto it
+    //    instead of running the heavy pipeline again.
+    if (this._bioInflightPromise) {
+      if (global.DEV_MODE) global.devLog('[EXPLORE] getExplorationBiologicals: coalescing onto in-flight request')
+      const result = await this._bioInflightPromise
+      return {
+        ...result,
+        planetRadius,
+        player: { lat: playerLat, lon: playerLon, heading, altitude },
+        shipPosition: this._shipPosition
+      }
+    }
+
+    // 4. Full recompute — mark as in-flight for coalescing
+    if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationBiologicals: cache MISS (dirty=${this._bioCacheDirty} body=${bodyName})`)
+    this._bioInflightPromise = this._computeBiologicals(bodyName, _start)
+    try {
+      const result = await this._bioInflightPromise
+      return {
+        ...result,
+        planetRadius,
+        player: { lat: playerLat, lon: playerLon, heading, altitude },
+        shipPosition: this._shipPosition
+      }
+    } finally {
+      this._bioInflightPromise = null
+    }
+  }
+
+  async _computeBiologicals (bodyName, _start) {
+    if (!_start && global.DEV_MODE) _start = Date.now()
     this._bioCacheDirty = false
     this._bioCacheTime = Date.now()
 
@@ -1274,10 +1384,12 @@ class Exploration {
           }
         }
 
-        // Attach scan positions from real-time captured data
+        // Attach scan positions from real-time captured data.
+        // Clone the array so in-flight results aren't mutated if
+        // onScanOrganic pushes to the original while we're still running.
         const posKey = `${currentBodyId}:${speciesKey}`
         const captured = this._bioScanPositions[posKey]
-        organism.scanPositions = captured?.scans ?? []
+        organism.scanPositions = captured?.scans ? [...captured.scans] : []
 
         // Resolve description
         const descData = codexDescriptions[speciesKey] || codexDescriptions[genusName] || {}
@@ -1461,20 +1573,15 @@ class Exploration {
       systemName,
       bodyName,
       currentBodyId,
-      planetRadius,
       isFirstFootfall,
-      player: {
-        lat: playerLat,
-        lon: playerLon,
-        heading,
-        altitude
-      },
-      shipPosition: this._shipPosition,
       bioSignalCount,
       organisms,
       predictions
     }
     this._bioCache = result
+    this._bioCacheDirty = false
+    this._bioCacheTime = Date.now()
+    if (global.DEV_MODE) global.devLog(`[EXPLORE] getExplorationBiologicals: complete  ${organisms.length} organisms  ${predictions.length} predictions  ${Date.now() - _start}ms`)
     return result
   }
 

@@ -521,7 +521,6 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   display: flex;
   flex-direction: column;
   gap: .5rem;
-  min-height: 100%;
 }
 
 .bio-list--fading-out {
@@ -603,16 +602,16 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
 
 /* Active scanning entry — expanded */
 .bio-list__entry--active {
-  flex: 1;
   flex-direction: column;
   align-items: center;
-  justify-content: center;
+  justify-content: flex-start;
   text-align: center;
   max-height: none;
-  padding: 1.5rem;
+  padding: 1rem 1.5rem;
   border-color: var(--color-primary);
   border-width: .15rem;
   background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .05);
+  gap: .6rem;
 }
 
 /* Completed scan */
@@ -723,14 +722,15 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
 
 /* Active scan large image */
 .bio-list__active-image {
-  width: 22rem;
-  height: 22rem;
+  width: 18rem;
+  height: 18rem;
   border-radius: .3rem;
   overflow: hidden;
   background: rgba(0, 0, 0, .3);
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
 }
 
 .bio-list__active-image img {
@@ -767,18 +767,21 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: .8rem;
+  gap: .5rem;
+  width: 100%;
 }
 
 .bio-list__active-name {
   font-size: 2rem;
   font-weight: 700;
   color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 .bio-list__active-value {
   font-size: 1.6rem;
   color: var(--color-primary);
+  flex-shrink: 0;
 }
 
 /* Row info */

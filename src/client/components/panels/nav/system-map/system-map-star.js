@@ -24,9 +24,9 @@ export default function SystemMapStar ({ star, setSystemObject }) {
     >
       <div
         onClick={() => { if (star.type !== 'Null') setSystemObject(star) }}
-        className={`system-map__planetary-system-star ${star.id ? 'system-map__planetary-system-star--icon' : '0'}`}
+        className={`system-map__planetary-system-star ${(star.id || star.bodyId) ? 'system-map__planetary-system-star--icon' : '0'}`}
       >
-        {star.id &&
+        {(star.id || star.bodyId) &&
           <div className='system-map__planetary-system-star-icon'>
             <svg viewBox={useLargerViewBox ? '-4500 -4500 8500 8000' : '-2500 -2500 5000 5000'} preserveAspectRatio='xMinYMid meet'>
               <SystemMapObject systemObject={star} setSystemObject={setSystemObject} labels={false} />
@@ -74,7 +74,7 @@ export default function SystemMapStar ({ star, setSystemObject }) {
                 opacity='0.25'
               />}
             {star._children.map((systemObject, i) =>
-              <g key={`system-map-object_${star.name}_${star.id}_${systemObject.id}`}>
+              <g key={`system-map-object_${star.name}_${star.id ?? star.bodyId ?? 'star'}_${systemObject.id ?? systemObject.bodyId ?? i}`}>
                 {systemObject._children && systemObject._children.length > 0 &&
                   <line
                     x1={systemObject._x}
@@ -86,8 +86,8 @@ export default function SystemMapStar ({ star, setSystemObject }) {
                     opacity='0.25'
                   />}
                 <SystemMapObject systemObject={systemObject} setSystemObject={setSystemObject} parentSystemObject={star} />
-                {(systemObject?._children ?? []).map((itemInOrbit, i) =>
-                  <SystemMapObject key={`system-map-object_${itemInOrbit.id}`} systemObject={itemInOrbit} setSystemObject={setSystemObject} />
+                {(systemObject?._children ?? []).map((itemInOrbit, j) =>
+                  <SystemMapObject key={`system-map-object_${itemInOrbit.id ?? itemInOrbit.bodyId ?? j}`} systemObject={itemInOrbit} setSystemObject={setSystemObject} />
                 )}
               </g>
             )}

@@ -70,6 +70,7 @@ class EliteJson {
         if (debounce) return
         debounce = setTimeout(() => { debounce = false }, 50)
         this.files[file.name] = await this.load({file})
+        if (global.DEV_MODE) global.devLog(`[JSON-WATCH] File changed: ${file.label}`)
         // Send data for all files in the callback, plus which file changed
         if (callback) callback(await this.json(), file.label)
       } catch (e) {

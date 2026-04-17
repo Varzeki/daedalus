@@ -307,7 +307,7 @@ class SystemMap {
 
       itemInOrbit._children = this.getChildren(itemInOrbit, false)
 
-      itemInOrbit._r = itemInOrbit.radius / R_DIVIDER
+      itemInOrbit._r = (itemInOrbit.radius || 0) / R_DIVIDER
       if (itemInOrbit._r < MAIN_PLANET_MIN_R) itemInOrbit._r = MAIN_PLANET_MIN_R
       if (itemInOrbit._r > MAX_R) itemInOrbit._r = MAX_R
 
@@ -340,7 +340,7 @@ class SystemMap {
         //.sort((a, b) => (a.distanceToArrival - b.distanceToArrival))
         .sort((a, b) => (a.bodyId - b.bodyId))
         .map(subItemInOrbit => {
-          subItemInOrbit._r = subItemInOrbit.radius / R_DIVIDER
+          subItemInOrbit._r = (subItemInOrbit.radius || 0) / R_DIVIDER
           if (subItemInOrbit._r < SUB_MIN_R) subItemInOrbit._r = SUB_MIN_R
           if (subItemInOrbit._r > SUB_MAX_R) subItemInOrbit._r = SUB_MAX_R
 

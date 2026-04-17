@@ -1,5 +1,5 @@
 import { useState, useEffect, useLayoutEffect, useRef, useCallback } from 'react'
-import { useSocket, sendEvent, eventListener } from 'lib/socket'
+import { useSocket, sendEvent, eventListener, devLog } from 'lib/socket'
 import { ExplorationPanelNavItems } from 'lib/navigation-items'
 import Layout from 'components/layout'
 import Panel from 'components/panel'
@@ -147,8 +147,8 @@ function BioRadarMap ({ player: rawPlayer, organisms, planetRadius, shipPosition
         {/* North indicator */}
         <text x={center} y='18' fill='rgba(250,150,0,0.5)' fontSize='9' fontFamily='monospace' textAnchor='middle'>N</text>
 
-        {/* Scan exclusion zones */}
-        {organisms.map((org, oi) =>
+        {/* Scan exclusion zones — skip completed organisms (no zones needed) */}
+        {organisms.filter(org => !org.isComplete).map((org, oi) =>
           (org.scanPositions || []).map((scan, si) => {
             const pos = toSvg(scan.lat, scan.lon)
             const radiusPx = org.colonyDistance * scale
@@ -248,19 +248,19 @@ function BiologicalEntry ({ bio, isActive, isFiltered, player, planetRadius, isF
   if (isActive) {
     return (
       <div className={entryClass}>
+        <div className='bio-list__active-name'>
+          <span className='bio-list__genus'>{bio.genus}</span>
+          {' '}
+          <span className='bio-list__species-name'>{bio.species.replace(bio.genus + ' ', '')}</span>
+        </div>
         <div className='bio-list__active-image'>
           {bio.imageUrl
             ? <img src={bio.imageUrl} alt={bio.species} />
             : <div className='bio-list__image-placeholder'><i className='icon daedalus-terminal-plant' /></div>}
         </div>
         <div className='bio-list__active-details'>
-          <div className='bio-list__active-name'>
-            <span className='bio-list__genus'>{bio.genus}</span>
-            {' '}
-            <span className='bio-list__species-name'>{bio.species.replace(bio.genus + ' ', '')}</span>
-          </div>
           {bio.variant && bio.variant !== bio.species && (
-            <div className='text-muted' style={{ fontSize: '1.6rem' }}>{bio.variant}</div>
+            <div className='text-muted' style={{ fontSize: '1.4rem' }}>{bio.variant}</div>
           )}
           {bio.description && (
             <div className='bio-list__description text-muted'>{bio.description}</div>
@@ -298,7 +298,7 @@ function BiologicalEntry ({ bio, isActive, isFiltered, player, planetRadius, isF
                 : <>Clear — {formatDistance(nearestScanDist - bio.colonyDistance)} beyond exclusion</>}
             </div>
           )}
-          <div className='text-muted' style={{ fontSize: '1.4rem' }}>
+          <div className='text-muted' style={{ fontSize: '1.2rem' }}>
             Exclusion zone: {formatDistance(bio.colonyDistance)}
           </div>
         </div>
@@ -350,18 +350,61 @@ export default function ExplorationBiologicalsPage () {
 
   const fetchData = useCallback(async () => {
     if (fetchInFlightRef.current) {
+      if (process.env.NODE_ENV === 'development') devLog('[BIO] fetchData queued (in-flight)')
       fetchQueuedRef.current = true
       return
     }
 
     fetchInFlightRef.current = true
+    if (process.env.NODE_ENV === 'development') devLog('[BIO] fetchData started')
     try {
       do {
         fetchQueuedRef.current = false
         const result = await sendEvent('getExplorationBiologicals')
-        setData(result)
+        if (process.env.NODE_ENV === 'development') devLog(`[BIO] fetchData result: ${result?.organisms?.length ?? 0} organisms`)
+        // Merge poll result but preserve pushed position from gameStateChange
+        // to avoid rubberbanding (the poll response carries a stale position
+        // from when the request was made, while gameStateChange has already
+        // pushed a newer one).
+        //
+        // Also preserve locally-patched completion state: if an organism was
+        // marked complete via the instant ScanOrganic patch but the server
+        // response (from a stale in-flight request) doesn't yet reflect it,
+        // keep the local state so we don't briefly re-show exclusion zones
+        // or delay the scan-complete animation.
+        setData(prev => {
+          if (!prev) return result
+
+          let organisms = result.organisms
+          if (prev.organisms && result.organisms) {
+            const localBySpecies = {}
+            for (const o of prev.organisms) { localBySpecies[o.species] = o }
+            organisms = result.organisms.map(serverOrg => {
+              const localOrg = localBySpecies[serverOrg.species]
+              if (localOrg?.isComplete && !serverOrg.isComplete) {
+                return { ...serverOrg, isComplete: true, scanPositions: [], scanProgress: localOrg.scanProgress }
+              }
+              return serverOrg
+            })
+          }
+
+          return {
+            ...result,
+            organisms,
+            player: prev.player ?? result.player,
+            planetRadius: prev.planetRadius ?? result.planetRadius
+          }
+        })
       } while (fetchQueuedRef.current)
-    } catch (e) { /* ignore fetch errors */ }
+    } catch (e) {
+      if (process.env.NODE_ENV === 'development') devLog('[BIO] fetchData error:', e)
+      // After a timeout, discard any queued retry — let the regular poll
+      // interval handle the next attempt instead of immediately hammering
+      // the server again while the previous request may still be processing.
+      if (e?.message?.includes('timed out')) {
+        fetchQueuedRef.current = false
+      }
+    }
     finally {
       fetchInFlightRef.current = false
     }
@@ -375,17 +418,28 @@ export default function ExplorationBiologicalsPage () {
   }, [ready])
 
   useEffect(() => {
-    if (!ready) return
+    if (!ready) {
+      if (process.env.NODE_ENV === 'development') devLog(`[BIO] Waiting for ready state (connected=${connected}, ready=${ready})`)
+      return
+    }
+    if (process.env.NODE_ENV === 'development') devLog('[BIO] Ready — starting initial fetch + poll interval')
     fetchData()
     pollRef.current = setInterval(fetchData, SAFETY_POLL_INTERVAL)
-    return () => clearInterval(pollRef.current)
+    return () => {
+      if (process.env.NODE_ENV === 'development') devLog('[BIO] Clearing poll interval')
+      clearInterval(pollRef.current)
+    }
   }, [ready, fetchData])
 
   useEffect(() => {
     if (!ready) return
     return eventListener('gameStateChange', (event) => {
       const status = event?.Status
-      if (!status) return
+      if (!status) {
+        if (process.env.NODE_ENV === 'development') devLog('[BIO] gameStateChange: no Status payload, skipping')
+        return
+      }
+      if (process.env.NODE_ENV === 'development') devLog(`[BIO] gameStateChange: lat=${status.Latitude} lon=${status.Longitude} body=${status.BodyName}`)
 
       setData(prev => {
         if (!prev) return prev
@@ -426,6 +480,41 @@ export default function ExplorationBiologicalsPage () {
     return eventListener('newLogEntry', (log) => {
       if (['ScanOrganic', 'Disembark', 'Embark', 'Touchdown', 'Liftoff', 'Location', 'ApproachBody', 'LeaveBody',
         'FSSBodySignals', 'SAASignalsFound', 'SAAScanComplete'].includes(log.event)) {
+
+        if (process.env.NODE_ENV === 'development') devLog(`[BIO] newLogEntry received: ${log.event}${log.ScanType ? ` (${log.ScanType})` : ''}`)
+
+        // Instantly patch local state for ScanOrganic so the UI reacts
+        // without waiting for the server round-trip.
+        if (log.event === 'ScanOrganic') {
+          const species = log.Species_Localised || log.Species || ''
+          setData(prev => {
+            if (!prev?.organisms) return prev
+            const updated = prev.organisms.map(org => {
+              if (org.species !== species) return org
+              const newProgress = [...(org.scanProgress || []), { scanType: log.ScanType, timestamp: log.timestamp }]
+              const isComplete = log.ScanType === 'Analyse'
+              return {
+                ...org,
+                scanProgress: newProgress,
+                isComplete: org.isComplete || isComplete,
+                // Clear scan positions on completion so no exclusion zones linger
+                scanPositions: isComplete ? [] : org.scanPositions
+              }
+            })
+            return { ...prev, organisms: updated }
+          })
+        }
+
+        // Instantly set/clear ship marker so it appears without waiting for
+        // the next successful server round-trip (which may be delayed during
+        // EDSM cold-cache).
+        if (log.event === 'Touchdown' && log.Latitude != null && log.Longitude != null) {
+          setData(prev => prev ? { ...prev, shipPosition: { lat: log.Latitude, lon: log.Longitude } } : prev)
+        }
+        if (log.event === 'Liftoff' || log.event === 'Embark') {
+          setData(prev => prev ? { ...prev, shipPosition: null } : prev)
+        }
+
         fetchData()
       }
     })
@@ -463,13 +552,15 @@ export default function ExplorationBiologicalsPage () {
     if (prevSpecies && !activeOrganism) {
       // We had an active organism that's now gone — check if it completed
       const org = dataRef.current?.organisms?.find(o => o.species === prevSpecies)
+      if (process.env.NODE_ENV === 'development') devLog(`[BIO] Scan transition: prev=${prevSpecies} → active=null  isComplete=${org?.isComplete}`)
       if (org?.isComplete) {
+        if (process.env.NODE_ENV === 'development') devLog(`[BIO] Scan complete animation START for ${prevSpecies}`)
         completedOrgRef.current = { ...org }
         setCompletedSpecies(prevSpecies)
         setScanCompletePhase('fading-out')
-        const t1 = setTimeout(() => setScanCompletePhase('complete'), 600)
-        const t2 = setTimeout(() => setScanCompletePhase('fading-in'), 3000)
-        const t3 = setTimeout(() => { setScanCompletePhase(null); setCompletedSpecies(null); completedOrgRef.current = null }, 3600)
+        const t1 = setTimeout(() => { devLog('[BIO] Scan phase → complete'); setScanCompletePhase('complete') }, 600)
+        const t2 = setTimeout(() => { devLog('[BIO] Scan phase → fading-in'); setScanCompletePhase('fading-in') }, 3000)
+        const t3 = setTimeout(() => { devLog('[BIO] Scan phase → null (done)'); setScanCompletePhase(null); setCompletedSpecies(null); completedOrgRef.current = null }, 3600)
         prevActiveRef.current = null
         return () => { clearTimeout(t1); clearTimeout(t2); clearTimeout(t3) }
       }

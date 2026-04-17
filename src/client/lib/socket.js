@@ -73,7 +73,19 @@ if (typeof window !== 'undefined') {
   } catch (e) { /* ignore */ }
 }
 
-function socketDebugMessage () { /* console.log(...arguments) */ }
+const isDev = process.env.NODE_ENV === 'development'
+
+/** Timestamped dev-mode logger — matches server-side format for correlation */
+function devLog (...args) {
+  if (!isDev) return
+  const now = new Date()
+  const ts = now.toTimeString().slice(0, 8) + '.' + String(now.getMilliseconds()).padStart(3, '0')
+  console.log(ts, ...args)
+}
+
+function socketDebugMessage () {
+  devLog('[SOCKET]', ...arguments)
+}
 
 function connect (socketState, setSocketState) {
   if (socket !== null) return
@@ -88,6 +100,7 @@ function connect (socketState, setSocketState) {
   recentBroadcastEvents = 0
 
   socket = new WebSocket('ws://' + window.location.host)
+  if (process.env.NODE_ENV === 'development') devLog('[SOCKET] Connecting to', 'ws://' + window.location.host)
   socket.onmessage = (event) => {
     let requestId, name, message
     try {
@@ -103,7 +116,9 @@ function connect (socketState, setSocketState) {
     // with the server. it is useful for remote clients that disconnects then
     // reconnects to tell them to update once the service is ready.
     if (name === 'loadingProgress') {
+      if (process.env.NODE_ENV === 'development') devLog(`[SOCKET] loadingProgress: complete=${message.loadingComplete} inProgress=${message.loadingInProgress}`)
       if (message.loadingComplete) {
+        if (process.env.NODE_ENV === 'development') devLog('[SOCKET] Ready state → true (via loadingProgress)')
         setSocketState(prevState => ({
           ...prevState,
           ready: true
@@ -113,6 +128,14 @@ function connect (socketState, setSocketState) {
 
     // Broadcast event to anything that is listening for an event with this name
     if (!requestId && name) {
+      if (process.env.NODE_ENV === 'development') {
+        const summary = name === 'gameStateChange'
+          ? `file=${message?._changedFile}`
+          : name === 'newLogEntry'
+            ? `event=${message?.event}`
+            : ''
+        devLog(`[RECV-BROADCAST] ${name}  ${summary}`)
+      }
       window.dispatchEvent(new CustomEvent(`socketEvent_${name}`, { detail: message }))
 
       // When a broadcast message is received, use recentBroadcastEvents to
@@ -261,6 +284,7 @@ function connect (socketState, setSocketState) {
     socketDebugMessage('Message received from socket server', requestId, name, message)
   }
   socket.onopen = async (e) => {
+    if (process.env.NODE_ENV === 'development') devLog('[SOCKET] Connection opened')
     setSocketState(prevState => ({
       ...prevState,
       active: socketRequestsPending(),
@@ -291,7 +315,9 @@ function connect (socketState, setSocketState) {
     // until get a loadingProgress event that indicates the service is loaded
     try {
       const loadingStats = await sendEvent('getLoadingStatus')
+      if (process.env.NODE_ENV === 'development') devLog(`[SOCKET] getLoadingStatus: complete=${loadingStats.loadingComplete} inProgress=${loadingStats.loadingInProgress}`)
       if (loadingStats.loadingComplete) {
+        if (process.env.NODE_ENV === 'development') devLog('[SOCKET] Ready state → true (via getLoadingStatus)')
         setSocketState(prevState => ({
           ...prevState,
           ready: true
@@ -303,7 +329,7 @@ function connect (socketState, setSocketState) {
   }
   socket.onclose = (e) => {
     socket = null
-    socketDebugMessage('Disconnected from socket server (will attempt reconnection)')
+    if (process.env.NODE_ENV === 'development') devLog('[SOCKET] Connection closed — reconnecting in 5s')
     setSocketState(prevState => ({
       ...prevState,
       active: socketRequestsPending(),
@@ -342,11 +368,14 @@ function useSocket () { return useContext(SocketContext) }
 function sendEvent (name, message = null, timeout = 30000) {
   return new Promise((resolve, reject) => {
     const requestId = generateUuid()
+    const sendStart = (process.env.NODE_ENV === 'development') ? Date.now() : 0
+    if (process.env.NODE_ENV === 'development') devLog(`[SEND] → ${name}  id=${requestId.slice(0,8)}`)
     let timer = null
     callbackHandlers[requestId] = (event, setSocketState) => {
       if (timer) clearTimeout(timer)
       const { message } = JSON.parse(event.data)
       delete callbackHandlers[requestId]
+      if (process.env.NODE_ENV === 'development') devLog(`[SEND] ← ${name}  id=${requestId.slice(0,8)}  ${Date.now() - sendStart}ms`)
       setSocketState(prevState => ({
         ...prevState,
         active: socketRequestsPending()
@@ -356,6 +385,7 @@ function sendEvent (name, message = null, timeout = 30000) {
     if (timeout > 0) {
       timer = setTimeout(() => {
         delete callbackHandlers[requestId]
+        if (process.env.NODE_ENV === 'development') devLog(`[SEND] TIMEOUT ${name}  id=${requestId.slice(0,8)}  ${timeout}ms`)
         reject(new Error(`sendEvent '${name}' timed out after ${timeout}ms`))
       }, timeout)
     }
@@ -387,5 +417,6 @@ module.exports = {
   sendEvent,
   eventListener,
   socketOptions,
-  setSocketOption
+  setSocketOption,
+  devLog
 }

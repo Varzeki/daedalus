@@ -34,16 +34,18 @@ class EventHandlers {
     this._handlerInstances = []
 
     this.system = this._register(new System({ eliteLog }))
-    this.shipStatus = this._register(new ShipStatus({ eliteLog, eliteJson }))
+    this.cmdrStatus = this._register(new CmdrStatus({ eliteLog, eliteJson, system: this.system }))
+    this.shipStatus = this._register(new ShipStatus({ eliteLog, eliteJson, cmdrStatus: this.cmdrStatus }))
     this.materials = this._register(new Materials({ eliteLog, eliteJson }))
     this.engineers = this._register(new Engineers({ eliteLog, eliteJson }))
     this.inventory = this._register(new Inventory({ eliteLog, eliteJson }))
-    this.cmdrStatus = this._register(new CmdrStatus({ eliteLog, eliteJson }))
 
     // These handlers depend on calls to other handlers
     this.blueprints = this._register(new Blueprints({ engineers: this.engineers, materials: this.materials, shipStatus: this.shipStatus }))
     this.navRoute = this._register(new NavRoute({ eliteLog, eliteJson, system: this.system }))
     this.exploration = this._register(new Exploration({ eliteLog, eliteJson, system: this.system, shipStatus: this.shipStatus }))
+    // Allow System to use Exploration's journal enrichment pipeline
+    this.system.exploration = this.exploration
     this.powerplay = this._register(new Powerplay({ eliteLog, shipStatus: this.shipStatus }))
     this.keybinds = this._register(new Keybinds())
     this.video = this._register(new Video())
@@ -58,15 +60,19 @@ class EventHandlers {
 
   // logEventHandler is fired on every in-game log event
   logEventHandler (logEvent) {
+    if (global.DEV_MODE) global.devLog(`[HANDLER] logEventHandler: ${logEvent.event}`)
     this.textToSpeech.logEventHandler(logEvent)
     // Capture bio scan positions in real-time
     if (logEvent.event === 'ScanOrganic') {
+      if (global.DEV_MODE) global.devLog(`[HANDLER] → onScanOrganic: ${logEvent.Species_Localised || logEvent.Species} (${logEvent.ScanType})`)
       this.exploration.onScanOrganic(logEvent).catch(e => console.error('onScanOrganic error:', e))
     }
     if (logEvent.event === 'Disembark') {
+      if (global.DEV_MODE) global.devLog('[HANDLER] → onDisembark')
       this.exploration.onDisembark(logEvent).catch(e => console.error('onDisembark error:', e))
     }
     if (logEvent.event === 'Embark') {
+      if (global.DEV_MODE) global.devLog('[HANDLER] → onEmbark')
       this.exploration.onEmbark()
     }
     // Invalidate bio scanner cache when events change body/system/signal state.
@@ -77,12 +83,28 @@ class EventHandlers {
       'FSSBodySignals', 'SAASignalsFound', 'SAAScanComplete'
     ]
     if (BIO_CACHE_EVENTS.includes(logEvent.event)) {
+      if (global.DEV_MODE) global.devLog(`[HANDLER] → invalidateBioCache (${logEvent.event})`)
       this.exploration.invalidateBioCache()
+    }
+    // Invalidate route cache when the player jumps to a new system or
+    // when scan/signal events change body data on the current route.
+    const ROUTE_CACHE_EVENTS = [
+      'FSDJump', 'Scan', 'FSSBodySignals', 'SAASignalsFound',
+      'SAAScanComplete', 'FSSDiscoveryScan', 'ScanOrganic'
+    ]
+    if (ROUTE_CACHE_EVENTS.includes(logEvent.event)) {
+      if (global.DEV_MODE) global.devLog(`[HANDLER] → invalidateRouteCache (${logEvent.event})`)
+      this.exploration.invalidateRouteCache()
     }
   }
 
   gameStateChangeHandler (event) {
     this.textToSpeech.gameStateChangeHandler(event)
+    // Invalidate route cache when NavRoute file changes (player plotted a new route)
+    if (event?.NavRoute) {
+      if (global.DEV_MODE) global.devLog('[HANDLER] → invalidateRouteCache (NavRoute file changed)')
+      this.exploration.invalidateRouteCache()
+    }
   }
 
   // Return handlers for events that are fired from the client

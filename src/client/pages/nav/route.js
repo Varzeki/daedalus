@@ -17,7 +17,7 @@ export default function NavListPage () {
   const [system, setSystem] = useState()
   const currentSystemRef = useRef(null)
 
-  useEffect(animateTableEffect, [])
+  useEffect(animateTableEffect, [navRoute])
   
   // Scroll to current route once, on view load
   useEffect(() => {
@@ -109,7 +109,7 @@ export default function NavListPage () {
         <hr style={{ marginBottom: 0 }} />
         {navRoute?.route?.length > 0 &&
           <>
-            <div className='scrollable' style={{ position: 'fixed', top: '20rem', bottom: '4.5rem', left: '5rem', right: '1rem' }}>
+            <div className='scrollable' style={{ position: 'fixed', top: '11rem', bottom: '4.5rem', left: '5rem', right: '1rem' }}>
               <table className='navigation-panel__route-plan table--animated table--interactive'>
                 <tbody className='fx-fade-in'>
                   {navRoute.route.map((route, i) => {
@@ -191,7 +191,7 @@ export default function NavListPage () {
               </table>
             </div>
           </>}
-          <div className='text-primary text-uppercase text-center' style={{height: '2F.75rem', fontSize: '1.5rem', position: 'fixed', bottom: '.8rem', left: '5rem', right: '1rem', marginBottom: '.5rem' }}>
+          <div className='text-primary text-uppercase text-center' style={{height: '2.75rem', fontSize: '1.5rem', position: 'fixed', bottom: '.8rem', left: '5rem', right: '1rem', marginBottom: '.5rem' }}>
             <hr className='small' style={{ marginTop: 0, marginBottom: '1rem' }} />
             {navRoute?.route?.length > 0 && navRoute?.jumpsToDestination > 0 &&
               <>
