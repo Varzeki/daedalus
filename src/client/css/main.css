@@ -10,6 +10,7 @@
 @import "ui/secondary-navigation.css";
 @import "ui/sections.css";
 @import "ui/tooltip.css";
+@import "ui/window-title-bar.css";
 @import "form/button.css";
 @import "form/button-group.css";
 @import "form/input.css";
@@ -240,7 +241,7 @@ body::after {
 }
 
 header {
-  padding: 0 .5rem .5rem .5rem;
+  padding: var(--window-chrome-offset, 0px) .5rem .5rem .5rem;
 }
 
 .header__toolbar {

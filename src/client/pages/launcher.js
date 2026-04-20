@@ -81,7 +81,7 @@ export default function IndexPage () {
         __html: '.notification { visibility: hidden; }'
       }}
       />
-      <div style={{ padding: '.5rem 1rem', opacity: connected ? 1 : 0, zoom: '1.2', fontWeight: 'bold' }}>
+      <div style={{ padding: 'calc(.5rem + var(--window-chrome-offset, 0px)) 1rem .5rem 1rem', opacity: connected ? 1 : 0, zoom: '1.2', fontWeight: 'bold' }}>
         <h1 className='text-info' style={{ marginBottom: '.5rem', position: 'relative', paddingLeft: '4.5rem' }}>
           <i className='icon daedalus-terminal-logo' style={{ position: 'absolute', left: '-.25rem', top: '.1rem', fontSize: '4rem', textShadow: '0 0 1px' }} />DAEDALUS
         </h1>
@@ -135,7 +135,7 @@ export default function IndexPage () {
         <div
           className='scrollable text-right text-uppercase' style={{
             position: 'absolute',
-            top: '1rem',
+            top: 'calc(1rem + var(--window-chrome-offset, 0px))',
             right: '1rem',
             bottom: '5rem',
             width: '19rem',

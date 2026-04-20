@@ -144,8 +144,7 @@ function BioRadarMap ({ player: rawPlayer, organisms, planetRadius, shipPosition
         <line x1={center} y1='10' x2={center} y2={MAP_SIZE - 10} stroke='rgba(250,150,0,0.1)' strokeWidth='1' />
         <line x1='10' y1={center} x2={MAP_SIZE - 10} y2={center} stroke='rgba(250,150,0,0.1)' strokeWidth='1' />
 
-        {/* North indicator */}
-        <text x={center} y='18' fill='rgba(250,150,0,0.5)' fontSize='9' fontFamily='monospace' textAnchor='middle'>N</text>
+
 
         {/* Scan exclusion zones — skip completed organisms (no zones needed) */}
         {organisms.filter(org => !org.isComplete).map((org, oi) =>
@@ -166,12 +165,17 @@ function BioRadarMap ({ player: rawPlayer, organisms, planetRadius, shipPosition
           })
         )}
 
-        {/* Ship position marker */}
+        {/* Ship position marker — points in the direction the ship was facing when parked */}
         {shipPosition?.lat != null && (() => {
           const shipPos = toSvg(shipPosition.lat, shipPosition.lon)
           const shipDist = surfaceDistance(player.lat, player.lon, shipPosition.lat, shipPosition.lon, planetRadius)
+          // The map rotates so the player always faces "up". The ship icon
+          // must counter-rotate so it keeps pointing in its parked heading.
+          // shipHeading is absolute degrees; player.heading is the current
+          // map rotation. The difference gives the SVG rotation.
+          const shipRot = (shipPosition.heading ?? 0) - (player.heading ?? 0)
           return (
-            <g>
+            <g transform={`rotate(${shipRot}, ${shipPos.x}, ${shipPos.y})`}>
               <polygon
                 points={`${shipPos.x},${shipPos.y - 8} ${shipPos.x - 6},${shipPos.y + 6} ${shipPos.x},${shipPos.y + 3} ${shipPos.x + 6},${shipPos.y + 6}`}
                 fill='rgba(100, 180, 255, 0.8)'

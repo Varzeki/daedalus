@@ -20,7 +20,6 @@ const socketOptions = {
   explorationAutoSwitch: false,
   audioEnabled: false,
   landingPadEnabled: false,
-  _autoSwitchFrom: null,
   _autoSwitchJumping: false,
   _autoSwitchCooldown: 0
 }
@@ -44,7 +43,6 @@ function persistAutoSwitchState () {
   if (typeof window === 'undefined') return
   try {
     window.sessionStorage.setItem(AUTOSWITCH_STORAGE_KEY, JSON.stringify({
-      from: socketOptions._autoSwitchFrom,
       jumping: socketOptions._autoSwitchJumping,
       cooldown: socketOptions._autoSwitchCooldown
     }))
@@ -66,7 +64,6 @@ if (typeof window !== 'undefined') {
   try {
     const autoState = JSON.parse(window.sessionStorage.getItem(AUTOSWITCH_STORAGE_KEY))
     if (autoState) {
-      socketOptions._autoSwitchFrom = autoState.from || null
       socketOptions._autoSwitchJumping = autoState.jumping || false
       socketOptions._autoSwitchCooldown = autoState.cooldown || 0
     }
@@ -177,16 +174,61 @@ function connect (socketState, setSocketState) {
         }
       } catch (e) { console.log('NOTIFICATION_ERROR', e) }
 
-      // Auto-switch exploration pages on hyperspace jump
-      // Triggers on: StartJump(Hyperspace), or FSD charging while already in supercruise
-      // (charging in supercruise can only be a hyperspace jump)
+      // ── Auto-switch logic ──
+      // Rules:
+      // 1. In supercruise + FSD charge begins → switch to route (must be a jump)
+      // 2. In supercruise + jump charge cancelled → switch to system (or bio if in atmosphere)
+      // 3. Not in supercruise + hyperspace jump begins → switch to route (jumped from idle)
+      // 4. Enter a body's atmosphere → switch to bioscanner
+      // 5. Leave a body's atmosphere → switch to system
+
+      // Early auto-switch via Status flags (rule 1: supercruise + charging = jump)
+      try {
+        if (socketOptions.explorationAutoSwitch && name === 'gameStateChange' && message?._changedFile === 'Status') {
+          const statusFlags = message?.Status?.Flags ?? 0
+          const statusFlags2 = message?.Status?.Flags2 ?? 0
+          const fsdCharging = (statusFlags & 131072) !== 0
+          const supercruise = (statusFlags & 16) !== 0
+          const fsdHyperdriveCharging = (statusFlags2 & 524288) !== 0
+          const fsdJump = (statusFlags & 1073741824) !== 0
+          const hasLatLon = (statusFlags & 2097152) !== 0
+          const path = Router.asPath
+
+          if (path.startsWith('/exploration')) {
+            // Skip during post-arrival cooldown to avoid re-triggering
+            const inCooldown = socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000
+
+            // Rule 1: Supercruise + FSD charging → switch to route
+            if (!inCooldown && !socketOptions._autoSwitchJumping) {
+              if (fsdCharging && supercruise && fsdHyperdriveCharging) {
+                socketOptions._autoSwitchJumping = true
+                socketOptions._autoSwitchCooldown = 0
+                persistAutoSwitchState()
+                if (path !== '/exploration/route') Router.push('/exploration/route')
+              }
+            }
+
+            // Rule 2: Charge cancelled — was jumping but FSD no longer charging and not mid-jump
+            if (socketOptions._autoSwitchJumping && !fsdCharging && !fsdJump) {
+              socketOptions._autoSwitchJumping = false
+              persistAutoSwitchState()
+              if (hasLatLon) {
+                if (path !== '/exploration/biologicals') Router.push('/exploration/biologicals')
+              } else {
+                if (path !== '/exploration/system') Router.push('/exploration/system')
+              }
+            }
+          }
+        }
+      } catch (e) { console.log('AUTO_SWITCH_STATUS_ERROR', e) }
+
+      // Rule 3: Not in supercruise + hyperspace jump begins (StartJump journal event)
+      // Also acts as a fallback if Status flags fire too late
       try {
         if (socketOptions.explorationAutoSwitch && name === 'newLogEntry') {
           const path = Router.asPath
           if (path.startsWith('/exploration')) {
             if (message.event === 'StartJump' && message.JumpType === 'Hyperspace') {
-              // Hyperspace jump starting — save current page and switch to route view
-              if (!socketOptions._autoSwitchFrom) socketOptions._autoSwitchFrom = path
               socketOptions._autoSwitchJumping = true
               socketOptions._autoSwitchCooldown = 0
               persistAutoSwitchState()
@@ -196,79 +238,24 @@ function connect (socketState, setSocketState) {
         }
       } catch (e) { console.log('AUTO_SWITCH_CHARGE_ERROR', e) }
 
-      // Early auto-switch: FSD charging while in supercruise = hyperspace jump
-      // Uses pushed Status flags from the broadcast — no server round-trip needed.
-      try {
-        if (socketOptions.explorationAutoSwitch && name === 'gameStateChange' && message?._changedFile === 'Status') {
-          const statusFlags = message?.Status?.Flags ?? 0
-          const statusFlags2 = message?.Status?.Flags2 ?? 0
-          const fsdCharging = (statusFlags & 131072) !== 0
-          const supercruise = (statusFlags & 16) !== 0
-          const fsdHyperdriveCharging = (statusFlags2 & 524288) !== 0
-          const fsdJump = (statusFlags & 1073741824) !== 0
-
-          if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) { /* skip */ }
-          else {
-            const path = Router.asPath
-            if (path.startsWith('/exploration') && !socketOptions._autoSwitchFrom) {
-              if (fsdCharging && supercruise && fsdHyperdriveCharging) {
-                socketOptions._autoSwitchFrom = path
-                persistAutoSwitchState()
-                if (path !== '/exploration/route') Router.push('/exploration/route')
-              }
-            }
-          }
-
-          // Cancel auto-switch when FSD charge cancelled (flags clear without jump completing)
-          if (socketOptions._autoSwitchFrom) {
-            if (socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000) { /* skip during cooldown */ }
-            else if (!fsdCharging && !fsdJump && !socketOptions._autoSwitchJumping) {
-              const returnTo = socketOptions._autoSwitchFrom
-              socketOptions._autoSwitchFrom = null
-              persistAutoSwitchState()
-              const currentPath = Router.asPath
-              if (currentPath.startsWith('/exploration') && currentPath !== returnTo) {
-                Router.push(returnTo)
-              }
-            }
-          }
-        }
-      } catch (e) { console.log('AUTO_SWITCH_STATUS_ERROR', e) }
-
-      // Switch to appropriate page when arriving (FSDJump / Location events)
-      // If player is on a body surface, switch to biologicals; otherwise system
+      // Arrival: switch to system (or bio if on a body surface)
       try {
         if (socketOptions.explorationAutoSwitch && name === 'newLogEntry') {
           if (message.event === 'FSDJump' || message.event === 'Location') {
-            socketOptions._autoSwitchFrom = null
             socketOptions._autoSwitchJumping = false
             socketOptions._autoSwitchCooldown = Date.now()
             persistAutoSwitchState()
             const path = Router.asPath
             if (path.startsWith('/exploration')) {
-              sendEvent('getCmdrStatus').then(cmdrStatus => {
-                const flags = cmdrStatus?.flags || {}
-                const currentPath = Router.asPath
-                if (!currentPath.startsWith('/exploration')) return
-                if (flags.hasLatLon) {
-                  if (currentPath !== '/exploration/biologicals') Router.push('/exploration/biologicals')
-                } else {
-                  if (currentPath !== '/exploration/system') Router.push('/exploration/system')
-                }
-              }).catch(() => {
-                const currentPath = Router.asPath
-                if (currentPath.startsWith('/exploration') && currentPath !== '/exploration/system') {
-                  Router.push('/exploration/system')
-                }
-              })
+              if (path !== '/exploration/system') Router.push('/exploration/system')
             }
           }
         }
       } catch (e) { console.log('AUTO_SWITCH_JUMP_ERROR', e) }
 
-      // Auto-switch to biologicals when approaching a body / back to system when leaving
+      // Rules 4 & 5: Atmosphere enter/leave (suppressed while mid-jump)
       try {
-        if (socketOptions.explorationAutoSwitch && name === 'newLogEntry') {
+        if (socketOptions.explorationAutoSwitch && !socketOptions._autoSwitchJumping && name === 'newLogEntry') {
           const path = Router.asPath
           if (path.startsWith('/exploration')) {
             if (message.event === 'ApproachBody') {

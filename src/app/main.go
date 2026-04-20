@@ -29,6 +29,17 @@ var (
 	procGetMonitorInfoW   = user32.NewProc("GetMonitorInfoW")
 )
 
+// DWM API for rounded window corners (Windows 11+)
+var (
+	dwmapi                    = syscall.NewLazyDLL("dwmapi.dll")
+	procDwmSetWindowAttribute = dwmapi.NewProc("DwmSetWindowAttribute")
+)
+
+const DWMWA_WINDOW_CORNER_PREFERENCE = 33
+const DWMWA_BORDER_COLOR = 34
+const DWMWCP_ROUND = 2
+const DWMWA_COLOR_NONE = 0xFFFFFFFE
+
 const MONITOR_DEFAULTTONEAREST = 2
 
 type MONITORINFO struct {
@@ -44,6 +55,79 @@ func getMonitorRect(hwnd win.HWND) win.RECT {
 	mi.CbSize = uint32(unsafe.Sizeof(mi))
 	procGetMonitorInfoW.Call(hMonitor, uintptr(unsafe.Pointer(&mi)))
 	return mi.RcMonitor
+}
+
+func getWorkArea(hwnd win.HWND) win.RECT {
+	hMonitor, _, _ := procMonitorFromWindow.Call(uintptr(hwnd), MONITOR_DEFAULTTONEAREST)
+	var mi MONITORINFO
+	mi.CbSize = uint32(unsafe.Sizeof(mi))
+	procGetMonitorInfoW.Call(hMonitor, uintptr(unsafe.Pointer(&mi)))
+	return mi.RcWork
+}
+
+// stripTitleBar removes the native title bar from a window. Used for
+// the launcher which should not be resizable or snappable.
+func stripTitleBar(hwnd win.HWND) {
+	style := uint32(win.GetWindowLong(hwnd, win.GWL_STYLE))
+	style = style &^ (win.WS_CAPTION | win.WS_THICKFRAME)
+	style = style | uint32(win.WS_POPUP)
+	win.SetWindowLong(hwnd, win.GWL_STYLE, int32(style))
+
+	exStyle := win.GetWindowLong(hwnd, win.GWL_EXSTYLE)
+	exStyle = exStyle &^ (win.WS_EX_CLIENTEDGE | win.WS_EX_WINDOWEDGE | win.WS_EX_STATICEDGE | win.WS_EX_DLGMODALFRAME)
+	exStyle = exStyle | win.WS_EX_APPWINDOW
+	win.SetWindowLong(hwnd, win.GWL_EXSTYLE, exStyle)
+
+	win.SetWindowPos(hwnd, 0, 0, 0, 0, 0,
+		win.SWP_FRAMECHANGED|win.SWP_NOMOVE|win.SWP_NOSIZE|win.SWP_NOZORDER)
+
+	preference := int32(DWMWCP_ROUND)
+	procDwmSetWindowAttribute.Call(
+		uintptr(hwnd),
+		DWMWA_WINDOW_CORNER_PREFERENCE,
+		uintptr(unsafe.Pointer(&preference)),
+		uintptr(unsafe.Sizeof(preference)),
+	)
+
+	borderColor := uint32(DWMWA_COLOR_NONE)
+	procDwmSetWindowAttribute.Call(
+		uintptr(hwnd),
+		DWMWA_BORDER_COLOR,
+		uintptr(unsafe.Pointer(&borderColor)),
+		uintptr(unsafe.Sizeof(borderColor)),
+	)
+}
+
+// stripTitleBarClient removes the native title bar from a client window
+// while keeping WS_THICKFRAME and WS_MAXIMIZEBOX for Aero Snap support.
+// The WndProc subclass for WM_NCCALCSIZE is set up in bindFunctionsToWebView
+// so it can share the isMaximized/isFullScreen state.
+func stripTitleBarClient(hwnd win.HWND) {
+	style := uint32(win.GetWindowLong(hwnd, win.GWL_STYLE))
+	style = style &^ win.WS_CAPTION
+	style = style | uint32(win.WS_POPUP) | win.WS_THICKFRAME | win.WS_MAXIMIZEBOX
+	win.SetWindowLong(hwnd, win.GWL_STYLE, int32(style))
+
+	exStyle := win.GetWindowLong(hwnd, win.GWL_EXSTYLE)
+	exStyle = exStyle &^ (win.WS_EX_CLIENTEDGE | win.WS_EX_WINDOWEDGE | win.WS_EX_STATICEDGE | win.WS_EX_DLGMODALFRAME)
+	exStyle = exStyle | win.WS_EX_APPWINDOW
+	win.SetWindowLong(hwnd, win.GWL_EXSTYLE, exStyle)
+
+	preference := int32(DWMWCP_ROUND)
+	procDwmSetWindowAttribute.Call(
+		uintptr(hwnd),
+		DWMWA_WINDOW_CORNER_PREFERENCE,
+		uintptr(unsafe.Pointer(&preference)),
+		uintptr(unsafe.Sizeof(preference)),
+	)
+
+	borderColor := uint32(DWMWA_COLOR_NONE)
+	procDwmSetWindowAttribute.Call(
+		uintptr(hwnd),
+		DWMWA_BORDER_COLOR,
+		uintptr(unsafe.Pointer(&borderColor)),
+		uintptr(unsafe.Sizeof(borderColor)),
+	)
 }
 
 var port int // Actual port we are running on
@@ -234,10 +318,19 @@ func createWindow(LAUNCHER_WINDOW_TITLE string, url string, width int32, height 
 	win.SendMessage(hwnd, win.WM_SETICON, 0, uintptr(hIconSm))
 	win.SendMessage(hwnd, win.WM_SETICON, 1, uintptr(hIcon))
 
-	bindFunctionsToWebView(w)
-
+	// SetTitle and SetSize MUST come before stripTitleBar — the webview
+	// library re-applies window styles during these calls, which would
+	// undo our popup/frameless changes.
 	w.SetTitle(LAUNCHER_WINDOW_TITLE)
 	w.SetSize(int(width), int(height), hint)
+
+	// Remove native title bar — replaced by custom HTML chrome
+	stripTitleBarClient(hwnd)
+
+	bindFunctionsToWebView(w, true)
+
+	w.Bind("daedalusTerminal_hasCustomChrome", func() bool { return true })
+
 	w.Navigate(LoadUrl(url))
 	w.Run()
 }
@@ -272,20 +365,75 @@ func createNativeWindow(title string, url string, width int32, height int32) {
 	win.SendMessage(hwnd, win.WM_SETICON, 0, uintptr(hIconSm))
 	win.SendMessage(hwnd, win.WM_SETICON, 1, uintptr(hIcon))
 
-	bindFunctionsToWebView(webViewInstance)
+	// Remove native title bar — replaced by custom HTML chrome
+	stripTitleBar(hwnd)
+
+	bindFunctionsToWebView(webViewInstance, false)
+
+	webViewInstance.Bind("daedalusTerminal_hasCustomChrome", func() bool { return true })
+
 	webViewInstance.Navigate(LoadUrl(url))
 	webViewInstance.Run()
 }
 
-func bindFunctionsToWebView(w webview.WebView) {
+func bindFunctionsToWebView(w webview.WebView, isClientWindow bool) {
 	hwndPtr := w.Window()
 	hwnd := win.HWND(hwndPtr)
 
 	var isFullScreen = false
+	var isMaximized = false
 	var isPinned = false
 	var preFullScreenRect win.RECT
 	var wasMaximised = false
 	defaultWindowStyle := win.GetWindowLong(hwnd, win.GWL_STYLE)
+
+	// For client windows, subclass the WndProc to intercept WM_NCCALCSIZE
+	// (eliminating the non-client area) and WM_SIZE (syncing isMaximized
+	// when Windows changes the maximize state, e.g. Aero Snap or drag-
+	// to-restore). This must be set up before SWP_FRAMECHANGED is sent.
+	if isClientWindow {
+		origProc := win.GetWindowLongPtr(hwnd, win.GWLP_WNDPROC)
+		newProc := syscall.NewCallback(func(h win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+			if msg == win.WM_GETMINMAXINFO {
+				// Constrain the maximized window position and size to
+				// the work area (excluding the taskbar). Without this,
+				// WS_POPUP|WS_THICKFRAME maximizes to the full monitor,
+				// leaving unrendered non-client space as visual artefacts.
+				// In fullscreen, allow the full monitor.
+				if !isFullScreen {
+					mmi := (*win.MINMAXINFO)(unsafe.Pointer(lParam))
+					monitorRect := getMonitorRect(h)
+					workArea := getWorkArea(h)
+					// PtMaxPosition is relative to the monitor origin,
+					// not absolute screen coordinates. Using absolute
+					// coords pushes the window off-screen on non-primary
+					// monitors.
+					mmi.PtMaxPosition.X = workArea.Left - monitorRect.Left
+					mmi.PtMaxPosition.Y = workArea.Top - monitorRect.Top
+					mmi.PtMaxSize.X = workArea.Right - workArea.Left
+					mmi.PtMaxSize.Y = workArea.Bottom - workArea.Top
+				}
+				return 0
+			}
+			if msg == win.WM_NCCALCSIZE && wParam != 0 {
+				// Return 0 to make the entire window client area
+				// (no non-client frame). WM_GETMINMAXINFO above
+				// already constrains the maximize rect to the work area.
+				return 0
+			}
+			if msg == win.WM_SIZE {
+				if wParam == win.SIZE_MAXIMIZED {
+					isMaximized = true
+				} else if wParam == win.SIZE_RESTORED {
+					isMaximized = false
+				}
+			}
+			return win.CallWindowProc(origProc, h, msg, wParam, lParam)
+		})
+		win.SetWindowLongPtr(hwnd, win.GWLP_WNDPROC, newProc)
+		win.SetWindowPos(hwnd, 0, 0, 0, 0, 0,
+			win.SWP_FRAMECHANGED|win.SWP_NOMOVE|win.SWP_NOSIZE|win.SWP_NOZORDER)
+	}
 
 	w.Bind("daedalusTerminal_version", func() string {
 		return GetCurrentAppVersion()
@@ -348,39 +496,41 @@ func bindFunctionsToWebView(w webview.WebView) {
 
 	w.Bind("daedalusTerminal_toggleFullScreen", func() bool {
 		if isFullScreen {
-			// Restore to pre-fullscreen window style
-			win.SetWindowLong(hwnd, win.GWL_STYLE, defaultWindowStyle)
+			// Clear fullscreen BEFORE restoring so WM_NCCALCSIZE handler
+			// can apply the work-area adjustment if restoring to maximized.
+			isFullScreen = false
 			if wasMaximised {
-				win.ShowWindow(hwnd, win.SW_SHOWMAXIMIZED)
+				win.ShowWindow(hwnd, win.SW_MAXIMIZE)
+				// isMaximized synced by WM_SIZE handler
 			} else {
-				win.MoveWindow(hwnd,
-					preFullScreenRect.Left,
-					preFullScreenRect.Top,
+				win.SetWindowPos(hwnd, 0,
+					preFullScreenRect.Left, preFullScreenRect.Top,
 					preFullScreenRect.Right-preFullScreenRect.Left,
 					preFullScreenRect.Bottom-preFullScreenRect.Top,
-					true)
+					win.SWP_NOZORDER|win.SWP_FRAMECHANGED)
 			}
-			isFullScreen = false
 		} else {
-			// Save current window position and maximised state before going fullscreen
+			// Save current state before going fullscreen
 			win.GetWindowRect(hwnd, &preFullScreenRect)
-			wasMaximised = (win.GetWindowLong(hwnd, win.GWL_STYLE) & win.WS_MAXIMIZE) != 0
+			wasMaximised = isMaximized
+
+			// Set fullscreen flag BEFORE SetWindowPos so WM_NCCALCSIZE
+			// skips the work-area adjustment (we want full monitor).
+			isFullScreen = true
 
 			// Get the bounds of the monitor the window is currently on
 			monitorRect := getMonitorRect(hwnd)
 
-			// Remove window chrome and fill the current monitor
-			newWindowStyle := defaultWindowStyle &^ (win.WS_CAPTION | win.WS_THICKFRAME | win.WS_MINIMIZEBOX | win.WS_MAXIMIZEBOX | win.WS_SYSMENU)
-			win.SetWindowLong(hwnd, win.GWL_STYLE, newWindowStyle)
-			win.SetWindowPos(hwnd, 0,
-				monitorRect.Left,
-				monitorRect.Top,
+			// Fill the current monitor entirely — use HWND_TOP to ensure
+			// the window covers the taskbar
+			win.SetWindowPos(hwnd, win.HWND_TOP,
+				monitorRect.Left, monitorRect.Top,
 				monitorRect.Right-monitorRect.Left,
 				monitorRect.Bottom-monitorRect.Top,
 				win.SWP_FRAMECHANGED)
 
 			isPinned = false
-			isFullScreen = true
+			isMaximized = false
 		}
 		return isFullScreen
 	})
@@ -430,6 +580,52 @@ func bindFunctionsToWebView(w webview.WebView) {
 	w.Bind("daedalusTerminal_quit", func() int {
 		exitApplication(0)
 		return 0
+	})
+
+	w.Bind("daedalusTerminal_minimizeWindow", func() {
+		win.ShowWindow(hwnd, win.SW_MINIMIZE)
+	})
+
+	w.Bind("daedalusTerminal_toggleMaximize", func() bool {
+		if isFullScreen {
+			return false
+		}
+		if isMaximized {
+			win.ShowWindow(hwnd, win.SW_RESTORE)
+		} else {
+			win.ShowWindow(hwnd, win.SW_MAXIMIZE)
+		}
+		// isMaximized is synced by the WM_SIZE handler
+		return isMaximized
+	})
+
+	w.Bind("daedalusTerminal_isMaximized", func() bool {
+		return isMaximized
+	})
+
+	// startDrag detects double-clicks by timing consecutive calls.
+	// WM_NCLBUTTONDOWN enters a modal loop so JS dblclick never fires;
+	// we handle it here instead.
+	var lastDragTime time.Time
+	w.Bind("daedalusTerminal_startDrag", func() bool {
+		now := time.Now()
+		if isClientWindow && now.Sub(lastDragTime) < 400*time.Millisecond {
+			// Double-click detected — toggle maximize
+			lastDragTime = time.Time{}
+			if isFullScreen {
+				return isMaximized
+			}
+			if isMaximized {
+				win.ShowWindow(hwnd, win.SW_RESTORE)
+			} else {
+				win.ShowWindow(hwnd, win.SW_MAXIMIZE)
+			}
+			return isMaximized
+		}
+		lastDragTime = now
+		win.ReleaseCapture()
+		win.SendMessage(hwnd, win.WM_NCLBUTTONDOWN, win.HTCAPTION, 0)
+		return isMaximized
 	})
 }
 

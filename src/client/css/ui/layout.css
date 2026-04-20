@@ -33,7 +33,7 @@ header h1 {
 
 .layout__main {
   position: absolute;
-  top: 9rem;
+  top: calc(9rem + var(--window-chrome-offset, 0px));
   bottom: .5rem;
   left: .5rem;
   right: .5rem;

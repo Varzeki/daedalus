@@ -8,6 +8,7 @@ import '../public/fonts/daedalus-terminal/daedalus-terminal.css'
 import '../css/main.css'
 
 const Header = dynamic(() => import('components/header'), { ssr: false })
+const WindowTitleBar = dynamic(() => import('components/window-title-bar'), { ssr: false })
 
 const LAUNCHER_PATHS = ['/launcher']
 
@@ -155,6 +156,7 @@ export default class MyApp extends App {
             }}
           />
         </div>
+        <WindowTitleBar />
         {!LAUNCHER_PATHS.includes(this.props.router.pathname) && <Header />}
         <Component {...pageProps} />
         {/* Pre-decode galaxy background so it's instant when nav map mounts */}

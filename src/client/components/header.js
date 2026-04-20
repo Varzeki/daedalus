@@ -111,7 +111,7 @@ export default function Header () {
       <h1 className='text-info' style={{ padding: '.6rem 0 .25rem 5.5rem' }}>
         <i className='icon daedalus-terminal-logo' style={{ position: 'absolute', fontSize: '5rem', left: '-.5rem', top: '.7rem', textShadow: '0 0 1px' }} />DAEDALUS <span className='hidden-small'>Terminal</span>
       </h1>
-      <div style={{ position: 'absolute', top: '1rem', right: '.5rem', display: 'flex', alignItems: 'center', zIndex: 100 }}>
+      <div style={{ position: 'absolute', top: 'calc(1rem + var(--window-chrome-offset, 0px))', right: '.5rem', display: 'flex', alignItems: 'center', zIndex: 100 }}>
         <div className={`header__toolbar ${toolbarOpen ? 'header__toolbar--open' : ''}`}>
           <p
             className='text-primary text-center text-uppercase'

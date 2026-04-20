@@ -1,4 +1,5 @@
 import CopyOnClick from 'components/copy-on-click'
+import Loader from 'components/loader'
 
 // ─── Rank thresholds ─────────────────────────────────────────────────────────
 function getMeritsForRank (rank) {
@@ -718,8 +719,8 @@ export default function PowerplayPanel ({ powerplay }) {
   if (!powerplay) {
     return (
       <div className='powerplay-panel'>
-        <div className='powerplay-panel__loading text-primary text-blink-slow text-center'>
-          <h2>Awaiting data</h2>
+        <div className='powerplay-panel__loading' style={{ position: 'relative', minHeight: '12rem' }}>
+          <Loader />
         </div>
       </div>
     )

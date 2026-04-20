@@ -35,9 +35,10 @@ function installUpdate () {
 }
 
 async function toggleFullScreen () {
-  if (isWindowsApp()) { return await window.daedalusTerminal_toggleFullScreen() }
-
-  if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.webkitCurrentFullScreenElement) {
+  let result
+  if (isWindowsApp()) {
+    result = await window.daedalusTerminal_toggleFullScreen()
+  } else if (!document.fullscreenElement && !document.mozFullScreenElement && !document.webkitFullscreenElement && !document.webkitCurrentFullScreenElement) {
     if (document.documentElement.requestFullscreen) {
       document.documentElement.requestFullscreen()
     } else if (document.documentElement.mozRequestFullScreen) {
@@ -45,7 +46,7 @@ async function toggleFullScreen () {
     } else if (document.documentElement.webkitRequestFullscreen) {
       document.documentElement.webkitRequestFullscreen()
     }
-    return true
+    result = true
   } else {
     if (document.cancelFullScreen) {
       document.cancelFullScreen()
@@ -56,13 +57,45 @@ async function toggleFullScreen () {
     } else if (document.webkitExitFullscreen) {
       document.webkitExitFullscreen()
     }
-    return false
+    result = false
   }
+  if (typeof window !== 'undefined') {
+    window.dispatchEvent(new CustomEvent('daedalus-fullscreen-change', { detail: result }))
+  }
+  return result
 }
 
 async function togglePinWindow () {
   if (isWindowsApp()) { return await window.daedalusTerminal_togglePinWindow() }
 }
+
+function hasCustomChrome () { return (typeof window !== 'undefined' && typeof window.daedalusTerminal_hasCustomChrome === 'function') }
+
+function minimizeWindow () {
+  if (isWindowsApp()) { return window.daedalusTerminal_minimizeWindow() }
+}
+
+async function startWindowDrag () {
+  if (isWindowsApp()) {
+    const maximized = await window.daedalusTerminal_startDrag()
+    // startDrag may toggle maximize on double-click; sync the state
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('daedalus-maximize-change', { detail: maximized }))
+    }
+  }
+}
+
+async function toggleMaximize () {
+  if (isWindowsApp()) {
+    const result = await window.daedalusTerminal_toggleMaximize()
+    if (typeof window !== 'undefined') {
+      window.dispatchEvent(new CustomEvent('daedalus-maximize-change', { detail: result }))
+    }
+    return result
+  }
+}
+
+function isWindowMaximized () { if (isWindowsApp()) { return window.daedalusTerminal_isMaximized() } }
 
 module.exports = {
   isWindowsApp,
@@ -76,5 +109,10 @@ module.exports = {
   toggleFullScreen,
   togglePinWindow,
   checkForUpdate,
-  installUpdate
+  installUpdate,
+  hasCustomChrome,
+  minimizeWindow,
+  startWindowDrag,
+  toggleMaximize,
+  isWindowMaximized
 }

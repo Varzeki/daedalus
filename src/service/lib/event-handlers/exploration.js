@@ -297,7 +297,7 @@ class Exploration {
   async onDisembark (logEvent) {
     const StatusJson = (await this.eliteJson.json()).Status
     if (!StatusJson || StatusJson.Latitude == null || StatusJson.Longitude == null) return
-    this._shipPosition = { lat: StatusJson.Latitude, lon: StatusJson.Longitude }
+    this._shipPosition = { lat: StatusJson.Latitude, lon: StatusJson.Longitude, heading: StatusJson.Heading ?? null }
     this._bioCacheDirty = true
   }
 
