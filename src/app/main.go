@@ -300,6 +300,12 @@ func main() {
 func createWindow(LAUNCHER_WINDOW_TITLE string, url string, width int32, height int32, hint webview.Hint) {
 	// Passes the pointer to the window as an unsafe reference
 	w := webview.New(DEBUGGER)
+	// webview.New returns nil when WebView2 fails to initialize.
+	if w == nil {
+		dialog.Message("%s", "Failed to initialize WebView2.\n\nPlease ensure Microsoft Edge WebView2 Runtime is installed.").Title("Error").Error()
+		exitApplication(1)
+		return
+	}
 	defer w.Destroy()
 
 	hwndPtr := w.Window()

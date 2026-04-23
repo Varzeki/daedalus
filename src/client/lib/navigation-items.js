@@ -330,9 +330,14 @@ function MediaPanelNavItems (activePanel) {
       url: '/media/galnet'
     },
     {
-      name: 'Video & Music',
+      name: 'Video',
       icon: 'sound',
       url: '/media/video'
+    },
+    {
+      name: 'Music',
+      icon: 'sound',
+      url: '/media/music'
     }
   ]
   navigationItems.forEach(item => {

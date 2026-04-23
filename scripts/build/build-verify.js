@@ -51,7 +51,11 @@ async function verifyApp () {
     console.error('✗ App binary: unexpected output:', output)
     return 1
   } catch (e) {
-    console.error('✗ App binary failed:', e.stderr || e.message)
+    const output = [e.stdout, e.stderr, e.message]
+      .map(chunk => String(chunk || '').trim())
+      .filter(Boolean)
+      .join('\n')
+    console.error('✗ App binary failed:', output)
     return 1
   } finally {
     try { fs.unlinkSync(tmpExe) } catch (_) {}

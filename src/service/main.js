@@ -50,6 +50,8 @@ const WEB_DIR = (() => {
   return candidates.find(d => fs.existsSync(d)) || candidates[0]
 })()
 const LOG_DIR = getLogDir()
+const RUNTIME_DIR = path.join(os.homedir(), 'AppData', 'Local', 'DAEDALUS Terminal', 'runtime')
+const SYSTEM_MEDIA_ARTWORK_DIR = path.join(RUNTIME_DIR, 'system-media-artwork')
 
 if (!fs.existsSync(LOG_DIR)) {
   console.error('ERROR: No save game data found in', LOG_DIR, '\n')
@@ -228,6 +230,43 @@ function videosMiddleware (req, res, next) {
   next()
 }
 
+function systemMediaArtworkMiddleware (req, res, next) {
+  if (req.url && req.url.startsWith('/system-media-artwork/')) {
+    const requestPath = new URL(req.url, 'http://localhost').pathname
+    const fileName = path.basename(decodeURIComponent(requestPath.slice('/system-media-artwork/'.length)))
+    if (!fileName || fileName.includes('..') || !/\.(png|jpe?g|webp|bmp)$/i.test(fileName)) {
+      res.writeHead(400)
+      return res.end()
+    }
+
+    const filePath = path.join(SYSTEM_MEDIA_ARTWORK_DIR, fileName)
+    if (!fs.existsSync(filePath)) {
+      res.writeHead(404)
+      return res.end()
+    }
+
+    const stat = fs.statSync(filePath)
+    const ext = path.extname(fileName).toLowerCase()
+    const mimeTypes = {
+      '.png': 'image/png',
+      '.jpg': 'image/jpeg',
+      '.jpeg': 'image/jpeg',
+      '.webp': 'image/webp',
+      '.bmp': 'image/bmp'
+    }
+
+    res.writeHead(200, {
+      'Content-Type': mimeTypes[ext] || 'application/octet-stream',
+      'Content-Length': stat.size,
+      'Cache-Control': 'public, max-age=300'
+    })
+    fs.createReadStream(filePath).pipe(res)
+    return
+  }
+
+  next()
+}
+
 let httpServer
 if (DEVELOPMENT) {
   // If DEVELOPMENT is specified then HTTP requests other than web socket
@@ -244,13 +283,13 @@ if (DEVELOPMENT) {
     if (res.end) res.end('Waiting for Next.js dev server...')
   })
   httpServer = http.createServer((req, res) => {
-    voicelinesMiddleware(req, res, () => videosMiddleware(req, res, () => proxy.web(req, res, { target: 'http://localhost:3000' })))
+    voicelinesMiddleware(req, res, () => videosMiddleware(req, res, () => systemMediaArtworkMiddleware(req, res, () => proxy.web(req, res, { target: 'http://localhost:3000' }))))
   })
 } else {
   // The default behaviour (i.e. production) is to serve static assets. When the
   // application is compiled to a native executable these assets will be bundled
   // with the executable in a virtual file system.
-  const webServer = connect().use(voicelinesMiddleware).use(videosMiddleware).use(serveStatic(WEB_DIR, { extensions: ['html'] }))
+  const webServer = connect().use(voicelinesMiddleware).use(videosMiddleware).use(systemMediaArtworkMiddleware).use(serveStatic(WEB_DIR, { extensions: ['html'] }))
   httpServer = http.createServer(webServer)
 }
 

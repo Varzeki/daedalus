@@ -1,6 +1,6 @@
 {
   "name": "daedalus",
-  "version": "1.13.0",
+  "version": "1.14.0",
   "description": "DAEDALUS Terminal for Elite Dangerous",
   "scripts": {
     "build": "npm run build:client && npm run build:app && npm run build:service && npm run build:verify && npm run build:package",
@@ -63,7 +63,9 @@
   "pkg": {
     "assets": [
       "build/client/**/*",
-      "src/service/data/**/*"
+      "src/service/data/**/*",
+      "src/service/lib/system-media-thumbnail-helper.cs",
+      "src/service/lib/system-audio-meter-helper.cs"
     ]
   },
   "engines": {

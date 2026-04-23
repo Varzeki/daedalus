@@ -376,7 +376,7 @@ export default function MediaVideoPage () {
 
   return (
     <Layout connected={connected} active={active} ready={ready}>
-      <Panel layout='full-width' navigation={MediaPanelNavItems('Video & Music')}>
+      <Panel layout='full-width' navigation={MediaPanelNavItems('Video')}>
         <div className='video-panel'>
           <SearchBar
             onSearch={handleSearch}

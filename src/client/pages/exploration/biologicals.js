@@ -175,21 +175,23 @@ function BioRadarMap ({ player: rawPlayer, organisms, planetRadius, shipPosition
           // map rotation. The difference gives the SVG rotation.
           const shipRot = (shipPosition.heading ?? 0) - (player.heading ?? 0)
           return (
-            <g transform={`rotate(${shipRot}, ${shipPos.x}, ${shipPos.y})`}>
-              <polygon
-                points={`${shipPos.x},${shipPos.y - 8} ${shipPos.x - 6},${shipPos.y + 6} ${shipPos.x},${shipPos.y + 3} ${shipPos.x + 6},${shipPos.y + 6}`}
-                fill='rgba(100, 180, 255, 0.8)'
-                stroke='rgba(100, 180, 255, 1)'
-                strokeWidth='1'
-              />
-              <text x={shipPos.x + 10} y={shipPos.y + 4} fill='rgba(100, 180, 255, 0.8)' fontSize='8' fontFamily='monospace'>{formatDistance(shipDist)}</text>
+            <g>
+              <g transform={`rotate(${shipRot}, ${shipPos.x}, ${shipPos.y})`}>
+                <polygon
+                  points={`${shipPos.x},${shipPos.y - 8} ${shipPos.x - 6},${shipPos.y + 6} ${shipPos.x},${shipPos.y + 3} ${shipPos.x + 6},${shipPos.y + 6}`}
+                  fill='rgba(100, 180, 255, 0.8)'
+                  stroke='rgba(100, 180, 255, 1)'
+                  strokeWidth='1'
+                />
+              </g>
+              <text x={shipPos.x + 12} y={shipPos.y + 4} fill='rgba(100, 180, 255, 0.8)' fontSize='8' fontFamily='monospace'>{formatDistance(shipDist)}</text>
             </g>
           )
         })()}
 
         {/* Player position triangle */}
         <polygon
-          points={`${center},${center - 12} ${center - 8},${center + 8} ${center + 8},${center + 8}`}
+          points={`${center},${center - 6} ${center - 4},${center + 4} ${center + 4},${center + 4}`}
           fill='rgba(250,150,0,0.9)'
           stroke='rgba(250,150,0,1)'
           strokeWidth='1'

@@ -25,6 +25,7 @@ const Powerplay = require('./event-handlers/powerplay')
 const Keybinds = require('./event-handlers/keybinds')
 const Video = require('./event-handlers/video')
 const Galnet = require('./event-handlers/galnet')
+const Media = require('./event-handlers/media')
 const covasPlayer = require('./covas-player')
 
 class EventHandlers {
@@ -50,6 +51,7 @@ class EventHandlers {
     this.keybinds = this._register(new Keybinds())
     this.video = this._register(new Video())
     this.galnet = this._register(new Galnet())
+    this.media = this._register(new Media())
     this.textToSpeech = new TextToSpeech({ eliteLog, eliteJson, cmdrStatus: this.cmdrStatus, shipStatus: this.shipStatus })
   }
 

@@ -724,17 +724,19 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   object-fit: cover;
 }
 
-/* Active scan large image */
+/* Active scan large image — fills available vertical space */
 .bio-list__active-image {
-  width: 18rem;
-  height: 18rem;
+  width: 100%;
+  max-width: 28rem;
+  aspect-ratio: 1;
   border-radius: .3rem;
   overflow: hidden;
   background: rgba(0, 0, 0, .3);
   display: flex;
   align-items: center;
   justify-content: center;
-  flex-shrink: 0;
+  flex: 1;
+  min-height: 0;
 }
 
 .bio-list__active-image img {
@@ -773,6 +775,7 @@ table:not(.table--inline).table--interactive tbody tr.exploration-system__specie
   align-items: center;
   gap: .5rem;
   width: 100%;
+  flex-shrink: 0;
 }
 
 .bio-list__active-name {

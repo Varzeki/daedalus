@@ -475,8 +475,8 @@ function getSystemValue (bodies, speciesRewards, options = {}) {
     // Biological value estimation
     const bioSignals = body.signals?.biological ?? 0
     if (bioSignals > 0) {
-      // First footfall possible if the body is undiscovered (nobody has been there)
-      const isFirstFootfall = body._isFirstDiscoverer ?? false
+      // WasFootfalled (v4.2.1+) stored as _isFirstFootfall; fall back to discovery heuristic
+      const isFirstFootfall = body._isFirstFootfall ?? ((body._isFirstDiscoverer ?? false) || (body._isFirstMapped ?? false))
       const knownSpecies = body._knownSpecies ?? []
       const predictedSpecies = body._predictedSpecies ?? null
       const confirmedGenuses = body.biologicalGenuses ?? null

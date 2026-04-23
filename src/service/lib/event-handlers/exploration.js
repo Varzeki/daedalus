@@ -418,8 +418,18 @@ class Exploration {
         if (scan.StellarMass > 0) body.solarMasses = scan.StellarMass
 
         const isNavBeacon = scan.ScanType === 'NavBeaconDetail'
-        body._isFirstDiscoverer = !isNavBeacon && scan.WasDiscovered === false
+        // If already mapped, treat as already discovered (core systems
+        // never attribute a first discoverer, only first mapped/footfall)
+        const wasDiscovered = scan.WasMapped === true ? true : (scan.WasDiscovered ?? undefined)
+        body._isFirstDiscoverer = !isNavBeacon && wasDiscovered === false
         body._isFirstMapped = !isNavBeacon && scan.WasMapped === false
+        // WasFootfalled (added in game v4.2.1) — use directly when available,
+        // fall back to undiscovered||unmapped for older journals that lack it
+        if (scan.WasFootfalled !== undefined) {
+          body._isFirstFootfall = !isNavBeacon && scan.WasFootfalled === false
+        } else {
+          body._isFirstFootfall = body._isFirstDiscoverer || body._isFirstMapped
+        }
 
         if (scan.SurfaceGravity) body.gravity = scan.SurfaceGravity / 9.81
         if (scan.SurfaceTemperature) body.surfaceTemperature = scan.SurfaceTemperature
@@ -493,8 +503,11 @@ class Exploration {
         terraformingState: scan.TerraformState === 'Terraformable' ? 'Candidate for terraforming' : (scan.TerraformState || ''),
         isMainStar: scan.DistanceFromArrivalLS === 0,
         distanceToArrival: scan.DistanceFromArrivalLS,
-        _isFirstDiscoverer: !isNavBeacon && scan.WasDiscovered === false,
+        _isFirstDiscoverer: !isNavBeacon && (scan.WasMapped === true ? false : scan.WasDiscovered === false),
         _isFirstMapped: !isNavBeacon && scan.WasMapped === false,
+        _isFirstFootfall: scan.WasFootfalled !== undefined
+          ? (!isNavBeacon && scan.WasFootfalled === false)
+          : (!isNavBeacon && ((scan.WasMapped === true ? false : scan.WasDiscovered === false) || scan.WasMapped === false)),
         _wasScanned: true,
         signals: { geological: 0, biological: 0, human: 0 },
         gravity: scan.SurfaceGravity ? scan.SurfaceGravity / 9.81 : undefined,
@@ -832,7 +845,7 @@ class Exploration {
           // Biological value
           const bioSignals = body.signals?.biological ?? 0
           if (bioSignals > 0) {
-            const isFirstFootfall = body._isFirstDiscoverer ?? false
+            const isFirstFootfall = body._isFirstFootfall ?? false
             const knownSpecies = body._knownSpecies ?? []
             const predictedSpecies = body._predictedSpecies ?? null
             const confirmedGenuses = body.biologicalGenuses ?? null
@@ -1007,7 +1020,7 @@ class Exploration {
 
       // Bio value
       const bioSignals = body.signals?.biological ?? 0
-      const isFirstFootfall = isFirstDiscoverer
+      const isFirstFootfall = body._isFirstFootfall ?? false
       const knownSpecies = body._knownSpecies ?? []
       const predictedSpecies = body._predictedSpecies ?? null
       const confirmedGenuses = body.biologicalGenuses ?? null
@@ -1149,6 +1162,7 @@ class Exploration {
         speciesDetail,
         isFirstDiscoverer,
         isFirstMapped,
+        isFirstFootfall,
         wasScanned: body._wasScanned ?? false,
         wasMapped: body._wasMapped ?? false,
         edsmDiscoverer,
@@ -1418,7 +1432,14 @@ class Exploration {
         const scan = await this.eliteLog._query({ event: 'Scan', BodyID: currentBodyId }, 1)
         if (scan?.[0]) {
           const rawBody = scan[0]
-          isFirstFootfall = rawBody.WasDiscovered === false
+          // WasFootfalled (added in game v4.2.1) — use directly when available
+          if (rawBody.WasFootfalled !== undefined) {
+            isFirstFootfall = rawBody.WasFootfalled === false
+          } else {
+            // Fallback for older journals: estimate from discovery/map status
+            const wasDiscovered = rawBody.WasMapped === true ? true : (rawBody.WasDiscovered ?? undefined)
+            isFirstFootfall = wasDiscovered === false || rawBody.WasMapped === false
+          }
           const starPos = locationEvent?.StarPos ?? null
           const allScans = await this.eliteLog._query({ event: 'Scan', StarSystem: systemName })
 
@@ -1741,6 +1762,10 @@ class Exploration {
       const wasMapped = scan.WasMapped
       const isFirstDiscoverer = wasDiscovered === false
       const isFirstMapped = wasMapped === false
+      // WasFootfalled (v4.2.1+) — real footfall boolean; fall back to heuristic
+      const isFirstFootfall = scan.WasFootfalled !== undefined
+        ? scan.WasFootfalled === false
+        : (isFirstDiscoverer || isFirstMapped)
 
       // Calculate body value (mapped + efficiency bonus = best possible payout)
       const mappedValue = getBodyValue({
@@ -1777,6 +1802,7 @@ class Exploration {
         distanceToArrival: scan.DistanceFromArrivalLS,
         isFirstDiscoverer: wasDiscovered === undefined ? null : isFirstDiscoverer,
         isFirstMapped: wasMapped === undefined ? null : isFirstMapped,
+        isFirstFootfall,
         wasScanned: true,
         wasMapped: wasDSSMapped,
         scanValue,
@@ -1805,7 +1831,7 @@ class Exploration {
           const isLostToDeath = !wasBioSold && latestDeath && sp.timestamp <= latestDeath
           const isBioSold = wasBioSold || isLostToDeath
 
-          const isFirstFootfall = body.isFirstDiscoverer === true
+          const isFirstFootfall = body.isFirstFootfall ?? ((body.isFirstDiscoverer === true) || (body.isFirstMapped === true))
           const ffMultiplier = isFirstFootfall ? FIRST_FOOTFALL_MULTIPLIER : 1
 
           return {

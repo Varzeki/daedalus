@@ -176,19 +176,18 @@ function connect (socketState, setSocketState) {
 
       // ── Auto-switch logic ──
       // Rules:
-      // 1. In supercruise + FSD charge begins → switch to route (must be a jump)
-      // 2. In supercruise + jump charge cancelled → switch to system (or bio if in atmosphere)
-      // 3. Not in supercruise + hyperspace jump begins → switch to route (jumped from idle)
+      // 1. FSD hyperdrive charging (in supercruise or not) → switch to route
+      // 2. Jump charge cancelled → switch to system (or bio if in atmosphere)
+      // 3. Not in supercruise + hyperspace jump begins → switch to route (journal fallback)
       // 4. Enter a body's atmosphere → switch to bioscanner
       // 5. Leave a body's atmosphere → switch to system
 
-      // Early auto-switch via Status flags (rule 1: supercruise + charging = jump)
+      // Early auto-switch via Status flags (rule 1: FSD hyperdrive charging = jump)
       try {
         if (socketOptions.explorationAutoSwitch && name === 'gameStateChange' && message?._changedFile === 'Status') {
           const statusFlags = message?.Status?.Flags ?? 0
           const statusFlags2 = message?.Status?.Flags2 ?? 0
           const fsdCharging = (statusFlags & 131072) !== 0
-          const supercruise = (statusFlags & 16) !== 0
           const fsdHyperdriveCharging = (statusFlags2 & 524288) !== 0
           const fsdJump = (statusFlags & 1073741824) !== 0
           const hasLatLon = (statusFlags & 2097152) !== 0
@@ -198,9 +197,11 @@ function connect (socketState, setSocketState) {
             // Skip during post-arrival cooldown to avoid re-triggering
             const inCooldown = socketOptions._autoSwitchCooldown && Date.now() - socketOptions._autoSwitchCooldown < 5000
 
-            // Rule 1: Supercruise + FSD charging → switch to route
+            // Rule 1: FSD hyperdrive charging → switch to route
+            // Fires for both supercruise and normal-space jumps.
+            // fsdHyperdriveCharging distinguishes a jump from a supercruise entry.
             if (!inCooldown && !socketOptions._autoSwitchJumping) {
-              if (fsdCharging && supercruise && fsdHyperdriveCharging) {
+              if (fsdCharging && fsdHyperdriveCharging) {
                 socketOptions._autoSwitchJumping = true
                 socketOptions._autoSwitchCooldown = 0
                 persistAutoSwitchState()
