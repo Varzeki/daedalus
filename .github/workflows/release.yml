@@ -130,7 +130,7 @@ jobs:
         run: |
           FFMPEG_VERSION=$(cat resources/ffmpeg-version.txt | tr -d '[:space:]')
           curl -L -o ffmpeg-release.7z "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-${FFMPEG_VERSION}.7z"
-          7z e ffmpeg-release.7z -o resources "*/bin/ffmpeg.exe" -r
+          7z e ffmpeg-release.7z -oresources "*/bin/ffmpeg.exe" -r -y
           ls -la resources/ffmpeg.exe
 
       - name: Get version from package.json
