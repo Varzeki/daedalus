@@ -3,6 +3,7 @@ import dynamic from 'next/dynamic'
 import { Toaster } from 'react-hot-toast'
 import { SocketProvider, eventListener } from 'lib/socket'
 import { loadColorSettings, saveColorSettings } from 'components/settings'
+import { hasCustomChrome, startWindowResize } from 'lib/window'
 import 'lib/performance-profiler'
 import '../public/fonts/daedalus-terminal/daedalus-terminal.css'
 import '../css/main.css'
@@ -129,7 +130,83 @@ export default class MyApp extends App {
       })
 
       document.addEventListener('keydown', handleKeyPress)
-    } 
+
+      // Edge-drag resize for terminal windows. WebView2's child window
+      // intercepts WM_NCHITTEST before the parent WndProc can return resize
+      // hit codes, so we detect edge proximity in JS and call the native
+      // startResize binding which sends WM_NCLBUTTONDOWN — the same mechanism
+      // used by startWindowDrag for the title bar.
+      if (hasCustomChrome() && !LAUNCHER_PATHS.includes(props.router.pathname)) {
+        const RESIZE_BORDER = 8
+        const EDGE_CURSORS = {
+          'top-left': 'nw-resize',
+          top: 'n-resize',
+          'top-right': 'ne-resize',
+          left: 'w-resize',
+          right: 'e-resize',
+          'bottom-left': 'sw-resize',
+          bottom: 's-resize',
+          'bottom-right': 'se-resize'
+        }
+
+        let currentEdge = null
+        let resizeCursorStyle = null
+        let isResizing = false
+        let resizeIsFullScreen = false
+        let resizeIsMaximized = false
+
+        window.addEventListener('daedalus-fullscreen-change', e => { resizeIsFullScreen = e.detail })
+        window.addEventListener('daedalus-maximize-change', e => { resizeIsMaximized = e.detail })
+
+        function getResizeEdge (x, y) {
+          if (resizeIsFullScreen || resizeIsMaximized) return null
+          const w = window.innerWidth
+          const h = window.innerHeight
+          const l = x < RESIZE_BORDER
+          const r = x > w - RESIZE_BORDER
+          const t = y < RESIZE_BORDER
+          const b = y > h - RESIZE_BORDER
+          if (t && l) return 'top-left'
+          if (t && r) return 'top-right'
+          if (b && l) return 'bottom-left'
+          if (b && r) return 'bottom-right'
+          if (l) return 'left'
+          if (r) return 'right'
+          if (t) return 'top'
+          if (b) return 'bottom'
+          return null
+        }
+
+        document.addEventListener('mousemove', e => {
+          if (isResizing) return
+          const edge = getResizeEdge(e.clientX, e.clientY)
+          if (edge !== currentEdge) {
+            currentEdge = edge
+            if (edge) {
+              if (!resizeCursorStyle) {
+                resizeCursorStyle = document.createElement('style')
+                document.head.appendChild(resizeCursorStyle)
+              }
+              resizeCursorStyle.textContent = `*, *::before, *::after { cursor: ${EDGE_CURSORS[edge]} !important; }`
+            } else if (resizeCursorStyle) {
+              resizeCursorStyle.textContent = ''
+            }
+          }
+        })
+
+        document.addEventListener('mousedown', e => {
+          if (e.button !== 0 || !currentEdge || isResizing) return
+          e.preventDefault()
+          e.stopPropagation()
+          isResizing = true
+          startWindowResize(currentEdge).finally(() => {
+            isResizing = false
+            currentEdge = null
+            if (resizeCursorStyle) resizeCursorStyle.textContent = ''
+          })
+        }, { capture: true })
+      }
+    }
   }
 
   render () {

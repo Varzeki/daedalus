@@ -158,6 +158,18 @@ async function build () {
     console.warn('Warning: resources/yt-dlp.exe not found — video features will be unavailable')
   }
 
+  // Copy ffmpeg.exe alongside the service binary (enables higher-quality video
+  // downloads via bestvideo+bestaudio merge and audio processing features).
+  // Place ffmpeg.exe in resources/ before building to include it.
+  const FFMPEG_SRC = path.join(__dirname, '..', '..', 'resources', 'ffmpeg.exe')
+  const FFMPEG_DST = path.join(BIN_DIR, 'ffmpeg.exe')
+  if (fs.existsSync(FFMPEG_SRC)) {
+    fs.copyFileSync(FFMPEG_SRC, FFMPEG_DST)
+    console.log('Copied ffmpeg.exe to build/bin/')
+  } else {
+    console.warn('Warning: resources/ffmpeg.exe not found — place ffmpeg.exe in resources/ to enable higher-quality video downloads')
+  }
+
   // Copy @parcel/watcher native addon alongside the service binary.
   // pkg cannot embed native .node files, so we ship it externally.
   // At runtime, require('@parcel/watcher-win32-x64') resolves to the

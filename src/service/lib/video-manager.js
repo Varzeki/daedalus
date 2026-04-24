@@ -26,6 +26,18 @@ const YTDLP_BIN = (() => {
   return path.join(__dirname, '..', '..', '..', 'resources', 'yt-dlp.exe')
 })()
 
+// ffmpeg binary — enables higher-quality bestvideo+bestaudio downloads.
+// Resolved the same way as yt-dlp: beside the running exe first, then
+// the project resources/ directory for development.
+const FFMPEG_BIN = (() => {
+  const exeDir = path.dirname(process.execPath)
+  const beside = path.join(exeDir, 'ffmpeg.exe')
+  if (fs.existsSync(beside)) return beside
+  const devPath = path.join(__dirname, '..', '..', '..', 'resources', 'ffmpeg.exe')
+  if (fs.existsSync(devPath)) return devPath
+  return null
+})()
+
 // Ensure cache directory exists
 if (!fs.existsSync(CACHE_DIR)) {
   fs.mkdirSync(CACHE_DIR, { recursive: true })
@@ -302,13 +314,21 @@ function download (urlOrId) {
 
     const args = [
       target,
-      '-f', 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best',
-      '--merge-output-format', 'mp4',
-      '--postprocessor-args', 'ffmpeg:-movflags +faststart',
+      // When ffmpeg is bundled, prefer the higher-quality bestvideo+bestaudio
+      // merge. Without ffmpeg, fall back to pre-muxed formats so the download
+      // always succeeds without any external postprocessor dependency.
+      '-f', FFMPEG_BIN
+        ? 'bestvideo[height<=1080][ext=mp4]+bestaudio[ext=m4a]/best[height<=1080][ext=mp4]/best[height<=1080]/best'
+        : 'best[height<=1080][ext=mp4]/best[ext=mp4]/best[height<=1080]/best',
       '-o', outputTemplate,
       '--no-warnings',
       '--no-check-certificates',
-      '--newline' // Force progress on new lines (easier to parse)
+      '--newline', // Force progress on new lines (easier to parse)
+      ...(FFMPEG_BIN ? [
+        '--ffmpeg-location', FFMPEG_BIN,
+        '--merge-output-format', 'mp4',
+        '--postprocessor-args', 'ffmpeg:-movflags +faststart'
+      ] : [])
     ]
 
     const proc = spawn(YTDLP_BIN, args, { windowsHide: true, cwd: CACHE_DIR })

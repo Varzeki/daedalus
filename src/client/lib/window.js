@@ -85,6 +85,12 @@ async function startWindowDrag () {
   }
 }
 
+async function startWindowResize (edge) {
+  if (isWindowsApp()) {
+    await window.daedalusTerminal_startResize(edge)
+  }
+}
+
 async function toggleMaximize () {
   if (isWindowsApp()) {
     const result = await window.daedalusTerminal_toggleMaximize()
@@ -113,6 +119,7 @@ module.exports = {
   hasCustomChrome,
   minimizeWindow,
   startWindowDrag,
+  startWindowResize,
   toggleMaximize,
   isWindowMaximized
 }

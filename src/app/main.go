@@ -677,6 +677,40 @@ func bindFunctionsToWebView(w webview.WebView, isClientWindow bool) {
 		win.SendMessage(hwnd, win.WM_NCLBUTTONDOWN, win.HTCAPTION, 0)
 		return isMaximized
 	})
+
+	// startResize initiates a native edge-drag resize using the supplied edge
+	// identifier ("left", "right", "top", "bottom", "top-left", "top-right",
+	// "bottom-left", "bottom-right"). Called from the JS edge-detection layer
+	// which detects the cursor proximity because WebView2's child window
+	// intercepts WM_NCHITTEST before the parent WndProc can act on it.
+	w.Bind("daedalusTerminal_startResize", func(edge string) {
+		if !isClientWindow || isFullScreen || isPinned || isMaximized {
+			return
+		}
+		var htCode uintptr
+		switch edge {
+		case "left":
+			htCode = HTLEFT
+		case "right":
+			htCode = HTRIGHT
+		case "top":
+			htCode = HTTOP
+		case "bottom":
+			htCode = HTBOTTOM
+		case "top-left":
+			htCode = HTTOPLEFT
+		case "top-right":
+			htCode = HTTOPRIGHT
+		case "bottom-left":
+			htCode = HTBOTTOMLEFT
+		case "bottom-right":
+			htCode = HTBOTTOMRIGHT
+		default:
+			return
+		}
+		win.ReleaseCapture()
+		win.SendMessage(hwnd, win.WM_NCLBUTTONDOWN, htCode, 0)
+	})
 }
 
 func exitApplication(exitCode int) {
