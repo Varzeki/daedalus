@@ -31,15 +31,23 @@
   position: relative;
   z-index: 2;
   height: 100%;
+  width: min(100%, 96rem);
+  margin: 0 auto;
   display: grid;
-  grid-template-rows: auto 1fr auto auto;
+  grid-template-rows: auto minmax(0, 1fr) auto auto;
   gap: 1.5rem;
   align-items: center;
+  justify-items: center;
+}
+
+.music-panel__content--no-artwork {
+  grid-template-rows: auto auto auto;
+  align-content: center;
 }
 
 .music-panel__header {
   text-align: center;
-  max-width: min(80rem, 100%);
+  width: min(80rem, 100%);
   margin: 0 auto;
 }
 
@@ -97,6 +105,8 @@
 
 .music-panel__track-title {
   margin: .25rem 0 0;
+  position: relative;
+  width: 100%;
   color: rgba(255, 248, 236, .96);
   font-size: clamp(2.2rem, 4.8vw, 4.8rem);
   line-height: 1.02;
@@ -112,7 +122,15 @@
 .music-panel__track-title-track {
   display: inline-flex;
   align-items: baseline;
-  max-width: 100%;
+  white-space: nowrap;
+}
+
+.music-panel__track-title-measure {
+  position: absolute;
+  left: -9999px;
+  top: 0;
+  visibility: hidden;
+  pointer-events: none;
   white-space: nowrap;
 }
 
@@ -141,7 +159,7 @@
 
 .music-panel__transport-bar {
   width: min(56rem, 100%);
-  margin: 0 auto 1rem;
+  margin: 0 auto .35rem;
   padding: 1rem 1.25rem 1.2rem;
   border: .1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), .18);
   background: rgba(4, 9, 14, .66);
@@ -295,9 +313,12 @@
 
 .music-panel__message {
   margin: 0 auto;
-  max-width: min(42rem, 100%);
+  width: min(56rem, 100%);
   padding: .7rem 1rem;
+  font-size: .92rem;
+  line-height: 1.35;
   text-align: center;
+  overflow-wrap: anywhere;
   background: rgba(0, 0, 0, .42);
   border: .1rem solid rgba(255, 255, 255, .08);
 }

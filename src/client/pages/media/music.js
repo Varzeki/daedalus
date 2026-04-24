@@ -61,6 +61,15 @@ function getSessionArtwork (session) {
   return session?.albumArtUrl || null
 }
 
+function getVisualizerErrorMessage (error) {
+  if (!error) return null
+  if (/Windows audio meter helper prerequisites are unavailable/i.test(error)) {
+    return 'Audio visualizer unavailable on this system.'
+  }
+
+  return error
+}
+
 function normalizeMeterSample (sample) {
   if (!sample) return null
 
@@ -484,6 +493,7 @@ export default function MediaMusicPage () {
   const animationFrameRef = useRef(null)
   const titleViewportRef = useRef(null)
   const titleCopyRef = useRef(null)
+  const titleMeasureRef = useRef(null)
   const visualizerStateRef = useRef({
     bars: null,
     peaks: null,
@@ -693,23 +703,25 @@ export default function MediaMusicPage () {
     : false
 
   const albumArtUrl = resolvedAlbumArtUrl
+  const hasAlbumArt = Boolean(albumArtUrl)
   const songTitle = current?.title || (mediaState?.available ? 'Unnamed track' : 'No active media session')
   const songArtist = current?.artist || (mediaState?.supported === false
     ? 'Windows media session API is unavailable on this system.'
     : 'Start playback in Spotify, a browser, or another supported media app.')
+  const visualizerError = getVisualizerErrorMessage(hostVisualizerState.error)
 
   useEffect(() => {
     if (typeof window === 'undefined') return
 
     const measureTitle = () => {
       const viewport = titleViewportRef.current
-      const copy = titleCopyRef.current
+      const copy = titleMeasureRef.current || titleCopyRef.current
       if (!viewport || !copy) {
         return
       }
 
-      const availableWidth = viewport.clientWidth
-      const titleWidth = copy.scrollWidth
+      const availableWidth = Math.floor(viewport.getBoundingClientRect().width)
+      const titleWidth = Math.ceil(copy.getBoundingClientRect().width || copy.scrollWidth || 0)
       const overflow = Math.ceil(titleWidth - availableWidth)
 
       if (overflow > 0) {
@@ -742,10 +754,20 @@ export default function MediaMusicPage () {
     }
 
     const frameId = window.requestAnimationFrame(measureTitle)
+    const resizeObserver = typeof window.ResizeObserver === 'function'
+      ? new window.ResizeObserver(() => measureTitle())
+      : null
+
+    if (resizeObserver) {
+      if (titleViewportRef.current) resizeObserver.observe(titleViewportRef.current)
+      if (titleMeasureRef.current) resizeObserver.observe(titleMeasureRef.current)
+    }
+
     window.addEventListener('resize', measureTitle)
 
     return () => {
       window.cancelAnimationFrame(frameId)
+      if (resizeObserver) resizeObserver.disconnect()
       window.removeEventListener('resize', measureTitle)
     }
   }, [songTitle])
@@ -756,7 +778,7 @@ export default function MediaMusicPage () {
         <div className='music-panel'>
           <canvas ref={canvasRef} className='music-panel__visualizer music-panel__visualizer--background' />
           <div className='music-panel__scrim' />
-          <div className='music-panel__content'>
+          <div className={`music-panel__content${hasAlbumArt ? '' : ' music-panel__content--no-artwork'}`}>
             <header className='music-panel__header'>
               <p className='music-panel__eyebrow'>Now Playing</p>
               <h2 className={`music-panel__track-title ${titleMarquee.active ? 'music-panel__track-title--marquee' : ''}`}>
@@ -779,17 +801,18 @@ export default function MediaMusicPage () {
                     )}
                   </span>
                 </span>
+                <span ref={titleMeasureRef} className='music-panel__track-title-measure' aria-hidden='true'>{songTitle}</span>
               </h2>
               <p className='music-panel__track-subtitle'>{songArtist}</p>
             </header>
 
-            <div className='music-panel__artwork-stage'>
-              <div className='music-panel__artwork-frame'>
-                {albumArtUrl
-                  ? <img src={albumArtUrl} alt={current?.album || current?.title || 'Album art'} className='music-panel__artwork-image' />
-                  : <div className='music-panel__artwork-placeholder'>No Artwork</div>}
+            {hasAlbumArt && (
+              <div className='music-panel__artwork-stage'>
+                <div className='music-panel__artwork-frame'>
+                  <img src={albumArtUrl} alt={current?.album || current?.title || 'Album art'} className='music-panel__artwork-image' />
+                </div>
               </div>
-            </div>
+            )}
 
             <div className='music-panel__transport-bar'>
               <div className='music-panel__progress-row'>
@@ -835,8 +858,8 @@ export default function MediaMusicPage () {
               <p className='music-panel__message music-panel__message--error'>{mediaError}</p>
             )}
 
-            {hostVisualizerState.error && (
-              <p className='music-panel__message music-panel__message--error'>{hostVisualizerState.error}</p>
+            {visualizerError && (
+              <p className='music-panel__message music-panel__message--error'>{visualizerError}</p>
             )}
           </div>
         </div>

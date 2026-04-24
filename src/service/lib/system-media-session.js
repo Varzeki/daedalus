@@ -13,6 +13,7 @@ const SCRIPT_PATH = path.join(RUNTIME_DIR, 'system-media-session.ps1')
 const EMBEDDED_THUMBNAIL_HELPER_SOURCE_PATH = path.join(__dirname, 'system-media-thumbnail-helper.cs')
 const THUMBNAIL_HELPER_SOURCE_PATH = path.join(RUNTIME_DIR, 'system-media-thumbnail-helper.cs')
 const THUMBNAIL_HELPER_PATH = path.join(RUNTIME_DIR, 'system-media-thumbnail-helper.exe')
+const PREBUILT_THUMBNAIL_HELPER_PATH = path.join(path.dirname(process.execPath), 'system-media-thumbnail-helper.exe')
 
 let _cachedState = null
 let _cachedAt = 0
@@ -263,6 +264,10 @@ async function ensureThumbnailHelper () {
   if (!_thumbnailHelperPromise) {
     _thumbnailHelperPromise = (async () => {
       fs.mkdirSync(RUNTIME_DIR, { recursive: true })
+
+      if (fs.existsSync(PREBUILT_THUMBNAIL_HELPER_PATH)) {
+        return PREBUILT_THUMBNAIL_HELPER_PATH
+      }
 
       const cscPath = getCscPath()
       const windowsMetadataPath = getWindowsMetadataPath()

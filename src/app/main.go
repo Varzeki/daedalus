@@ -386,6 +386,17 @@ func bindFunctionsToWebView(w webview.WebView, isClientWindow bool) {
 	hwndPtr := w.Window()
 	hwnd := win.HWND(hwndPtr)
 
+	const (
+		HTLEFT        = 10
+		HTRIGHT       = 11
+		HTTOP         = 12
+		HTTOPLEFT     = 13
+		HTTOPRIGHT    = 14
+		HTBOTTOM      = 15
+		HTBOTTOMLEFT  = 16
+		HTBOTTOMRIGHT = 17
+	)
+
 	var isFullScreen = false
 	var isMaximized = false
 	var isPinned = false
@@ -400,6 +411,39 @@ func bindFunctionsToWebView(w webview.WebView, isClientWindow bool) {
 	if isClientWindow {
 		origProc := win.GetWindowLongPtr(hwnd, win.GWLP_WNDPROC)
 		newProc := syscall.NewCallback(func(h win.HWND, msg uint32, wParam, lParam uintptr) uintptr {
+			if msg == win.WM_NCHITTEST && !isFullScreen && !isPinned {
+				const resizeBorder = 8
+
+				var windowRect win.RECT
+				win.GetWindowRect(h, &windowRect)
+				x := int32(int16(uint32(lParam & 0xFFFF)))
+				y := int32(int16(uint32((lParam >> 16) & 0xFFFF)))
+
+				left := x >= windowRect.Left && x < windowRect.Left+resizeBorder
+				right := x <= windowRect.Right && x >= windowRect.Right-resizeBorder
+				top := y >= windowRect.Top && y < windowRect.Top+resizeBorder
+				bottom := y <= windowRect.Bottom && y >= windowRect.Bottom-resizeBorder
+
+				switch {
+				case top && left:
+					return HTTOPLEFT
+				case top && right:
+					return HTTOPRIGHT
+				case bottom && left:
+					return HTBOTTOMLEFT
+				case bottom && right:
+					return HTBOTTOMRIGHT
+				case left:
+					return HTLEFT
+				case right:
+					return HTRIGHT
+				case top:
+					return HTTOP
+				case bottom:
+					return HTBOTTOM
+				}
+			}
+
 			if msg == win.WM_GETMINMAXINFO {
 				// Constrain the maximized window position and size to
 				// the work area (excluding the taskbar). Without this,

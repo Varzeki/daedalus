@@ -9,6 +9,7 @@ const RUNTIME_DIR = path.join(os.homedir(), 'AppData', 'Local', 'DAEDALUS Termin
 const EMBEDDED_HELPER_SOURCE_PATH = path.join(__dirname, 'system-audio-meter-helper.cs')
 const HELPER_SOURCE_PATH = path.join(RUNTIME_DIR, 'system-audio-meter-helper.cs')
 const HELPER_PATH = path.join(RUNTIME_DIR, 'system-audio-meter-helper.exe')
+const PREBUILT_HELPER_PATH = path.join(path.dirname(process.execPath), 'system-audio-meter-helper.exe')
 const SAMPLE_HISTORY_LIMIT = 180
 
 let _helperProcess = null
@@ -88,6 +89,10 @@ function ensureHelperSource () {
 
 async function ensureHelper () {
   fs.mkdirSync(RUNTIME_DIR, { recursive: true })
+
+  if (fs.existsSync(PREBUILT_HELPER_PATH)) {
+    return PREBUILT_HELPER_PATH
+  }
 
   const cscPath = getCscPath()
   const systemRuntimeFacadePath = getSystemRuntimeFacadePath()

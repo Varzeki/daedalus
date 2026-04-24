@@ -1,5 +1,6 @@
 const fs = require('fs')
 const path = require('path')
+const { execFileSync } = require('child_process')
 const { exec } = require('@yao-pkg/pkg')
 const UPX = require('upx')({ brute: false })
 const yargs = require('yargs')
@@ -18,6 +19,11 @@ const {
 const DEVELOPMENT_BUILD = commandLineArgs.debug || DEVELOPMENT_BUILD_DEFAULT
 const DEBUG_CONSOLE = commandLineArgs.debug || DEBUG_CONSOLE_DEFAULT
 const ENTRY_POINT = path.join(__dirname, '..', '..', 'src', 'service', 'main.js')
+const SERVICE_LIB_DIR = path.join(__dirname, '..', '..', 'src', 'service', 'lib')
+const AUDIO_HELPER_SOURCE = path.join(SERVICE_LIB_DIR, 'system-audio-meter-helper.cs')
+const AUDIO_HELPER_OUTPUT = path.join(BIN_DIR, 'system-audio-meter-helper.exe')
+const THUMBNAIL_HELPER_SOURCE = path.join(SERVICE_LIB_DIR, 'system-media-thumbnail-helper.cs')
+const THUMBNAIL_HELPER_OUTPUT = path.join(BIN_DIR, 'system-media-thumbnail-helper.exe')
 const COMPRESS_FINAL_BUILD = true
 const PKG_TARGET = 'node24-win-x64'
 
@@ -32,6 +38,91 @@ function clean () {
   if (fs.existsSync(SERVICE_UNOPTIMIZED_BUILD)) fs.unlinkSync(SERVICE_UNOPTIMIZED_BUILD)
   if (fs.existsSync(SERVICE_OPTIMIZED_BUILD)) fs.unlinkSync(SERVICE_OPTIMIZED_BUILD)
   if (fs.existsSync(SERVICE_FINAL_BUILD)) fs.unlinkSync(SERVICE_FINAL_BUILD)
+  if (fs.existsSync(AUDIO_HELPER_OUTPUT)) fs.unlinkSync(AUDIO_HELPER_OUTPUT)
+  if (fs.existsSync(THUMBNAIL_HELPER_OUTPUT)) fs.unlinkSync(THUMBNAIL_HELPER_OUTPUT)
+}
+
+function getCscPath () {
+  const windir = process.env.WINDIR || 'C:\\Windows'
+  const candidates = [
+    path.join(windir, 'Microsoft.NET', 'Framework64', 'v4.0.30319', 'csc.exe'),
+    path.join(windir, 'Microsoft.NET', 'Framework', 'v4.0.30319', 'csc.exe')
+  ]
+
+  return candidates.find(candidate => fs.existsSync(candidate)) || null
+}
+
+function getSystemRuntimeFacadePath () {
+  const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)'
+  const candidates = [
+    path.join(programFilesX86, 'Reference Assemblies', 'Microsoft', 'Framework', '.NETFramework', 'v4.8', 'Facades', 'System.Runtime.dll'),
+    path.join(programFilesX86, 'Reference Assemblies', 'Microsoft', 'Framework', '.NETFramework', 'v4.7.2', 'Facades', 'System.Runtime.dll'),
+    path.join(programFilesX86, 'Reference Assemblies', 'Microsoft', 'Framework', '.NETFramework', 'v4.7.1', 'Facades', 'System.Runtime.dll')
+  ]
+
+  return candidates.find(candidate => fs.existsSync(candidate)) || null
+}
+
+function getWindowsMetadataPath () {
+  const programFilesX86 = process.env['ProgramFiles(x86)'] || 'C:\\Program Files (x86)'
+  const candidates = [
+    path.join(programFilesX86, 'Windows Kits', '10', 'UnionMetadata', '10.0.26100.0', 'Windows.winmd'),
+    path.join(programFilesX86, 'Windows Kits', '10', 'UnionMetadata', '10.0.16299.0', 'Windows.winmd'),
+    path.join(programFilesX86, 'Windows Kits', '10', 'UnionMetadata', 'Facade', 'Windows.WinMD')
+  ]
+
+  return candidates.find(candidate => fs.existsSync(candidate)) || null
+}
+
+function getWindowsRuntimeAssemblyPath () {
+  const windir = process.env.WINDIR || 'C:\\Windows'
+  const candidates = [
+    path.join(windir, 'Microsoft.NET', 'Framework64', 'v4.0.30319', 'System.Runtime.WindowsRuntime.dll'),
+    path.join(windir, 'Microsoft.NET', 'Framework', 'v4.0.30319', 'System.Runtime.WindowsRuntime.dll')
+  ]
+
+  return candidates.find(candidate => fs.existsSync(candidate)) || null
+}
+
+function compileHelper (outputPath, sourcePath, references) {
+  const cscPath = getCscPath()
+  if (!cscPath) {
+    throw new Error(`Unable to compile ${path.basename(sourcePath)} because csc.exe is unavailable on the build machine.`)
+  }
+
+  execFileSync(cscPath, [
+    '/nologo',
+    '/target:exe',
+    `/out:${outputPath}`,
+    ...references.map(reference => `/reference:${reference}`),
+    sourcePath
+  ], {
+    windowsHide: true,
+    stdio: 'inherit'
+  })
+}
+
+function compileBundledHelpers () {
+  const systemRuntimeFacadePath = getSystemRuntimeFacadePath()
+  if (!systemRuntimeFacadePath) {
+    throw new Error('Unable to compile bundled Windows helpers because System.Runtime facade is unavailable on the build machine.')
+  }
+
+  compileHelper(AUDIO_HELPER_OUTPUT, AUDIO_HELPER_SOURCE, [systemRuntimeFacadePath])
+  console.log('Compiled bundled system-audio-meter-helper.exe')
+
+  const windowsMetadataPath = getWindowsMetadataPath()
+  const windowsRuntimeAssemblyPath = getWindowsRuntimeAssemblyPath()
+  if (!windowsMetadataPath || !windowsRuntimeAssemblyPath) {
+    throw new Error('Unable to compile bundled thumbnail helper because Windows Runtime build references are unavailable on the build machine.')
+  }
+
+  compileHelper(THUMBNAIL_HELPER_OUTPUT, THUMBNAIL_HELPER_SOURCE, [
+    windowsRuntimeAssemblyPath,
+    systemRuntimeFacadePath,
+    windowsMetadataPath
+  ])
+  console.log('Compiled bundled system-media-thumbnail-helper.exe')
 }
 
 async function build () {
@@ -49,6 +140,8 @@ async function build () {
 
   console.log(`Packaging service with pkg (target: ${PKG_TARGET})...`)
   await exec(pkgArgs)
+
+  compileBundledHelpers()
 
   // Note: resedit metadata injection is skipped for pkg binaries because
   // it reorganizes PE sections, invalidating the hardcoded payload offsets
