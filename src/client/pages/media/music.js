@@ -383,7 +383,46 @@ function smoothHostMeterBars (sample, visualizerState, now = Date.now()) {
   return total / HOST_VISUALIZER_BAR_COUNT
 }
 
-function drawHostMeterVisualizer (ctx, width, height, palette, session, positionSeconds, visualizerState, albumArtImage) {
+function drawSidesModeVisualizer (ctx, width, height, palette, bars, peaks, barCount) {
+  const half = Math.ceil(barCount / 2)
+  const maxSideWidth = width * 0.3
+  const slotH = height / half
+
+  for (let i = 0; i < half; i++) {
+    const y = i * slotH
+    const bh = Math.max(1.5, slotH - 1.5)
+
+    const leftNorm = bars[i] ?? 0
+    const rightNorm = bars[barCount - 1 - i] ?? 0
+    const leftPeak = peaks[i] ?? 0
+    const rightPeak = peaks[barCount - 1 - i] ?? 0
+
+    const leftW = leftNorm * maxSideWidth
+    const rightW = rightNorm * maxSideWidth
+
+    if (leftW > 0.5) {
+      const fillL = ctx.createLinearGradient(0, 0, maxSideWidth, 0)
+      fillL.addColorStop(0, rgba(palette.primary, 0.32))
+      fillL.addColorStop(1, rgba(palette.primary, 0.04))
+      ctx.fillStyle = fillL
+      ctx.fillRect(0, y, leftW, bh)
+    }
+    ctx.fillStyle = rgba(palette.primary, 0.22)
+    ctx.fillRect(Math.max(0, leftPeak * maxSideWidth - 1), y, 2, bh)
+
+    if (rightW > 0.5) {
+      const fillR = ctx.createLinearGradient(width, 0, width - maxSideWidth, 0)
+      fillR.addColorStop(0, rgba(palette.primary, 0.32))
+      fillR.addColorStop(1, rgba(palette.primary, 0.04))
+      ctx.fillStyle = fillR
+      ctx.fillRect(width - rightW, y, rightW, bh)
+    }
+    ctx.fillStyle = rgba(palette.primary, 0.22)
+    ctx.fillRect(Math.min(width - 3, width - rightPeak * maxSideWidth - 1), y, 2, bh)
+  }
+}
+
+function drawHostMeterVisualizer (ctx, width, height, palette, session, positionSeconds, visualizerState, albumArtImage, layout) {
   const sample = visualizerState.hostMeterSample || null
   if (!sample) {
     drawIdleVisualizer(ctx, width, height, palette)
@@ -395,6 +434,15 @@ function drawHostMeterVisualizer (ctx, width, height, palette, session, position
   const dynamicCeiling = updateDynamicCeiling(visualizerState, 'hostDynamicCeiling', maxBarLevel, sample.peak > VISUALIZER_NOISE_FLOOR)
 
   drawBackground(ctx, width, height, palette, averageEnergy)
+
+  if (layout === 'sides') {
+    const scaled = Array.from({ length: HOST_VISUALIZER_BAR_COUNT }, (_, i) =>
+      scaleVisualizerLevel(visualizerState.hostBars[i], dynamicCeiling))
+    const scaledPeaks = Array.from({ length: HOST_VISUALIZER_BAR_COUNT }, (_, i) =>
+      scaleVisualizerLevel(visualizerState.hostPeaks[i], dynamicCeiling))
+    drawSidesModeVisualizer(ctx, width, height, palette, scaled, scaledPeaks, HOST_VISUALIZER_BAR_COUNT)
+    return
+  }
 
   const baseline = height
   const barWidth = width / HOST_VISUALIZER_BAR_COUNT
@@ -418,7 +466,7 @@ function drawHostMeterVisualizer (ctx, width, height, palette, session, position
   }
 }
 
-function drawLiveVisualizer (ctx, width, height, palette, analyser, frequencyData, waveformData, session, positionSeconds, visualizerState, albumArtImage) {
+function drawLiveVisualizer (ctx, width, height, palette, analyser, frequencyData, waveformData, session, positionSeconds, visualizerState, albumArtImage, layout) {
   analyser.getByteFrequencyData(frequencyData)
   analyser.getByteTimeDomainData(waveformData)
 
@@ -428,6 +476,15 @@ function drawLiveVisualizer (ctx, width, height, palette, analyser, frequencyDat
   const dynamicCeiling = updateDynamicCeiling(visualizerState, 'dynamicCeiling', maxBarLevel, averageEnergy > VISUALIZER_NOISE_FLOOR)
 
   drawBackground(ctx, width, height, palette, averageEnergy)
+
+  if (layout === 'sides') {
+    const scaled = Array.from({ length: VISUALIZER_BAR_COUNT }, (_, i) =>
+      scaleVisualizerLevel(visualizerState.bars[i], dynamicCeiling))
+    const scaledPeaks = Array.from({ length: VISUALIZER_BAR_COUNT }, (_, i) =>
+      scaleVisualizerLevel(visualizerState.peaks[i], dynamicCeiling))
+    drawSidesModeVisualizer(ctx, width, height, palette, scaled, scaledPeaks, VISUALIZER_BAR_COUNT)
+    return
+  }
 
   const barWidth = width / VISUALIZER_BAR_COUNT
   const baseline = height
@@ -450,18 +507,18 @@ function drawLiveVisualizer (ctx, width, height, palette, analyser, frequencyDat
   }
 }
 
-function drawVisualizer (canvas, { palette, session, positionSeconds, analyser, frequencyData, waveformData, visualizerState, albumArtImage }) {
+function drawVisualizer (canvas, { palette, session, positionSeconds, analyser, frequencyData, waveformData, visualizerState, albumArtImage, layout }) {
   const drawingContext = prepareCanvas(canvas)
   if (!drawingContext) return
 
   const { ctx, width, height } = drawingContext
   if (analyser && frequencyData && waveformData) {
-    drawLiveVisualizer(ctx, width, height, palette, analyser, frequencyData, waveformData, session, positionSeconds, visualizerState, albumArtImage)
+    drawLiveVisualizer(ctx, width, height, palette, analyser, frequencyData, waveformData, session, positionSeconds, visualizerState, albumArtImage, layout)
     return
   }
 
   if (visualizerState?.hostMeterSample) {
-    drawHostMeterVisualizer(ctx, width, height, palette, session, positionSeconds, visualizerState, albumArtImage)
+    drawHostMeterVisualizer(ctx, width, height, palette, session, positionSeconds, visualizerState, albumArtImage, layout)
     return
   }
 
@@ -484,6 +541,12 @@ export default function MediaMusicPage () {
     error: null,
     updatedAt: 0
   })
+
+  const [vizLayout, setVizLayout] = useState(() => {
+    try { return localStorage.getItem('music:vizLayout') || 'bottom' } catch { return 'bottom' }
+  })
+  const vizLayoutRef = useRef(vizLayout)
+  const lastCurrentRef = useRef(null)
 
   const canvasRef = useRef(null)
   const currentRef = useRef(null)
@@ -548,6 +611,7 @@ export default function MediaMusicPage () {
   const updateMediaState = useCallback((nextState, options = {}) => {
     playbackAnchorRef.current = syncPlaybackAnchor(playbackAnchorRef.current, nextState, options)
     currentRef.current = nextState?.current || null
+    if (nextState?.current) lastCurrentRef.current = nextState.current
     positionRef.current = estimatePosition(playbackAnchorRef.current)
     setMediaState(nextState)
     applyVisualizerState(nextState?.visualizer || null)
@@ -675,7 +739,8 @@ export default function MediaMusicPage () {
           frequencyData: null,
           waveformData: null,
           visualizerState: visualizerStateRef.current,
-          albumArtImage: albumArtImageRef.current
+          albumArtImage: albumArtImageRef.current,
+          layout: vizLayoutRef.current
         })
       }
 
@@ -691,7 +756,9 @@ export default function MediaMusicPage () {
     }
   }, [])
 
-  const current = mediaState?.current || null
+  // Keep showing the previous session during brief source-switch gaps (e.g. Spotify → YouTube)
+  // so the media controls don't flash away while SMTC transitions between sessions.
+  const current = mediaState?.current ?? (mediaState?.available !== false ? lastCurrentRef.current : null)
   const durationSeconds = current?.timeline?.endSeconds ?? playbackAnchorRef.current?.durationSeconds ?? 0
   const positionSeconds = displayPosition
   const progressPercent = durationSeconds > 0
@@ -778,6 +845,19 @@ export default function MediaMusicPage () {
         <div className='music-panel'>
           <canvas ref={canvasRef} className='music-panel__visualizer music-panel__visualizer--background' />
           <div className='music-panel__scrim' />
+          <button
+            type='button'
+            className='music-panel__viz-toggle'
+            onClick={() => {
+              const next = vizLayout === 'bottom' ? 'sides' : 'bottom'
+              vizLayoutRef.current = next
+              setVizLayout(next)
+              try { localStorage.setItem('music:vizLayout', next) } catch {}
+            }}
+            title={vizLayout === 'bottom' ? 'Switch to sides visualiser' : 'Switch to bottom visualiser'}
+          >
+            {vizLayout === 'bottom' ? 'Vis: Bottom' : 'Vis: Sides'}
+          </button>
           <div className={`music-panel__content${hasAlbumArt ? '' : ' music-panel__content--no-artwork'}`}>
             <header className='music-panel__header'>
               <p className='music-panel__eyebrow'>Now Playing</p>

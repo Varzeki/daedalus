@@ -285,7 +285,7 @@ function isDebounced (eventName, debounceMs) {
 }
 
 /**
- * Play the FSD hyperspace countdown locally: 5... 4... 3... 2... 1... Engage
+ * Play the FSD hyperspace countdown locally: 4... 3... 2... 1... Engage
  * Each clip is spaced ~1 second apart to match the in-game countdown.
  */
 async function playCountdown () {

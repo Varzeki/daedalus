@@ -78,7 +78,7 @@
       "causticDamage": { "file": "caustic_damage_detected.wav" }
     },
 
-    "countdownSequence": ["five.wav", "four.wav", "three.wav", "two.wav", "one.wav", "engage.wav"],
+    "countdownSequence": ["four.wav", "three.wav", "two.wav", "one.wav", "engage.wav"],
 
     "statusFlags": {
       "cargoScoopDeployed_true": { "file": "cargo_scoop_deployed.wav" },

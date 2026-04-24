@@ -401,3 +401,26 @@
     transform: scale(.84);
   }
 }
+
+.music-panel__viz-toggle {
+  position: absolute;
+  right: 1rem;
+  bottom: 1rem;
+  z-index: 3;
+  background: rgba(4, 9, 14, 0.6);
+  border: 0.1rem solid rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), 0.22);
+  color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), 0.72);
+  padding: 0.4rem 0.8rem;
+  font-size: 0.8rem;
+  letter-spacing: 0.06rem;
+  text-transform: uppercase;
+  cursor: pointer;
+  line-height: 1;
+  transition: background 0.15s, border-color 0.15s, color 0.15s;
+}
+
+.music-panel__viz-toggle:hover {
+  background: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), 0.14);
+  border-color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), 0.48);
+  color: rgba(var(--color-primary-r), var(--color-primary-g), var(--color-primary-b), 1);
+}

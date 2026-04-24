@@ -229,8 +229,12 @@ function drawFleetCarrier (ctx, cx, cy, size, padNumber, colors) {
   }
 
   // Highlight assigned pad
-  if (padNumber >= 1 && padNumber <= 16) {
-    const p = FC_PADS[padNumber - 1]
+  // Fleet carriers officially have 16 pads, but the game may issue pad
+  // numbers beyond 16. Wrap with modulo (matching LandingPad plugin behaviour)
+  // so any valid pad number maps to a visible rectangle.
+  if (padNumber >= 1) {
+    const padIdx = (padNumber - 1) % FC_PADS.length
+    const p = FC_PADS[padIdx]
     const x = cx + p.x * unit
     const y = cy + p.y * unit
     const w = p.w * unit

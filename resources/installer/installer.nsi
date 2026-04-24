@@ -81,6 +81,20 @@ InstallDir "$PROGRAMFILES\DAEDALUS Terminal"
 
 Section -MainProgram
 ${INSTALL_TYPE}
+
+; Wait up to 10 seconds for any running instance to release its file lock.
+; On a fresh install the exe doesn't exist yet so Delete succeeds immediately.
+StrCpy $1 10
+wait_for_exit:
+  ClearErrors
+  Delete "$INSTDIR\${MAIN_APP_EXE}"
+  IfErrors 0 wait_done
+  IntOp $1 $1 - 1
+  IntCmp $1 0 wait_done 0 0
+  Sleep 1000
+  Goto wait_for_exit
+wait_done:
+
 SetOverwrite ifnewer
 SetOutPath "$INSTDIR"
 File "..\..\build\bin\DAEDALUS Service.exe"
