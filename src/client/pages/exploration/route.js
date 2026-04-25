@@ -111,7 +111,8 @@ export default function ExplorationRoutePage () {
   }, [connected, ready, router.isReady])
 
   useEffect(() => eventListener('newLogEntry', async (log) => {
-    if (['Location', 'FSDJump'].includes(log.event)) {
+    // NavRoute / NavRouteClear fire when the player plots or clears a route.
+    if (['Location', 'FSDJump', 'NavRoute', 'NavRouteClear'].includes(log.event)) {
       if (process.env.NODE_ENV === 'development') devLog(`[ROUTE] newLogEntry: ${log.event} — refetching`)
       const data = await fetchRoute()
       if (data) {

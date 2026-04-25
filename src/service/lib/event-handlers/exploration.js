@@ -160,7 +160,19 @@ function projectRouteFuel (route, jumpProfile, currentSystemName) {
 
   for (let index = currentIndex === -1 ? 0 : currentIndex + 1; index < projectedRoute.length; index++) {
     const entry = projectedRoute[index]
-    const fuelRequired = getJumpFuelUse(entry.hopDistance, currentMass, jumpProfile)
+    const prevEntry = index > 0 ? projectedRoute[index - 1] : null
+    const prevIsNeutron = prevEntry != null && /^N/.test(prevEntry.starClass)
+
+    let fuelRequired = getJumpFuelUse(entry.hopDistance, currentMass, jumpProfile)
+
+    // Neutron star supercharge boosts the following jump's range 4x. The game
+    // still caps fuel spend at maxFuelPerJump per jump, so the raw fuel formula
+    // (which can return 40–50× maxFuelPerJump for a full-boost hop) must be
+    // capped here to reflect what the ship actually burns.
+    if (prevIsNeutron) {
+      fuelRequired = Math.min(fuelRequired, jumpProfile.maxFuelPerJump)
+    }
+
     const canReach =
       Number.isFinite(fuelRequired) &&
       fuelRequired <= jumpProfile.maxFuelPerJump + 1e-6 &&
@@ -176,6 +188,14 @@ function projectRouteFuel (route, jumpProfile, currentSystemName) {
 
     remainingFuel = Math.max(remainingFuel - fuelRequired, 0)
     currentMass = jumpProfile.dryMass + remainingFuel
+
+    // Assume the player fuel-scoops at every scoopable main-sequence star,
+    // restoring the main tank to capacity before the next hop.
+    if (entry.isScoopable && jumpProfile.fuelCapacity) {
+      remainingFuel = jumpProfile.fuelCapacity
+      currentMass = jumpProfile.dryMass + remainingFuel
+    }
+
     projectedRoute[index] = {
       ...entry,
       fuelRequiredFromPrevious: parseFloat(fuelRequired.toFixed(2)),
