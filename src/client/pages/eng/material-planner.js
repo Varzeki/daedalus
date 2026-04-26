@@ -1,5 +1,6 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useMemo } from 'react'
 import animateTableEffect from 'lib/animate-table-effect'
+import Link from 'next/link'
 import { useSocket, sendEvent, eventListener } from 'lib/socket'
 import { EngineeringPanelNavItems } from 'lib/navigation-items'
 import Layout from 'components/layout'
@@ -61,13 +62,13 @@ function toEnabledSet (methodsConfig) {
 
 // ── Tab: Smart Route ────────────────────────────────────────────────────────
 
-const STOP_ICONS = {
-  collection: '🪨',
-  trade: '💱',
-  engineer: '🔧',
-  activity: '📌',
-  commodity_purchase: '🛒',
-  outfitting: '🔩'
+const STOP_ICON_CLASSES = {
+  collection: 'daedalus-terminal-materials-raw',
+  trade: 'daedalus-terminal-cargo',
+  engineer: 'daedalus-terminal-engineer',
+  activity: 'daedalus-terminal-poi',
+  commodity_purchase: 'daedalus-terminal-cargo-buy',
+  outfitting: 'daedalus-terminal-cogs'
 }
 
 const STOP_LABELS = {
@@ -80,25 +81,22 @@ const STOP_LABELS = {
 }
 
 function GradePill ({ grade, type }) {
-  const colours = { raw: '#5cb85c', encoded: '#5bc0de', manufactured: '#d9534f' }
-  const bg = colours[(type ?? '').toLowerCase()] ?? '#555'
+  const TYPE_MAP = {
+    raw: { iconClass: 'daedalus-terminal-materials-raw', textClass: 'text-success' },
+    encoded: { iconClass: 'daedalus-terminal-materials-encoded', textClass: 'text-info' },
+    manufactured: { iconClass: 'daedalus-terminal-materials-manufactured', textClass: 'text-secondary' }
+  }
+  const { iconClass, textClass } = TYPE_MAP[(type ?? '').toLowerCase()] ?? { iconClass: 'daedalus-terminal-materials', textClass: 'text-muted' }
   return (
-    <span style={{
-      fontSize: '.75rem',
-      background: bg,
-      color: '#fff',
-      padding: '.1rem .4rem',
-      borderRadius: '3px',
-      fontWeight: 600,
-      textTransform: 'uppercase'
-    }}>
-      {type} G{grade}
+    <span className={textClass} style={{ fontSize: '.82rem', whiteSpace: 'nowrap' }}>
+      <i className={`icon ${iconClass}`} style={{ marginRight: '.2rem' }} />
+      G{grade}
     </span>
   )
 }
 
 function RouteStopCard ({ stop, index }) {
-  const icon = STOP_ICONS[stop.type] ?? '◆'
+  const iconClass = STOP_ICON_CLASSES[stop.type] ?? 'daedalus-terminal-poi'
   const label = STOP_LABELS[stop.type] ?? stop.type
 
   return (
@@ -120,7 +118,7 @@ function RouteStopCard ({ stop, index }) {
       <div style={{ flex: 1, marginBottom: '.5rem' }}>
         {/* Stop header */}
         <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.5rem', flexWrap: 'wrap' }}>
-          <span style={{ fontSize: '1.1rem' }}>{icon}</span>
+          <i className={`icon ${iconClass}`} style={{ fontSize: '1rem' }} />
           <strong>{stop.system?.name ?? 'Unknown System'}</strong>
           <span className='text-muted' style={{ fontSize: '.85rem' }}>({label})</span>
           {stop.distanceFromPrev != null && stop.distanceFromPrev !== Infinity && index > 0 &&
@@ -159,12 +157,12 @@ function CollectionStopBody ({ stop }) {
             <GradePill grade={mat.grade} type={mat.type} />
           </div>
           {mat.instructions &&
-            <div className='text-muted' style={{ fontSize: '.85rem' }}>📍 {mat.instructions}</div>}
+            <div className='text-muted' style={{ fontSize: '.85rem' }}><i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />{mat.instructions}</div>}
         </div>
       )}
       {stop.noSource &&
         <div className='text-warning' style={{ fontSize: '.85rem', marginTop: '.25rem' }}>
-          ⚠ No known hotspot for enabled collection methods.
+          <i className='icon daedalus-terminal-warning' style={{ marginRight: '.2rem' }} />No known hotspot for enabled collection methods.
         </div>}
     </>
   )
@@ -180,7 +178,7 @@ function TradeStopBody ({ stop }) {
             <span> · {stop.station.distanceToArrival.toLocaleString()} Ls</span>}
         </div>}
       <div className='text-muted' style={{ marginBottom: '.4rem', fontSize: '.85rem' }}>
-        📍 Dock → Contacts → Material Trader
+        <i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />Dock → Contacts → Material Trader
       </div>
       {(stop.trades ?? []).map((trade, i) =>
         <div key={`trade_${i}`} className='text-primary' style={{ fontSize: '.9rem', marginBottom: '.2rem' }}>
@@ -207,7 +205,7 @@ function EngineerStopBody ({ stop }) {
           </span>}
       </div>
       <div className='text-muted' style={{ marginBottom: '.4rem', fontSize: '.85rem' }}>
-        📍 Dock → Contacts → Engineers
+        <i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />Dock → Contacts → Engineers
       </div>
       {(stop.blueprints ?? []).map((bp, i) =>
         <div key={`bp_${i}`} style={{ fontSize: '.9rem', marginBottom: '.15rem' }}>
@@ -246,7 +244,7 @@ function CommodityStopBody ({ stop }) {
         </div>}
       {stop.commodity &&
         <div className='text-primary' style={{ fontSize: '.9rem' }}>
-          📍 Dock → Commodities Market → Buy {stop.commodity.amount}× <strong>{stop.commodity.name}</strong>
+          <i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />Dock → Commodities Market → Buy {stop.commodity.amount}× <strong>{stop.commodity.name}</strong>
         </div>}
     </>
   )
@@ -340,7 +338,7 @@ function SmartRouteTab ({ wishlist, blueprints, materials, engineers, materialSo
     return (
       <div className='text-muted' style={{ padding: '2rem 0' }}>
         Your engineering wishlist is empty.{' '}
-        <a href='/eng/wishlist' className='text-primary'>Add blueprints in the Wishlist tab</a> to generate a route.
+        <Link href='/eng/wishlist' className='text-primary'>Add blueprints in the Wishlist tab</Link> to generate a route.
       </div>
     )
   }
@@ -545,13 +543,13 @@ function GuideEntry ({ symbol, name, type, grade, shortfall, materialSources }) 
           </span>}
       </div>
       {source?.sources?.length
-        ? <div className='text-muted' style={{ fontSize: '.85rem' }}>📍 {source.sources.join(' · ')}</div>
-        : <div className='text-muted' style={{ fontSize: '.85rem' }}>📍 {genericHint}</div>}
+        ? <div className='text-muted' style={{ fontSize: '.85rem' }}><i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />{source.sources.join(' · ')}</div>
+        : <div className='text-muted' style={{ fontSize: '.85rem' }}><i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />{genericHint}</div>}
       {source?.hotspots?.length > 0 &&
         <div style={{ marginTop: '.2rem' }}>
           {source.hotspots.slice(0, 2).map((hs, i) => (
             <div key={`hs_${i}`} className='text-primary' style={{ fontSize: '.8rem' }}>
-              ⭐ {hs.system}{hs.instructions ? ` — ${hs.instructions}` : ''}
+              <i className='icon daedalus-terminal-poi' style={{ marginRight: '.2rem' }} />{hs.system}{hs.instructions ? ` — ${hs.instructions}` : ''}
             </div>
           ))}
         </div>}
@@ -648,6 +646,7 @@ function CollectionGuideTab ({ wishlist, blueprints, materials, materialSources 
 
 // ── Page ────────────────────────────────────────────────────────────────────
 
+const MATERIAL_EVENTS = ['Materials', 'MaterialCollected', 'MaterialDiscarded', 'MaterialTrade', 'EngineerCraft']
 const TABS = ['Smart Route', 'Trader Planner', 'Engineer Route', 'Collection Guide']
 
 export default function EngineeringMaterialPlannerPage () {
@@ -690,8 +689,6 @@ export default function EngineeringMaterialPlannerPage () {
       setComponentReady(true)
     })()
   }, [connected, ready])
-
-  const MATERIAL_EVENTS = ['Materials', 'MaterialCollected', 'MaterialDiscarded', 'MaterialTrade', 'EngineerCraft']
 
   useEffect(() => eventListener('newLogEntry', async (log) => {
     if (MATERIAL_EVENTS.includes(log.event)) {
