@@ -16,6 +16,8 @@ export default function EngineeringEngineersPage () {
   const [componentReady, setComponentReady] = useState(false)
   const [currentSystem, setCurrentSystem] = useState()
   const [engineers, setEngineers] = useState()
+  const [blueprints, setBlueprints] = useState()
+  const [prerequisites, setPrerequisites] = useState({})
 
   useEffect(animateTableEffect)
   
@@ -24,11 +26,15 @@ export default function EngineeringEngineersPage () {
       if (!connected || !router.isReady) return
 
       // Always refetch list of engineers to ensure up to date
-      const newEngineers = await sendEvent('getEngineers')
+      const [newEngineers, newBlueprints, newPrerequisites, newSystem] = await Promise.all([
+        sendEvent('getEngineers'),
+        sendEvent('getBlueprints'),
+        sendEvent('getEngineerPrerequisites'),
+        sendEvent('getSystem')
+      ])
       setEngineers(newEngineers)
-
-      // Always refetch current system
-      const newSystem = await sendEvent('getSystem')
+      setBlueprints(newBlueprints)
+      setPrerequisites(newPrerequisites ?? {})
       if (newSystem?.address) setCurrentSystem(newSystem)
       setComponentReady(true)
     })()
@@ -38,6 +44,9 @@ export default function EngineeringEngineersPage () {
     if (['Location', 'FSDJump'].includes(log.event)) {
       const newSystem = await sendEvent('getSystem')
       if (newSystem?.address) setCurrentSystem(newSystem)
+    }
+    if (log.event === 'EngineerProgress') {
+      setEngineers((await sendEvent('getEngineers')) ?? [])
     }
   }), [])
 
@@ -51,36 +60,114 @@ export default function EngineeringEngineersPage () {
           Engineers can use Blueprints and Experimental Effects to improve ships and equipment
         </p>
 
-        {engineers && engineers.length > 0 &&
-          <>
-            <div className='section-heading'>
-              <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Unlocked Engineers</h4>
-            </div>
-            <ListEngineers
-              engineers={engineers.filter(e => e.progress.status.toLowerCase() === 'unlocked')}
-              currentSystem={currentSystem}
-            />
-            <div className='section-heading'>
-              <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Known/Invited Engineers</h4>
-            </div>
-            <ListEngineers
-              engineers={engineers.filter(e => e.progress.status !== UNKNOWN_VALUE && e.progress.status.toLowerCase() !== 'unlocked')}
-              currentSystem={currentSystem}
-            />
-            <div className='section-heading'>
-              <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Locked Engineers</h4>
-            </div>
-            <ListEngineers
-              engineers={engineers.filter(e => e.progress.status === UNKNOWN_VALUE)}
-              currentSystem={currentSystem}
-            />
-          </>}
+        {engineers && blueprints && (() => {
+          const relevantEngineers = engineers.filter(engineer =>
+            blueprints.some(bp =>
+              bp.appliedToModules.length > 0 &&
+              Object.prototype.hasOwnProperty.call(bp.engineers ?? {}, engineer.name)
+            )
+          )
+          const relevantRows = relevantEngineers.map(engineer => {
+            const fittedBlueprintNames = blueprints
+              .filter(bp => bp.appliedToModules.length > 0 && Object.prototype.hasOwnProperty.call(bp.engineers ?? {}, engineer.name))
+              .map(bp => bp.name)
+            return { engineer, fittedBlueprintNames }
+          })
+          return (
+            <>
+              {relevantRows.length > 0 &&
+                <>
+                  <div className='section-heading'>
+                    <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Relevant to Your Ship</h4>
+                  </div>
+                  <p className='text-primary'>Engineers with Blueprints applied to your currently fitted equipment</p>
+                  <table className='table--animated'>
+                    <tbody className='fx-fade-in'>
+                      {relevantRows.map(({ engineer, fittedBlueprintNames }) => (
+                        <tr key={`relevant_${engineer.name}`}>
+                          <td className='text-primary text-center' style={{ width: '2rem' }}>
+                            <i className='icon daedalus-terminal-engineer' style={{ fontSize: '1.75rem', lineHeight: '2rem', width: '2rem', display: 'inline-block' }} />
+                          </td>
+                          <td>
+                            <h4 className='text-info'>{engineer.name}</h4>
+                            <p className='text-primary' style={{ margin: 0, fontSize: '.9rem' }}>
+                              {fittedBlueprintNames.join(', ')}
+                            </p>
+                          </td>
+                          <td className='text-right'>
+                            <CopyOnClick>{engineer.system.name}</CopyOnClick>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                  <hr className='small' style={{ marginTop: 0 }} />
+                </>
+              }
+
+              {engineers.length > 0 &&
+                <>
+                  <div className='section-heading'>
+                    <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Unlocked Engineers</h4>
+                  </div>
+                  <ListEngineers
+                    engineers={engineers.filter(e => e.progress.status.toLowerCase() === 'unlocked')}
+                    currentSystem={currentSystem}
+                    prerequisites={prerequisites}
+                  />
+                  <div className='section-heading'>
+                    <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Known/Invited Engineers</h4>
+                  </div>
+                  <ListEngineers
+                    engineers={engineers.filter(e => e.progress.status !== UNKNOWN_VALUE && e.progress.status.toLowerCase() !== 'unlocked')}
+                    currentSystem={currentSystem}
+                    prerequisites={prerequisites}
+                  />
+                  <div className='section-heading'>
+                    <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Locked Engineers</h4>
+                  </div>
+                  <ListEngineers
+                    engineers={engineers.filter(e => e.progress.status === UNKNOWN_VALUE)}
+                    currentSystem={currentSystem}
+                    prerequisites={prerequisites}
+                  />
+                </>
+              }
+            </>
+          )
+        })()}
       </Panel>
     </Layout>
   )
 }
 
-function ListEngineers ({ engineers, currentSystem }) {
+function getNextUnlockStep (engineer, prerequisites) {
+  const status = (engineer.progress.status ?? '').toLowerCase()
+  const prereq = prerequisites?.[String(engineer.id)]
+  if (!prereq) return null
+
+  if (status === 'unlocked') return null
+
+  // Invited → show unlock step
+  if (status === 'invited' && prereq.unlock) {
+    return `Unlock: ${prereq.unlock.description ?? `Provide ${prereq.unlock.amount ?? '?'}× ${prereq.unlock.name ?? prereq.unlock.symbol}`}`
+  }
+
+  // Known → show invite (activity) step if present, else unlock
+  if (status === 'known') {
+    if (prereq.invite) return `Invite: ${prereq.invite.description}`
+    if (prereq.unlock) return `Unlock: ${prereq.unlock.description ?? `Provide ${prereq.unlock.amount ?? '?'}× ${prereq.unlock.name ?? prereq.unlock.symbol}`}`
+  }
+
+  // Locked/Unknown → show learn step if present
+  if (prereq.learn) return `Learn: ${prereq.learn.description}`
+  if (prereq.invite) return `Invite: ${prereq.invite.description}`
+  if (prereq.unlock) return `Unlock: ${prereq.unlock.description ?? `Provide ${prereq.unlock.amount ?? '?'}× ${prereq.unlock.name ?? prereq.unlock.symbol}`}`
+
+  return null
+}
+
+function ListEngineers ({ engineers, currentSystem, prerequisites }) {
   return (
     <>
       <table className='table--animated'>
@@ -112,7 +199,13 @@ function ListEngineers ({ engineers, currentSystem }) {
                   {engineer.progress.status === UNKNOWN_VALUE
                     ? <p className='text-danger text-muted'>Locked</p>
                     : <p className={engineer.progress.status.toLowerCase() === 'unlocked' ? 'text-primary' : 'text-primary text-muted'}>{engineer.progress.status}</p>}
-                </>}
+                </> }
+                {engineer.progress.status.toLowerCase() !== 'unlocked' && (() => {
+                  const step = getNextUnlockStep(engineer, prerequisites)
+                  return step
+                    ? <p className='text-warning' style={{ margin: '.1rem 0 0', fontSize: '.82rem' }}>⮞ {step}</p>
+                    : null
+                })()}
                 {engineer.progress.rank > 0 &&
                   <h4 className='text-secondary'>
                     {[...Array(engineer.progress.rank)].map((j, i) =>
