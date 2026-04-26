@@ -25,11 +25,12 @@ export const TradeType = Object.freeze({
 })
 
 // Preference order for trade sorting — lower is better
+// CROSS_UPTRADE is worst (6^(n+1):1, e.g. 36:1 for n=1) vs plain UPTRADE (6^n:1, e.g. 6:1 for n=1)
 const TRADE_PREFERENCE = {
   [TradeType.DOWNTRADE]: 1,
   [TradeType.CROSS_DOWNTRADE]: 2,
-  [TradeType.CROSS_UPTRADE]: 3,
-  [TradeType.UPTRADE]: 4
+  [TradeType.UPTRADE]: 3,
+  [TradeType.CROSS_UPTRADE]: 4
 }
 
 // ---------------------------------------------------------------------------
@@ -265,21 +266,25 @@ export function calculateTradeSuggestions (targetMaterial, shortfall, allMateria
  * Processes targets in priority order: highest grade first (most expensive
  * to collect).
  *
- * @param {Array}  shortfalls   — result of aggregateMaterialRequirements() (only entries with shortfall > 0)
- * @param {Array}  allMaterials — full getMaterials() result
- * @returns {Array} Same as shortfalls but each entry augmented with
- *                  { trades, fullyResolved, stillNeeded } from the
- *                  calculateTradeSuggestions for that material.
+ * @param {Array}  allRequirements — full result of aggregateMaterialRequirements() including
+ *                                   entries with shortfall === 0 (needed for protected-quantity tracking)
+ * @param {Array}  allMaterials    — full getMaterials() result
+ * @returns {Array} Only entries from allRequirements where shortfall > 0, each augmented with
+ *                  { trades, fullyResolved, stillNeeded }.
  */
-export function allocateTradeSuggestions (shortfalls, allMaterials) {
+export function allocateTradeSuggestions (allRequirements, allMaterials) {
   // Work with a mutable copy of inventory counts
   const mutableInventory = allMaterials.map(m => ({ ...m }))
 
-  // Build shortfallMap for reserved-quantity tracking
+  // Build shortfallMap from ALL required materials — including those we already have enough of.
+  // This prevents their inventory from being offered as trade surplus for other targets.
   const shortfallMap = {}
-  for (const s of shortfalls) {
-    shortfallMap[s.symbol] = { required: s.required }
+  for (const r of allRequirements) {
+    shortfallMap[r.symbol] = { required: r.required }
   }
+
+  // Only generate trade suggestions for materials we're actually short on
+  const shortfalls = allRequirements.filter(r => r.shortfall > 0)
 
   // Sort by grade descending (highest grade first = hardest to collect gets first pick of surplus)
   const prioritised = [...shortfalls].sort((a, b) => b.grade - a.grade)
@@ -311,6 +316,43 @@ export function allocateTradeSuggestions (shortfalls, allMaterials) {
     }
   }
 
-  // Return in the original order with suggestions attached
+  // Return in the original order with suggestions attached (shortfall-only entries)
   return shortfalls.map(s => results[s.symbol] ?? s)
+}
+
+// ---------------------------------------------------------------------------
+// Per-item shortfall (for WishlistItem status badges)
+// ---------------------------------------------------------------------------
+
+/**
+ * Count how many distinct materials are short for a single wishlist item.
+ * Returns the count of materials where owned < required*quantity, not the
+ * total unit deficit (which scales arbitrarily with grade and quantity).
+ *
+ * @param {object} item       — wishlist item
+ * @param {Array}  blueprints — result of getBlueprints()
+ * @param {Array}  materials  — result of getMaterials()
+ * @returns {number} Count of materials with a shortfall for this item
+ */
+export function computeItemShortfall (item, blueprints, materials) {
+  if (item.type !== 'engineering') return 0
+  const blueprint = blueprints.find(
+    b => b.symbol.toLowerCase() === (item.blueprintSymbol ?? '').toLowerCase()
+  )
+  if (!blueprint) return 0
+  const gradeEntry = blueprint.grades.find(g => g.grade === item.grade)
+  if (!gradeEntry) return 0
+
+  const qty = item.quantity ?? 1
+  let shortCount = 0
+  for (const component of gradeEntry.components) {
+    const sym = component.symbol ?? component.name?.toLowerCase().replace(/\s+/g, '')
+    const material = sym
+      ? materials.find(m => m.symbol?.toLowerCase() === sym.toLowerCase())
+      : null
+    const have = material?.count ?? 0
+    const need = component.cost * qty
+    if (have < need) shortCount++
+  }
+  return shortCount
 }

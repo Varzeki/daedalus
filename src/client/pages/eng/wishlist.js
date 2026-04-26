@@ -5,7 +5,7 @@ import { EngineeringPanelNavItems } from 'lib/navigation-items'
 import Layout from 'components/layout'
 import Panel from 'components/panel'
 import { getActiveShipId, setActiveShipId, getWishlist, addToWishlist, removeFromWishlist, updateWishlistItem } from 'lib/wishlist'
-import { aggregateMaterialRequirements, allocateTradeSuggestions } from 'lib/engineering-calc'
+import { aggregateMaterialRequirements, allocateTradeSuggestions, computeItemShortfall } from 'lib/engineering-calc'
 import WishlistItem from 'components/panels/eng/wishlist-item'
 import MaterialRequirement from 'components/panels/eng/material-requirement'
 import BlueprintPicker from 'components/panels/eng/blueprint-picker'
@@ -66,8 +66,8 @@ export default function EngineeringWishlistPage () {
   // ── Wishlist mutations ────────────────────────────────────────────────────
   const handleAdd = useCallback((item) => {
     if (!shipId) return
-    item.id = crypto.randomUUID()
-    const updated = addToWishlist(shipId, item)
+    const newItem = { ...item, id: crypto.randomUUID() }
+    const updated = addToWishlist(shipId, newItem)
     setWishlist([...updated])
     setShowPicker(false)
   }, [shipId])
@@ -86,9 +86,15 @@ export default function EngineeringWishlistPage () {
 
   // ── Computed data ─────────────────────────────────────────────────────────
   const allRequirements = aggregateMaterialRequirements(wishlist, blueprints, materials)
-  const shortfallRequirements = allRequirements.filter(r => r.shortfall > 0)
-  const withTrades = allocateTradeSuggestions(shortfallRequirements, materials)
+  // Pass allRequirements (not just shortfall subset) so every required material
+  // is protected from being offered as trade surplus for a different target.
+  const withTrades = allocateTradeSuggestions(allRequirements, materials)
   const shortfallMap = Object.fromEntries(allRequirements.map(r => [r.symbol, r]))
+
+  // Per-item shortfall: count of distinct materials short for each wishlist entry
+  const perItemShortfall = Object.fromEntries(
+    wishlist.map(item => [item.id, computeItemShortfall(item, blueprints, materials)])
+  )
 
   const displayRequirements = shortfallOnly ? withTrades : allRequirements.map(r => {
     const trade = withTrades.find(t => t.symbol === r.symbol)
@@ -151,7 +157,7 @@ export default function EngineeringWishlistPage () {
                     <WishlistItem
                       key={item.id}
                       item={item}
-                      requirements={allRequirements}
+                      shortfall={perItemShortfall[item.id] ?? 0}
                       onRemove={handleRemove}
                       onUpdate={handleUpdate}
                     />

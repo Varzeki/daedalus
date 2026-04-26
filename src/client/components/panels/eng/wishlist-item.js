@@ -2,19 +2,12 @@
  * WishlistItem — single row in the wishlist table.
  *
  * Props:
- *   item          {object}   — wishlist item from localStorage
- *   requirements  {Array}    — aggregated requirements from aggregateMaterialRequirements()
- *   onRemove      {Function} — (id) => void
- *   onUpdate      {Function} — (id, changes) => void
+ *   item      {object}   — wishlist item from localStorage
+ *   shortfall {number}   — count of distinct materials short for this specific item
+ *                          (computed by computeItemShortfall in the parent page)
+ *   onRemove  {Function} — (id) => void
+ *   onUpdate  {Function} — (id, changes) => void
  */
-
-function itemShortfall (item, requirements) {
-  // A wishlist item is "ready" if none of its per-grade materials have a shortfall.
-  // We use the aggregate requirements as a proxy — if ANY material has a shortfall
-  // the item is considered incomplete.
-  if (!requirements?.length) return 0
-  return requirements.reduce((sum, r) => sum + (r.shortfall ?? 0), 0)
-}
 
 function StatusBadge ({ shortfall }) {
   if (shortfall === 0) {
@@ -32,11 +25,9 @@ function StatusBadge ({ shortfall }) {
   )
 }
 
-export default function WishlistItem ({ item, requirements, onRemove, onUpdate }) {
-  const totalShortfall = itemShortfall(item, requirements)
-
+export default function WishlistItem ({ item, shortfall, onRemove, onUpdate }) {
   return (
-    <tr className={totalShortfall === 0 ? 'text-secondary' : ''}>
+    <tr className={shortfall === 0 ? 'text-secondary' : ''}>
       <td>
         <h4 style={{ margin: 0 }}>{item.blueprintName}</h4>
       </td>
@@ -73,7 +64,7 @@ export default function WishlistItem ({ item, requirements, onRemove, onUpdate }
         </div>
       </td>
       <td style={{ width: '10rem' }}>
-        <StatusBadge shortfall={totalShortfall} />
+        <StatusBadge shortfall={shortfall} />
       </td>
       <td className='text-right' style={{ width: '2rem' }}>
         <button

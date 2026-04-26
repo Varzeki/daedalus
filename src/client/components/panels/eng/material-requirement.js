@@ -3,10 +3,9 @@
  * Shows a progress bar, owned/required counts, and up to 4 trade suggestions.
  *
  * Props:
- *   requirement   {object}  — { symbol, name, type, category, grade, required, owned,
- *                              shortfall, maxCount, trades?, fullyResolved?, stillNeeded? }
- *   shortfallMap  {object}  — symbol → { required } for all materials
- *   materials     {Array}   — full getMaterials() result (for trade display)
+ *   requirement  {object}  — { symbol, name, type, category, grade, required, owned,
+ *                             shortfall, maxCount, trades?, fullyResolved?, stillNeeded? }
+ *   shortfallMap {object}  — symbol → { required } for all materials (reserved-quantity reference)
  */
 import { useState } from 'react'
 
@@ -68,7 +67,7 @@ function TradeSuggestions ({ trades, fullyResolved, stillNeeded }) {
   )
 }
 
-export default function MaterialRequirement ({ requirement, shortfallMap, materials }) {
+export default function MaterialRequirement ({ requirement, shortfallMap }) {
   const {
     name,
     type,
