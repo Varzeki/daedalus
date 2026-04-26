@@ -1,13 +1,175 @@
 import { useState, useEffect, useMemo } from 'react'
-import animateTableEffect from 'lib/animate-table-effect'
 import { useRouter } from 'next/router'
 import distance from '../../../shared/distance'
 import { UNKNOWN_VALUE } from '../../../shared/consts'
 import { useSocket, sendEvent, eventListener } from 'lib/socket'
 import { EngineeringPanelNavItems } from 'lib/navigation-items'
+import { getActiveShipId, setActiveShipId, getWishlist, addToWishlist, removeFromWishlist } from 'lib/wishlist'
+import { buildEngineerRoute } from 'lib/engineering-calc'
 import Layout from 'components/layout'
 import Panel from 'components/panel'
 import CopyOnClick from 'components/copy-on-click'
+
+// ── Portrait helper ──────────────────────────────────────────────────────────
+
+function engineerPortraitSrc (name) {
+  const slug = (name ?? '')
+    .toLowerCase()
+    .replace(/'/g, '')
+    .replace(/\s+/g, '_')
+  return `/images/engineers/${slug}.jpg`
+}
+
+// ── Unlock step helpers ──────────────────────────────────────────────────────
+
+function getAllUnlockSteps (engineer, prerequisites) {
+  const status = (engineer.progress.status ?? '').toLowerCase()
+  const prereq = prerequisites?.[String(engineer.id)]
+  if (!prereq) return []
+
+  const learnDone = status !== UNKNOWN_VALUE.toLowerCase() && status !== 'unknown'
+  const inviteDone = status === 'invited' || status === 'unlocked'
+  const unlockDone = status === 'unlocked'
+
+  const steps = []
+  if (prereq.learn) steps.push({ key: 'learn', label: prereq.learn.description, done: learnDone })
+  if (prereq.invite) steps.push({ key: 'invite', label: prereq.invite.description, done: inviteDone })
+  if (prereq.unlock) {
+    const unlockLabel = prereq.unlock.description
+      ?? `Provide ${prereq.unlock.amount ?? '?'}x ${prereq.unlock.name ?? prereq.unlock.symbol}`
+    steps.push({ key: 'unlock', label: unlockLabel, done: unlockDone })
+  }
+  return steps
+}
+
+// ── Card grid ────────────────────────────────────────────────────────────────
+
+const CARD_GRID_STYLE = {
+  display: 'grid',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
+  gap: '1rem',
+  marginBottom: '1.5rem'
+}
+
+function EngineerCard ({ engineer, currentSystem, prerequisites, onAddToWishlist, onRemoveFromWishlist, wishedIds }) {
+  const status = (engineer.progress.status ?? '').toLowerCase()
+  const isUnlocked = status === 'unlocked'
+  const isLocked = engineer.progress.status === UNKNOWN_VALUE
+  const steps = getAllUnlockSteps(engineer, prerequisites)
+  const dist = currentSystem?.position
+    ? distance(currentSystem.position, engineer.system.position).toLocaleString(undefined, { maximumFractionDigits: 0 })
+    : null
+  const isWished = wishedIds.has(String(engineer.id))
+
+  const statusColor = isUnlocked
+    ? 'var(--color-success)'
+    : isLocked ? 'var(--color-danger)' : 'var(--color-primary)'
+  const statusLabel = isUnlocked
+    ? `Rank ${engineer.progress.rank}`
+    : isLocked ? 'Locked' : engineer.progress.status
+
+  return (
+    <div style={{
+      border: `1px solid ${isUnlocked ? 'var(--color-success)' : isLocked ? 'rgba(255,255,255,.15)' : 'var(--color-primary)'}`,
+      borderRadius: '4px',
+      overflow: 'hidden',
+      opacity: isLocked ? 0.45 : 1,
+      display: 'flex',
+      flexDirection: 'column',
+      background: 'var(--color-primary-dark)'
+    }}>
+      <div style={{ position: 'relative', width: '100%', paddingTop: '75%', overflow: 'hidden', flexShrink: 0 }}>
+        <img
+          src={engineerPortraitSrc(engineer.name)}
+          alt={engineer.name}
+          style={{
+            position: 'absolute', top: 0, left: 0, width: '100%', height: '100%',
+            objectFit: 'cover', objectPosition: 'top center',
+            filter: isUnlocked ? 'none' : isLocked ? 'grayscale(1) brightness(0.5)' : 'grayscale(0.4) brightness(0.75)'
+          }}
+          onError={e => { e.target.style.display = 'none' }}
+        />
+        <div style={{
+          position: 'absolute', bottom: 0, left: 0, right: 0,
+          background: 'rgba(0,0,0,.65)',
+          padding: '.2rem .4rem',
+          display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '.25rem'
+        }}>
+          <span style={{ color: statusColor, fontSize: '.8em', fontWeight: 700, textTransform: 'uppercase' }}>{statusLabel}</span>
+          {dist && <span className='text-muted' style={{ fontSize: '.75em' }}>{dist} Ly</span>}
+        </div>
+      </div>
+
+      <div style={{ padding: '.5rem .6rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '.3rem' }}>
+        <h4 className={isUnlocked ? 'text-info' : 'text-info text-muted'} style={{ margin: 0, fontSize: '.9em', lineHeight: 1.2 }}>
+          <CopyOnClick>{engineer.name}</CopyOnClick>
+        </h4>
+
+        {isUnlocked && engineer.progress.rank > 0 &&
+          <div className='text-secondary' style={{ display: 'flex', gap: '.1rem', flexWrap: 'wrap' }}>
+            {[...Array(engineer.progress.rank)].map((_, i) =>
+              <i key={i} className='icon daedalus-terminal-engineering' style={{ fontSize: '1rem' }} />
+            )}
+          </div>}
+
+        {!isUnlocked && steps.length > 0 &&
+          <ol style={{ margin: 0, padding: '0 0 0 1.1em', fontSize: '.8em' }}>
+            {steps.map(step => (
+              <li
+                key={step.key}
+                className={step.done ? 'text-success' : 'text-muted'}
+                style={{ margin: '.15rem 0', lineHeight: 1.3, textDecoration: step.done ? 'line-through' : 'none', opacity: step.done ? 0.7 : 1 }}
+              >
+                {step.label}
+              </li>
+            ))}
+          </ol>}
+
+        <div className='text-muted' style={{ fontSize: '.8em', marginTop: 'auto', paddingTop: '.25rem' }}>
+          <CopyOnClick>{engineer.system.name}</CopyOnClick>
+        </div>
+
+        {!isUnlocked &&
+          <button
+            className='button'
+            style={{
+              width: '100%',
+              marginTop: '.25rem',
+              padding: '.3rem .5rem',
+              fontSize: '.8em',
+              color: isWished ? 'var(--color-success)' : undefined
+            }}
+            disabled={!onAddToWishlist}
+            onClick={() => isWished ? onRemoveFromWishlist(engineer) : onAddToWishlist(engineer)}
+            title={isWished ? 'Remove engineer unlock from wishlist' : 'Add engineer unlock to wishlist'}
+          >
+            {isWished ? '+ On Wishlist' : '+ Add Unlock'}
+          </button>}
+      </div>
+    </div>
+  )
+}
+
+function EngineerCardGrid ({ engineers, currentSystem, prerequisites, onAddToWishlist, onRemoveFromWishlist, wishedIds }) {
+  if (!engineers?.length) return <p className='text-muted'>None</p>
+  return (
+    <div style={CARD_GRID_STYLE}>
+      {engineers.map(engineer => (
+        <EngineerCard
+          key={`card_${engineer.name}`}
+          engineer={engineer}
+          currentSystem={currentSystem}
+          prerequisites={prerequisites}
+          onAddToWishlist={onAddToWishlist}
+          onRemoveFromWishlist={onRemoveFromWishlist}
+          wishedIds={wishedIds}
+        />
+      ))}
+    </div>
+  )
+}
+
+// ── Page ─────────────────────────────────────────────────────────────────────
 
 export default function EngineeringEngineersPage () {
   const router = useRouter()
@@ -18,29 +180,15 @@ export default function EngineeringEngineersPage () {
   const [engineers, setEngineers] = useState()
   const [blueprints, setBlueprints] = useState()
   const [prerequisites, setPrerequisites] = useState({})
+  const [shipId, setShipId] = useState(() => getActiveShipId())
+  const [wishlist, setWishlist] = useState(() => {
+    const id = getActiveShipId()
+    return id ? getWishlist(id) : []
+  })
 
-  const relevantRows = useMemo(() => {
-    if (!engineers || !blueprints) return []
-    return engineers
-      .filter(e => blueprints.some(bp =>
-        bp.appliedToModules.length > 0 &&
-        Object.prototype.hasOwnProperty.call(bp.engineers ?? {}, e.name)
-      ))
-      .map(e => ({
-        engineer: e,
-        fittedBlueprintNames: blueprints
-          .filter(bp => bp.appliedToModules.length > 0 && Object.prototype.hasOwnProperty.call(bp.engineers ?? {}, e.name))
-          .map(bp => bp.name)
-      }))
-  }, [engineers, blueprints])
-
-  useEffect(animateTableEffect)
-  
   useEffect(() => {
     ;(async () => {
       if (!connected || !router.isReady) return
-
-      // Always refetch list of engineers to ensure up to date
       const [newEngineers, newBlueprints, newPrerequisites, newSystem] = await Promise.all([
         sendEvent('getEngineers'),
         sendEvent('getBlueprints'),
@@ -63,172 +211,104 @@ export default function EngineeringEngineersPage () {
     if (log.event === 'EngineerProgress') {
       setEngineers((await sendEvent('getEngineers')) ?? [])
     }
+    if (log.event === 'Loadout' && log.ShipID != null) {
+      const id = String(log.ShipID)
+      setActiveShipId(id)
+      setShipId(id)
+      setWishlist(getWishlist(id))
+    }
   }), [])
+
+  function handleAddToWishlist (engineer) {
+    if (!shipId) return
+    const item = {
+      id: crypto.randomUUID(),
+      type: 'engineer_unlock',
+      engineerId: engineer.id,
+      engineerName: engineer.name
+    }
+    const updated = addToWishlist(shipId, item)
+    setWishlist([...updated])
+  }
+
+  function handleRemoveFromWishlist (engineer) {
+    if (!shipId) return
+    const current = getWishlist(shipId)
+    const item = current.find(i => i.type === 'engineer_unlock' && String(i.engineerId) === String(engineer.id))
+    if (!item) return
+    const updated = removeFromWishlist(shipId, item.id)
+    setWishlist([...updated])
+  }
+
+  const wishedIds = useMemo(() => {
+    const ids = new Set()
+    for (const item of wishlist) {
+      if (item.type === 'engineer_unlock') ids.add(String(item.engineerId))
+    }
+    return ids
+  }, [wishlist])
+
+  const neededEngineers = useMemo(() => {
+    if (!engineers || !blueprints || !wishlist.length) return []
+    const stops = buildEngineerRoute(wishlist, blueprints, engineers, currentSystem?.position ?? null)
+    return stops
+      .map(stop => engineers.find(e => String(e.id) === String(stop.engineerId)))
+      .filter(Boolean)
+  }, [engineers, blueprints, wishlist, currentSystem])
+
+  const cardProps = {
+    currentSystem,
+    prerequisites,
+    onAddToWishlist: shipId ? handleAddToWishlist : null,
+    onRemoveFromWishlist: shipId ? handleRemoveFromWishlist : null,
+    wishedIds
+  }
 
   return (
     <Layout connected={connected} active={active} ready={ready} loader={!componentReady}>
       <Panel layout='full-width' scrollable navigation={EngineeringPanelNavItems('Engineers')}>
         <h2>Engineers</h2>
         <h3 className='text-primary'>Engineers &amp; Workshops</h3>
-
         <p className='text-primary'>
           Engineers can use Blueprints and Experimental Effects to improve ships and equipment
         </p>
 
-        {relevantRows.length > 0 &&
+        {neededEngineers.length > 0 &&
           <>
             <div className='section-heading'>
-              <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Relevant to Your Ship</h4>
+              <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Engineers Needed</h4>
             </div>
-            <p className='text-primary'>Engineers with Blueprints applied to your currently fitted equipment</p>
-            <table className='table--animated'>
-              <tbody className='fx-fade-in'>
-                {relevantRows.map(({ engineer, fittedBlueprintNames }) => (
-                  <tr key={`relevant_${engineer.name}`}>
-                    <td className='text-primary text-center' style={{ width: '2rem' }}>
-                      <i className='icon daedalus-terminal-engineer' style={{ fontSize: '1.75rem', lineHeight: '2rem', width: '2rem', display: 'inline-block' }} />
-                    </td>
-                    <td>
-                      <h4 className='text-info'>{engineer.name}</h4>
-                      <p className='text-primary' style={{ margin: 0, fontSize: '.9rem' }}>
-                        {fittedBlueprintNames.join(', ')}
-                      </p>
-                    </td>
-                    <td className='text-right'>
-                      <CopyOnClick>{engineer.system.name}</CopyOnClick>
-                    </td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-            <hr className='small' style={{ marginTop: 0 }} />
+            <p className='text-primary'>Engineers required for your current engineering wishlist</p>
+            <EngineerCardGrid engineers={neededEngineers} {...cardProps} />
           </>}
+
         {engineers && engineers.length > 0 &&
           <>
             <div className='section-heading'>
               <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Unlocked Engineers</h4>
             </div>
-            <ListEngineers
+            <EngineerCardGrid
               engineers={engineers.filter(e => e.progress.status.toLowerCase() === 'unlocked')}
-              currentSystem={currentSystem}
-              prerequisites={prerequisites}
+              {...cardProps}
             />
+
             <div className='section-heading'>
-              <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Known/Invited Engineers</h4>
+              <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Known / Invited Engineers</h4>
             </div>
-            <ListEngineers
+            <EngineerCardGrid
               engineers={engineers.filter(e => e.progress.status !== UNKNOWN_VALUE && e.progress.status.toLowerCase() !== 'unlocked')}
-              currentSystem={currentSystem}
-              prerequisites={prerequisites}
+              {...cardProps}
             />
+
             <div className='section-heading'>
               <h4 className='section-heading__text' style={{ marginTop: '1rem' }}>Locked Engineers</h4>
             </div>
-            <ListEngineers
+            <EngineerCardGrid
               engineers={engineers.filter(e => e.progress.status === UNKNOWN_VALUE)}
-              currentSystem={currentSystem}
-              prerequisites={prerequisites}
+              {...cardProps}
             />
           </>}
       </Panel>
     </Layout>
-  )
-}
-
-function getNextUnlockStep (engineer, prerequisites) {
-  const status = (engineer.progress.status ?? '').toLowerCase()
-  const prereq = prerequisites?.[String(engineer.id)]
-  if (!prereq) return null
-
-  if (status === 'unlocked') return null
-
-  // Invited → show unlock step
-  if (status === 'invited' && prereq.unlock) {
-    return `Unlock: ${prereq.unlock.description ?? `Provide ${prereq.unlock.amount ?? '?'}× ${prereq.unlock.name ?? prereq.unlock.symbol}`}`
-  }
-
-  // Known → show invite (activity) step if present, else unlock
-  if (status === 'known') {
-    if (prereq.invite) return `Invite: ${prereq.invite.description}`
-    if (prereq.unlock) return `Unlock: ${prereq.unlock.description ?? `Provide ${prereq.unlock.amount ?? '?'}× ${prereq.unlock.name ?? prereq.unlock.symbol}`}`
-  }
-
-  // Locked/Unknown → show learn step if present
-  if (prereq.learn) return `Learn: ${prereq.learn.description}`
-  if (prereq.invite) return `Invite: ${prereq.invite.description}`
-  if (prereq.unlock) return `Unlock: ${prereq.unlock.description ?? `Provide ${prereq.unlock.amount ?? '?'}× ${prereq.unlock.name ?? prereq.unlock.symbol}`}`
-
-  return null
-}
-
-function ListEngineers ({ engineers, currentSystem, prerequisites }) {
-  return (
-    <>
-      <table className='table--animated'>
-        <tbody className='fx-fade-in'>
-          {engineers?.length === 0 &&
-            <tr>
-              <td className='text-muted'>None</td>
-            </tr>}
-          {engineers?.length > 0 && engineers.map(engineer =>
-            <tr
-              key={`engineer_${engineer.name}`}
-              tabIndex={2}
-              // className='table__row--highlighted'
-              onFocus={() => {
-                /// router.push({ pathname: '/eng/blueprints', query: { symbol: blueprint.symbol } })
-              }}
-            >
-              <td className={`text-primary text-center ${engineer.progress.status.toLowerCase() === 'unlocked' ? '' : 'text-muted'}`} style={{ width: '2rem' }}>
-                <i
-                  className='icon daedalus-terminal-engineer'
-                  style={{ fontSize: '1.75rem', lineHeight: '2rem', width: '2rem', display: 'inline-block' }}
-                />
-              </td>
-              <td style={{ width: '18rem' }}>
-                <h4 className={engineer.progress.status.toLowerCase() === 'unlocked' ? 'text-info' : 'text-info text-muted'}>
-                  <CopyOnClick>{engineer.name}</CopyOnClick>
-                </h4>
-                {engineer.progress.rank === 0 && <>
-                  {engineer.progress.status === UNKNOWN_VALUE
-                    ? <p className='text-danger text-muted'>Locked</p>
-                    : <p className={engineer.progress.status.toLowerCase() === 'unlocked' ? 'text-primary' : 'text-primary text-muted'}>{engineer.progress.status}</p>}
-                </> }
-                {engineer.progress.status.toLowerCase() !== 'unlocked' && (() => {
-                  const step = getNextUnlockStep(engineer, prerequisites)
-                  return step
-                    ? <p className='text-warning' style={{ margin: '.1rem 0 0', fontSize: '.82rem' }}><i className='icon daedalus-terminal-chevron-right' style={{ marginRight: '.2rem' }} />{step}</p>
-                    : null
-                })()}
-                {engineer.progress.rank > 0 &&
-                  <h4 className='text-secondary'>
-                    {[...Array(engineer.progress.rank)].map((j, i) =>
-                      <i
-                        style={{ fontSize: '1.5rem', width: '1.5rem', display: 'inline-block', marginRight: '0.1rem', marginTop: '.25rem' }}
-                        key={`${engineer.name}_rank_${i}`}
-                        className='icon daedalus-terminal-engineering'
-                      />
-                    )}
-                  </h4>}
-              </td>
-              <td className='text-primary text-no-transform text-left hidden-small'>
-                {engineer.description}
-              </td>
-              <td className='text-right'>
-                <span className='text-right'>
-                  <CopyOnClick>{engineer.system.name}</CopyOnClick>
-                </span>
-                {currentSystem?.position &&
-                  <span className='text-muted text-no-transform'>
-                    <br />
-                    {distance(currentSystem.position, engineer.system.position).toLocaleString(undefined, { maximumFractionDigits: 0 })} Ly
-                  </span>}
-              </td>
-            </tr>
-          )}
-        </tbody>
-      </table>
-      <hr className='small' style={{ marginTop: 0 }} />
-    </>
   )
 }

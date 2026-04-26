@@ -9,7 +9,7 @@ import { EngineeringPanelNavItems } from 'lib/navigation-items'
 import Layout from 'components/layout'
 import Panel from 'components/panel'
 import CopyOnClick from 'components/copy-on-click'
-import { addToWishlist, getActiveShipId } from 'lib/wishlist'
+import { addToWishlist, getActiveShipId, setActiveShipId } from 'lib/wishlist'
 
 export default function EngineeringMaterialsPage () {
   const router = useRouter()
@@ -22,6 +22,7 @@ export default function EngineeringMaterialsPage () {
   const [blueprintsNotApplied, setBlueprintsNotApplied] = useState()
   const [selectedBlueprint, setSelectedBlueprint] = useState()
   const [wishlistConfirmed, setWishlistConfirmed] = useState(null)
+  const [shipId, setShipId] = useState(() => getActiveShipId())
 
   useEffect(animateTableEffect)
   
@@ -63,6 +64,11 @@ export default function EngineeringMaterialsPage () {
     if (['Location', 'FSDJump'].includes(log.event)) {
       const newSystem = await sendEvent('getSystem')
       if (newSystem?.address) setCurrentSystem(newSystem)
+    }
+    if (log.event === 'Loadout' && log.ShipID != null) {
+      const id = String(log.ShipID)
+      setActiveShipId(id)
+      setShipId(id)
     }
   }), [])
 
@@ -322,7 +328,6 @@ export default function EngineeringMaterialsPage () {
             const confirmedKey = `${selectedBlueprint.symbol}_${grade}`
 
             function handleAddToWishlist () {
-              const shipId = getActiveShipId()
               if (!shipId) return
               addToWishlist(shipId, { id: crypto.randomUUID(), blueprintSymbol: selectedBlueprint.symbol, grade: gradeNum, quantity: 1 })
               setWishlistConfirmed(confirmedKey)
@@ -332,18 +337,21 @@ export default function EngineeringMaterialsPage () {
             return (
             <div className='engineering__blueprint-grade' style={{ position: 'relative' }} key={`${selectedBlueprint.symbol}_${grade}_materials`}>
 
-              <div className='section-heading' style={{ marginTop: '1rem' }}>
-                <h4 className='section-heading__text'>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', borderBottom: '.2rem solid var(--color-primary)', marginTop: '1rem', paddingBottom: '.35rem', gap: '1rem', flexWrap: 'wrap' }}>
+                <h4 className='section-heading__text' style={{ margin: 0 }}>
                   Grade {gradeNum}
                   {isReady &&
-                    <span style={{ marginLeft: '.6rem', fontSize: '.75rem', background: 'var(--color-success)', color: 'var(--color-primary-dark)', padding: '.1rem .4rem', borderRadius: '3px', fontWeight: 700, verticalAlign: 'middle', textTransform: 'uppercase' }}>
+                    <span style={{ marginLeft: '.75rem', fontSize: '.75em', background: 'var(--color-success)', color: 'var(--color-primary-dark)', padding: '.1rem .4rem', borderRadius: '3px', fontWeight: 700, verticalAlign: 'middle', textTransform: 'uppercase' }}>
                       Ready
                     </span>}
                 </h4>
-                <div className='float-right' style={{ display: 'flex', gap: '.5rem', alignItems: 'center', marginTop: '.4rem' }}>
-                  <h4 className='text-info text-muted' style={{ margin: 0 }}>Cost / Inventory</h4>
+                <div style={{ display: 'flex', gap: '.75rem', alignItems: 'center' }}>
+                  <span className='text-info text-muted text-uppercase' style={{ fontSize: '1rem' }}>Cost / Inventory</span>
                   <button
-                    style={{ fontSize: '.75rem', padding: '.15rem .6rem', background: 'none', border: '1px solid var(--color-primary)', borderRadius: '3px', cursor: 'pointer', color: wishlistConfirmed === confirmedKey ? 'var(--color-success)' : 'var(--color-primary)', whiteSpace: 'nowrap' }}
+                    className='button'
+                    disabled={!shipId}
+                    title={!shipId ? 'Board a ship to use the wishlist' : ''}
+                    style={{ color: wishlistConfirmed === confirmedKey ? 'var(--color-success)' : undefined, whiteSpace: 'nowrap' }}
                     onClick={handleAddToWishlist}
                   >
                     {wishlistConfirmed === confirmedKey ? '✓ Added' : '+ Wishlist'}

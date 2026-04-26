@@ -589,6 +589,13 @@ export function buildEngineerRoute (wishlist, blueprints, engineers, currentPos)
   const requiredBlueprintsByEngineer = {}  // engineerId → [{ symbol, name, grade, moduleName }]
 
   for (const item of wishlist) {
+    // Explicitly requested engineer unlocks
+    if (item.type === 'engineer_unlock') {
+      const eng = engineers.find(e => String(e.id) === String(item.engineerId) || e.name === item.engineerName)
+      if (eng && !requiredBlueprintsByEngineer[eng.id]) requiredBlueprintsByEngineer[eng.id] = []
+      continue
+    }
+
     if (item.type !== 'engineering') continue
     const bp = blueprints.find(b => b.symbol.toLowerCase() === item.blueprintSymbol.toLowerCase())
     if (!bp) continue

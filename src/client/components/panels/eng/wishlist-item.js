@@ -26,6 +26,34 @@ function StatusBadge ({ shortfall }) {
 }
 
 export default function WishlistItem ({ item, shortfall, onRemove, onUpdate }) {
+  if (item.type === 'engineer_unlock') {
+    return (
+      <tr>
+        <td colSpan={3}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem' }}>
+            <i className='icon daedalus-terminal-engineer' style={{ opacity: .7 }} />
+            <h4 style={{ margin: 0 }}>{item.engineerName}</h4>
+            <span className='text-warning text-uppercase' style={{ fontSize: '.85em' }}>Unlock</span>
+          </div>
+        </td>
+        <td style={{ width: '10rem' }}>
+          <span className='text-muted text-uppercase' style={{ fontSize: '.85em' }}>Engineer</span>
+        </td>
+        <td className='text-right' style={{ width: '2rem' }}>
+          <button
+            className='button text-danger'
+            style={{ background: 'none', border: 'none', cursor: 'pointer', fontSize: '1.25rem', padding: '.1rem .3rem' }}
+            title='Remove from wishlist'
+            onClick={() => onRemove(item.id)}
+            aria-label={`Remove ${item.engineerName} unlock from wishlist`}
+          >
+            ×
+          </button>
+        </td>
+      </tr>
+    )
+  }
+
   return (
     <tr className={shortfall === 0 ? 'text-secondary' : ''}>
       <td>

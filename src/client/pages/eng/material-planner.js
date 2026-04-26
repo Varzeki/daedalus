@@ -88,7 +88,7 @@ function GradePill ({ grade, type }) {
   }
   const { iconClass, textClass } = TYPE_MAP[(type ?? '').toLowerCase()] ?? { iconClass: 'daedalus-terminal-materials', textClass: 'text-muted' }
   return (
-    <span className={textClass} style={{ fontSize: '.82rem', whiteSpace: 'nowrap' }}>
+    <span className={textClass} style={{ fontSize: '.85em', whiteSpace: 'nowrap' }}>
       <i className={`icon ${iconClass}`} style={{ marginRight: '.2rem' }} />
       G{grade}
     </span>
@@ -107,7 +107,7 @@ function RouteStopCard ({ stop, index }) {
           width: '2rem', height: '2rem', borderRadius: '50%',
           background: 'var(--color-primary)', color: '#000',
           display: 'flex', alignItems: 'center', justifyContent: 'center',
-          fontWeight: 700, fontSize: '.9rem', flexShrink: 0
+          fontWeight: 700, fontSize: 'inherit', flexShrink: 0
         }}>
           {index + 1}
         </div>
@@ -120,9 +120,9 @@ function RouteStopCard ({ stop, index }) {
         <div style={{ display: 'flex', alignItems: 'center', gap: '.5rem', marginBottom: '.5rem', flexWrap: 'wrap' }}>
           <i className={`icon ${iconClass}`} style={{ fontSize: '1rem' }} />
           <strong>{stop.system?.name ?? 'Unknown System'}</strong>
-          <span className='text-muted' style={{ fontSize: '.85rem' }}>({label})</span>
+          <span className='text-muted' style={{ fontSize: '.9em' }}>({label})</span>
           {stop.distanceFromPrev != null && stop.distanceFromPrev !== Infinity && index > 0 &&
-            <span className='text-muted' style={{ fontSize: '.8rem', marginLeft: 'auto' }}>
+            <span className='text-muted' style={{ fontSize: '.85em', marginLeft: 'auto' }}>
               {stop.distanceFromPrev} Ly
             </span>}
         </div>
@@ -133,7 +133,7 @@ function RouteStopCard ({ stop, index }) {
           border: '1px solid var(--color-primary)',
           borderRadius: '4px',
           padding: '.75rem 1rem',
-          fontSize: '.9rem'
+          fontSize: 'inherit'
         }}>
           {stop.type === 'collection' && <CollectionStopBody stop={stop} />}
           {stop.type === 'trade' && <TradeStopBody stop={stop} />}
@@ -157,11 +157,11 @@ function CollectionStopBody ({ stop }) {
             <GradePill grade={mat.grade} type={mat.type} />
           </div>
           {mat.instructions &&
-            <div className='text-muted' style={{ fontSize: '.85rem' }}><i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />{mat.instructions}</div>}
+            <div className='text-muted' style={{ fontSize: '.9em' }}><i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />{mat.instructions}</div>}
         </div>
       )}
       {stop.noSource &&
-        <div className='text-warning' style={{ fontSize: '.85rem', marginTop: '.25rem' }}>
+        <div className='text-warning' style={{ fontSize: '.9em', marginTop: '.25rem' }}>
           <i className='icon daedalus-terminal-warning' style={{ marginRight: '.2rem' }} />No known hotspot for enabled collection methods.
         </div>}
     </>
@@ -172,16 +172,16 @@ function TradeStopBody ({ stop }) {
   return (
     <>
       {stop.station &&
-        <div className='text-muted' style={{ marginBottom: '.4rem', fontSize: '.85rem' }}>
+        <div className='text-muted' style={{ marginBottom: '.4rem', fontSize: '.9em' }}>
           Station: <strong className='text-primary'>{stop.station.name}</strong>
           {stop.station.distanceToArrival != null &&
             <span> · {stop.station.distanceToArrival.toLocaleString()} Ls</span>}
         </div>}
-      <div className='text-muted' style={{ marginBottom: '.4rem', fontSize: '.85rem' }}>
+      <div className='text-muted' style={{ marginBottom: '.4rem', fontSize: '.9em' }}>
         <i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />Dock → Contacts → Material Trader
       </div>
       {(stop.trades ?? []).map((trade, i) =>
-        <div key={`trade_${i}`} className='text-primary' style={{ fontSize: '.9rem', marginBottom: '.2rem' }}>
+        <div key={`trade_${i}`} className='text-primary' style={{ fontSize: 'inherit', marginBottom: '.2rem' }}>
           Give {trade.give.amount.toLocaleString()}× <strong>{trade.give.name}</strong> (G{trade.give.grade})
           {' → '}
           Receive {trade.receive.amount.toLocaleString()}× <strong>{trade.receive.name}</strong> (G{trade.receive.grade})
@@ -196,19 +196,19 @@ function EngineerStopBody ({ stop }) {
   return (
     <>
       <div style={{ display: 'flex', gap: '.75rem', marginBottom: '.4rem', flexWrap: 'wrap' }}>
-        <span className={isUnlocked ? 'text-success' : 'text-warning'} style={{ fontSize: '.85rem' }}>
+        <span className={isUnlocked ? 'text-success' : 'text-warning'} style={{ fontSize: '.9em' }}>
           {isUnlocked ? '✓ Unlocked' : `⚠ ${stop.unlockStatus ?? 'Locked'}`}
         </span>
         {stop.rank > 0 &&
-          <span className='text-muted' style={{ fontSize: '.85rem' }}>
+          <span className='text-muted' style={{ fontSize: '.9em' }}>
             Rank {stop.rank} (+{stop.rankProgress ?? 0}%)
           </span>}
       </div>
-      <div className='text-muted' style={{ marginBottom: '.4rem', fontSize: '.85rem' }}>
+      <div className='text-muted' style={{ marginBottom: '.4rem', fontSize: '.9em' }}>
         <i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />Dock → Contacts → Engineers
       </div>
       {(stop.blueprints ?? []).map((bp, i) =>
-        <div key={`bp_${i}`} style={{ fontSize: '.9rem', marginBottom: '.15rem' }}>
+        <div key={`bp_${i}`} style={{ fontSize: 'inherit', marginBottom: '.15rem' }}>
           <span className='text-primary'>{bp.name}</span>
           <span className='text-muted'> G{bp.grade}</span>
         </div>
@@ -221,7 +221,7 @@ function ActivityStopBody ({ stop }) {
   return (
     <div>
       {stop.forEngineer &&
-        <div className='text-muted' style={{ fontSize: '.85rem', marginBottom: '.3rem' }}>
+        <div className='text-muted' style={{ fontSize: '.9em', marginBottom: '.3rem' }}>
           For: {stop.forEngineer} ({stop.unlockStage ?? 'invite'} step)
         </div>}
       <div>{stop.description}</div>
@@ -233,17 +233,17 @@ function CommodityStopBody ({ stop }) {
   return (
     <>
       {stop.forEngineer &&
-        <div className='text-muted' style={{ fontSize: '.85rem', marginBottom: '.3rem' }}>
+        <div className='text-muted' style={{ fontSize: '.9em', marginBottom: '.3rem' }}>
           For: {stop.forEngineer} (unlock step)
         </div>}
       {stop.station &&
-        <div className='text-muted' style={{ fontSize: '.85rem', marginBottom: '.3rem' }}>
+        <div className='text-muted' style={{ fontSize: '.9em', marginBottom: '.3rem' }}>
           Station: <strong className='text-primary'>{stop.station.name}</strong>
           {stop.station.distanceToArrival != null &&
             <span> · {stop.station.distanceToArrival.toLocaleString()} Ls</span>}
         </div>}
       {stop.commodity &&
-        <div className='text-primary' style={{ fontSize: '.9rem' }}>
+        <div className='text-primary' style={{ fontSize: 'inherit' }}>
           <i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />Dock → Commodities Market → Buy {stop.commodity.amount}× <strong>{stop.commodity.name}</strong>
         </div>}
     </>
@@ -269,7 +269,7 @@ function CollectionMethodSettings ({ methods, onChange }) {
         style={{ width: '100%', padding: '.5rem .75rem', background: 'none', border: 'none', cursor: 'pointer', display: 'flex', justifyContent: 'space-between', color: 'inherit' }}
         onClick={() => setExpanded(v => !v)}
       >
-        <span className='text-primary text-uppercase' style={{ fontSize: '.85rem', fontWeight: 600 }}>
+        <span className='text-primary text-uppercase' style={{ fontSize: '.9em', fontWeight: 600 }}>
           Collection Methods
         </span>
         <span className='text-muted'>{expanded ? '▲' : '▼'}</span>
@@ -278,13 +278,13 @@ function CollectionMethodSettings ({ methods, onChange }) {
         <div style={{ padding: '.5rem .75rem', borderTop: '1px solid rgba(255,255,255,.1)' }}>
           {[['raw', 'Raw'], ['encoded', 'Encoded'], ['manufactured', 'Manufactured']].map(([cat, label]) =>
             <div key={cat} style={{ display: 'flex', gap: '1rem', alignItems: 'center', marginBottom: '.4rem', flexWrap: 'wrap' }}>
-              <span className='text-muted' style={{ minWidth: '6rem', fontSize: '.85rem' }}>{label}:</span>
+              <span className='text-muted' style={{ minWidth: '6rem', fontSize: '.9em' }}>{label}:</span>
               {Object.keys(methods[cat] ?? {}).map(key => {
                 const on = methods[cat][key]
                 const enabledCount = Object.values(methods[cat]).filter(Boolean).length
                 const disabled = on && enabledCount <= 1
                 return (
-                  <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '.3rem', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? .5 : 1, fontSize: '.85rem' }}>
+                  <label key={key} style={{ display: 'flex', alignItems: 'center', gap: '.3rem', cursor: disabled ? 'not-allowed' : 'pointer', opacity: disabled ? .5 : 1, fontSize: '.9em' }}>
                     <input type='checkbox' checked={on} disabled={disabled} onChange={() => toggle(cat, key)} />
                     {COLLECTION_METHOD_LABELS[key] ?? key}
                   </label>
@@ -354,7 +354,7 @@ function SmartRouteTab ({ wishlist, blueprints, materials, engineers, materialSo
           )
         : (
           <>
-            <div className='text-muted' style={{ marginBottom: '1.5rem', fontSize: '.9rem' }}>
+            <div className='text-muted' style={{ marginBottom: '1.5rem', fontSize: 'inherit' }}>
               {stopCount} stop{stopCount !== 1 ? 's' : ''} · ~{totalDistance.toLocaleString()} Ly total
             </div>
             <div>
@@ -431,21 +431,21 @@ function TraderPlannerTab ({ wishlist, blueprints, materials, materialTraders, c
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '.5rem', flexWrap: 'wrap', gap: '.5rem' }}>
               <h4 style={{ margin: 0 }}>{group.type} Materials Trader</h4>
               {group.nearest
-                ? <span className='text-primary' style={{ fontSize: '.85rem' }}>
+                ? <span className='text-primary' style={{ fontSize: '.9em' }}>
                     Nearest: {group.nearest.name}
                     {dist && <span className='text-muted'> · {dist} Ly</span>}
                   </span>
-                : <span className='text-muted' style={{ fontSize: '.85rem' }}>Location data unavailable</span>}
+                : <span className='text-muted' style={{ fontSize: '.9em' }}>Location data unavailable</span>}
             </div>
             {group.nearest?.station &&
-              <div className='text-muted' style={{ fontSize: '.85rem', marginBottom: '.5rem' }}>
+              <div className='text-muted' style={{ fontSize: '.9em', marginBottom: '.5rem' }}>
                 Station: {group.nearest.station.name}
                 {group.nearest.station.distanceToArrival != null &&
                   <span> · {Math.round(group.nearest.station.distanceToArrival).toLocaleString()} Ls</span>}
               </div>}
-            <div className='text-muted' style={{ fontSize: '.8rem', marginBottom: '.4rem' }}>Trades to make:</div>
+            <div className='text-muted' style={{ fontSize: '.85em', marginBottom: '.4rem' }}>Trades to make:</div>
             {group.trades.map((trade, i) => (
-              <div key={`trade_${i}`} className='text-primary' style={{ fontSize: '.9rem', marginBottom: '.2rem' }}>
+              <div key={`trade_${i}`} className='text-primary' style={{ fontSize: 'inherit', marginBottom: '.2rem' }}>
                 Give {trade.give.amount.toLocaleString()}× <strong>{trade.give.name}</strong> (G{trade.give.grade})
                 {' → '}
                 Receive {trade.receive.amount.toLocaleString()}× <strong>{trade.receive.name}</strong> (G{trade.receive.grade})
@@ -491,21 +491,21 @@ function EngineerRouteTab ({ wishlist, blueprints, engineers, currentSystem }) {
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', marginBottom: '.3rem', flexWrap: 'wrap', gap: '.5rem' }}>
               <div style={{ display: 'flex', gap: '.75rem', alignItems: 'baseline', flexWrap: 'wrap' }}>
                 <strong>{i + 1}. {stop.engineerName}</strong>
-                <span className='text-muted' style={{ fontSize: '.85rem' }}>{stop.system.name}</span>
-                {dist && <span className='text-muted' style={{ fontSize: '.85rem' }}>{dist} Ly</span>}
+                <span className='text-muted' style={{ fontSize: '.9em' }}>{stop.system.name}</span>
+                {dist && <span className='text-muted' style={{ fontSize: '.9em' }}>{dist} Ly</span>}
               </div>
-              <span className={isUnlocked ? 'text-success' : isKnown ? 'text-warning' : 'text-danger'} style={{ fontSize: '.85rem' }}>
+              <span className={isUnlocked ? 'text-success' : isKnown ? 'text-warning' : 'text-danger'} style={{ fontSize: '.9em' }}>
                 {isUnlocked ? '✓ Unlocked' : `⚠ ${stop.unlockStatus ?? 'Locked'}`}
               </span>
             </div>
             {stop.rank > 0 &&
-              <div className='text-muted' style={{ fontSize: '.8rem', marginBottom: '.3rem' }}>
+              <div className='text-muted' style={{ fontSize: '.85em', marginBottom: '.3rem' }}>
                 Rank {stop.rank} (+{stop.rankProgress ?? 0}%)
               </div>}
             {(stop.blueprints ?? []).length > 0 &&
               <div style={{ marginTop: '.4rem' }}>
-                <span className='text-muted' style={{ fontSize: '.8rem' }}>Blueprints to apply: </span>
-                <span style={{ fontSize: '.9rem' }}>
+                <span className='text-muted' style={{ fontSize: '.85em' }}>Blueprints to apply: </span>
+                <span style={{ fontSize: 'inherit' }}>
                   {stop.blueprints.map(bp => `${bp.name} G${bp.grade}`).join(', ')}
                 </span>
               </div>}
@@ -535,20 +535,20 @@ function GuideEntry ({ symbol, name, type, grade, shortfall, materialSources }) 
     <div style={{ padding: '.5rem 0', borderBottom: '1px solid rgba(255,255,255,.08)', marginBottom: '.1rem' }}>
       <div style={{ display: 'flex', gap: '.5rem', alignItems: 'baseline', marginBottom: '.2rem', flexWrap: 'wrap' }}>
         <strong>{name}</strong>
-        <span className='text-muted' style={{ fontSize: '.8rem' }}>{type} G{grade}</span>
-        {cannotTrade && <span className='text-warning' style={{ fontSize: '.75rem' }}>Cannot Trade</span>}
+        <span className='text-muted' style={{ fontSize: '.85em' }}>{type} G{grade}</span>
+        {cannotTrade && <span className='text-warning' style={{ fontSize: '.8em' }}>Cannot Trade</span>}
         {shortfall > 0 &&
-          <span className='text-warning' style={{ fontSize: '.85rem', marginLeft: 'auto' }}>
+          <span className='text-warning' style={{ fontSize: '.9em', marginLeft: 'auto' }}>
             Need {shortfall.toLocaleString()} more
           </span>}
       </div>
       {source?.sources?.length
-        ? <div className='text-muted' style={{ fontSize: '.85rem' }}><i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />{source.sources.join(' · ')}</div>
-        : <div className='text-muted' style={{ fontSize: '.85rem' }}><i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />{genericHint}</div>}
+        ? <div className='text-muted' style={{ fontSize: '.9em' }}><i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />{source.sources.join(' · ')}</div>
+        : <div className='text-muted' style={{ fontSize: '.9em' }}><i className='icon daedalus-terminal-location' style={{ marginRight: '.2rem' }} />{genericHint}</div>}
       {source?.hotspots?.length > 0 &&
         <div style={{ marginTop: '.2rem' }}>
           {source.hotspots.slice(0, 2).map((hs, i) => (
-            <div key={`hs_${i}`} className='text-primary' style={{ fontSize: '.8rem' }}>
+            <div key={`hs_${i}`} className='text-primary' style={{ fontSize: '.85em' }}>
               <i className='icon daedalus-terminal-poi' style={{ marginRight: '.2rem' }} />{hs.system}{hs.instructions ? ` — ${hs.instructions}` : ''}
             </div>
           ))}
@@ -585,20 +585,20 @@ function CollectionGuideTab ({ wishlist, blueprints, materials, materialSources 
       <div style={{ display: 'flex', gap: '.5rem', alignItems: 'center', marginBottom: '1rem' }}>
         <button
           className={`button${!showAll ? ' button--active' : ''}`}
-          style={{ fontSize: '.85rem', padding: '.25rem .75rem' }}
+          style={{ fontSize: '.9em', padding: '.25rem .75rem' }}
           onClick={() => setShowAll(false)}
         >
           Shortfall Only
         </button>
         <button
           className={`button${showAll ? ' button--active' : ''}`}
-          style={{ fontSize: '.85rem', padding: '.25rem .75rem' }}
+          style={{ fontSize: '.9em', padding: '.25rem .75rem' }}
           onClick={() => setShowAll(true)}
         >
           All Materials
         </button>
         {!showAll && shortfalls.length > 0 &&
-          <span className='text-muted' style={{ fontSize: '.85rem' }}>
+          <span className='text-muted' style={{ fontSize: '.9em' }}>
             {shortfalls.length} material{shortfalls.length !== 1 ? 's' : ''} short
           </span>}
       </div>
@@ -725,7 +725,7 @@ export default function EngineeringMaterialPlannerPage () {
             <button
               key={tab}
               className={`button${activeTab === i ? ' button--active' : ''}`}
-              style={{ fontSize: '.85rem', padding: '.3rem .9rem' }}
+              style={{ fontSize: '.9em', padding: '.3rem .9rem' }}
               onClick={() => setActiveTab(i)}
             >
               {tab}
@@ -734,7 +734,7 @@ export default function EngineeringMaterialPlannerPage () {
         </div>
 
         {currentSystem?.name &&
-          <div className='text-muted' style={{ fontSize: '.85rem', marginBottom: '1rem' }}>
+          <div className='text-muted' style={{ fontSize: '.9em', marginBottom: '1rem' }}>
             Current system: <span className='text-primary'>{currentSystem.name}</span>
           </div>}
 
@@ -777,3 +777,4 @@ export default function EngineeringMaterialPlannerPage () {
     </Layout>
   )
 }
+
