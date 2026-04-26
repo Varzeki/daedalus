@@ -1,0 +1,344 @@
+{
+  "_comment": "Material trader locations. lastUpdated drives the 24h background refresh from Spansh. This bundled stub is the fallback if the update fails.",
+  "lastUpdated": "2025-01-01T00:00:00.000Z",
+  "traders": [
+    {
+      "name": "Bolg",
+      "coords": { "x": -7.90625, "y": 34.71875, "z": 2.125 },
+      "station": {
+        "name": "Moxon's Mojo",
+        "distanceToArrival": 933.638903,
+        "varianceToArrival": 8.630209,
+        "primaryEconomy": "High Tech",
+        "secondaryEconomy": "Refinery",
+        "id": 128000000,
+        "type": "Raw"
+      }
+    },
+    {
+      "name": "Run",
+      "coords": { "x": 22.8125, "y": -165.96875, "z": 34.9375 },
+      "station": {
+        "name": "Smithport",
+        "distanceToArrival": 553.895774,
+        "varianceToArrival": 0.245241,
+        "primaryEconomy": "High Tech",
+        "secondaryEconomy": "None",
+        "id": 128027136,
+        "type": "Encoded"
+      }
+    },
+    {
+      "name": "Avalon",
+      "coords": { "x": 50.1875, "y": -132.96875, "z": 36.1875 },
+      "station": {
+        "name": "Noctilux",
+        "distanceToArrival": 159.687705,
+        "varianceToArrival": 14.344859,
+        "primaryEconomy": "High Tech",
+        "secondaryEconomy": "None",
+        "id": 128032768,
+        "type": "Encoded"
+      }
+    },
+    {
+      "name": "Svass",
+      "coords": { "x": 29.9375, "y": -82.59375, "z": -40.53125 },
+      "station": {
+        "name": "Maria's Rest",
+        "distanceToArrival": 458.585590,
+        "varianceToArrival": 0.168391,
+        "primaryEconomy": "High Tech",
+        "secondaryEconomy": "None",
+        "id": 128078328,
+        "type": "Encoded"
+      }
+    },
+    {
+      "name": "Delta Pavonis",
+      "coords": { "x": 8.375, "y": -10.84375, "z": 14.46875 },
+      "station": {
+        "name": "Hooper Relay",
+        "distanceToArrival": 195.610008,
+        "varianceToArrival": 0.166947,
+        "primaryEconomy": "Refinery",
+        "secondaryEconomy": "Extraction",
+        "id": 128117240,
+        "type": "Raw"
+      }
+    },
+    {
+      "name": "Sirius",
+      "coords": { "x": 6.25, "y": -1.28125, "z": -5.75 },
+      "station": {
+        "name": "Patterson Enterprise",
+        "distanceToArrival": 998.009785,
+        "varianceToArrival": 46.423895,
+        "primaryEconomy": "Industrial",
+        "secondaryEconomy": "Extraction",
+        "id": 128136952,
+        "type": "Manufactured"
+      }
+    },
+    {
+      "name": "HIP 8396",
+      "coords": { "x": -226.5, "y": -12.46875, "z": -193.5 },
+      "station": {
+        "name": "Titus Station",
+        "distanceToArrival": 5657.496613,
+        "varianceToArrival": 1.190965,
+        "primaryEconomy": "Extraction",
+        "secondaryEconomy": "None",
+        "id": 128863306,
+        "type": "Raw"
+      }
+    },
+    {
+      "name": "Sothis",
+      "coords": { "x": -352.78125, "y": 10.5, "z": -346.34375 },
+      "station": {
+        "name": "Velinski Enterprise",
+        "distanceToArrival": 613.819525,
+        "varianceToArrival": 1.208325,
+        "primaryEconomy": "Industrial",
+        "secondaryEconomy": "None",
+        "id": 128857674,
+        "type": "Manufactured"
+      }
+    },
+    {
+      "name": "Ceos",
+      "coords": { "x": -348.65625, "y": 13.875, "z": -339.21875 },
+      "station": {
+        "name": "Brunel Hub",
+        "distanceToArrival": 314.523549,
+        "varianceToArrival": 0.202032,
+        "primaryEconomy": "High Tech",
+        "secondaryEconomy": "None",
+        "id": 128858186,
+        "type": "Encoded"
+      }
+    },
+    {
+      "name": "Jaralis",
+      "coords": { "x": 370.46875, "y": -382.0, "z": -710.4375 },
+      "station": {
+        "name": "Ratchet Hub",
+        "distanceToArrival": 277.636823,
+        "varianceToArrival": 0.102885,
+        "primaryEconomy": "Industrial",
+        "secondaryEconomy": "None",
+        "id": 128952964,
+        "type": "Manufactured"
+      }
+    },
+    {
+      "name": "Musca Dark Region PJ-P b6-1",
+      "coords": { "x": 432.625, "y": 2.53125, "z": 288.6875 },
+      "station": {
+        "name": "Betancourt Base",
+        "distanceToArrival": 172.373234,
+        "varianceToArrival": 0.032732,
+        "primaryEconomy": "Extraction",
+        "secondaryEconomy": "High Tech",
+        "id": 128966616,
+        "type": "Encoded"
+      }
+    },
+    {
+      "name": "Coalsack Sector VU-O b6-6",
+      "coords": { "x": 418.65625, "y": 24.25, "z": 304.5625 },
+      "station": {
+        "name": "Cole Point",
+        "distanceToArrival": 161.840272,
+        "varianceToArrival": 0.086345,
+        "primaryEconomy": "Extraction",
+        "secondaryEconomy": "Refinery",
+        "id": 128966872,
+        "type": "Raw"
+      }
+    },
+    {
+      "name": "Coalsack Sector KN-S b4-9",
+      "coords": { "x": 405.46875, "y": 40.0, "z": 264.0625 },
+      "station": {
+        "name": "Bering port",
+        "distanceToArrival": 191.457750,
+        "varianceToArrival": 0.442944,
+        "primaryEconomy": "Extraction",
+        "secondaryEconomy": "None",
+        "id": 128967384,
+        "type": "Manufactured"
+      }
+    },
+    {
+      "name": "Concordia",
+      "coords": { "x": 20.8125, "y": -52.0, "z": -142.3125 },
+      "station": {
+        "name": "Stillman Hub",
+        "distanceToArrival": 992.803921,
+        "varianceToArrival": 67.479331,
+        "primaryEconomy": "High Tech",
+        "secondaryEconomy": "None",
+        "id": 128969188,
+        "type": "Encoded"
+      }
+    },
+    {
+      "name": "New Chana",
+      "coords": { "x": 46.8125, "y": 6.5, "z": -134.46875 },
+      "station": {
+        "name": "Tilman Point",
+        "distanceToArrival": 493.390195,
+        "varianceToArrival": 0.635821,
+        "primaryEconomy": "Industrial",
+        "secondaryEconomy": "None",
+        "id": 128969700,
+        "type": "Encoded"
+      }
+    },
+    {
+      "name": "Pru Euq WO-D b53-8",
+      "coords": { "x": -256.34375, "y": -5.15625, "z": 1363.125 },
+      "station": {
+        "name": "Zerreiss Station",
+        "distanceToArrival": 877.524223,
+        "varianceToArrival": 2.902838,
+        "primaryEconomy": "Refinery",
+        "secondaryEconomy": "Agriculture",
+        "id": 129009767,
+        "type": "Encoded"
+      }
+    },
+    {
+      "name": "NGC 6530 Sector ZE-X b2-0",
+      "coords": { "x": -382.78125, "y": -20.40625, "z": 4198.09375 },
+      "station": {
+        "name": "Helgrind Gateway",
+        "distanceToArrival": 748.715977,
+        "varianceToArrival": 4.683811,
+        "primaryEconomy": "Refinery",
+        "secondaryEconomy": "None",
+        "id": 129010023,
+        "type": "Raw"
+      }
+    },
+    {
+      "name": "Prua Phoe MI-B b17-5",
+      "coords": { "x": -5652.84375, "y": -561.0625, "z": 10815.34375 },
+      "station": {
+        "name": "Canonn Complex",
+        "distanceToArrival": 909.718157,
+        "varianceToArrival": 1.221616,
+        "primaryEconomy": "Refinery",
+        "secondaryEconomy": "Tourism",
+        "id": 129010535,
+        "type": "Encoded"
+      }
+    },
+    {
+      "name": "Eoch Flyuae QK-E d12-2118",
+      "coords": { "x": -8633.78125, "y": -700.8125, "z": 17942.1875 },
+      "station": {
+        "name": "Venatores Hub",
+        "distanceToArrival": 3388.457338,
+        "varianceToArrival": 58.664251,
+        "primaryEconomy": "Refinery",
+        "secondaryEconomy": "Agriculture",
+        "id": 129011047,
+        "type": "Manufactured"
+      }
+    },
+    {
+      "name": "Ratraii",
+      "coords": { "x": -9530.96875, "y": -918.03125, "z": 19803.8125 },
+      "station": {
+        "name": "Colonia Dream",
+        "distanceToArrival": 26.016653,
+        "varianceToArrival": 0.059666,
+        "primaryEconomy": "Industrial",
+        "secondaryEconomy": "Refinery",
+        "id": 128732581,
+        "type": "Encoded"
+      }
+    },
+    {
+      "name": "Kojeara",
+      "coords": { "x": -9513.09375, "y": -908.84375, "z": 19814.28125 },
+      "station": {
+        "name": "TolaGarf's Junkyard",
+        "distanceToArrival": 224.475957,
+        "varianceToArrival": 0.213306,
+        "primaryEconomy": "Refinery",
+        "secondaryEconomy": "None",
+        "id": 128771628,
+        "type": "Raw"
+      }
+    },
+    {
+      "name": "Coeus",
+      "coords": { "x": -9531.71875, "y": -885.3125, "z": 19839.21875 },
+      "station": {
+        "name": "Foster Terminal",
+        "distanceToArrival": 1587.667837,
+        "varianceToArrival": 1.585693,
+        "primaryEconomy": "Service",
+        "secondaryEconomy": "None",
+        "id": 128779985,
+        "type": "Manufactured"
+      }
+    },
+    {
+      "name": "Kojeara",
+      "coords": { "x": -9513.09375, "y": -908.84375, "z": 19814.28125 },
+      "station": {
+        "name": "Rosa's Shop",
+        "distanceToArrival": 2534.635773,
+        "varianceToArrival": 3.644895,
+        "primaryEconomy": "Colony",
+        "secondaryEconomy": "None",
+        "id": 128986587,
+        "type": "Raw"
+      }
+    },
+    {
+      "name": "Deriso",
+      "coords": { "x": -9520.3125, "y": -909.5, "z": 19808.75 },
+      "station": {
+        "name": "The Divine Apparatus",
+        "distanceToArrival": 2423.849316,
+        "varianceToArrival": 2.811727,
+        "primaryEconomy": "Colony",
+        "secondaryEconomy": "None",
+        "id": 128986843,
+        "type": "Raw"
+      }
+    },
+    {
+      "name": "Desy",
+      "coords": { "x": -9534.21875, "y": -912.21875, "z": 19792.375 },
+      "station": {
+        "name": "Bresa Modifications",
+        "distanceToArrival": 3669.605026,
+        "varianceToArrival": 14.888473,
+        "primaryEconomy": "Colony",
+        "secondaryEconomy": "None",
+        "id": 128987099,
+        "type": "Raw"
+      }
+    },
+    {
+      "name": "Einheriar",
+      "coords": { "x": -9557.8125, "y": -880.1875, "z": 19801.5625 },
+      "station": {
+        "name": "Eidolon Hold",
+        "distanceToArrival": 163.470119,
+        "varianceToArrival": 0.004734,
+        "primaryEconomy": "Colony",
+        "secondaryEconomy": "None",
+        "id": 128987355,
+        "type": "Raw"
+      }
+    }
+  ]
+}

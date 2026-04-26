@@ -33,7 +33,8 @@ class Engineers {
           status: engineer.Progress ?? UNKNOWN_VALUE,
           rank: engineer?.Rank ?? 0,
           rankProgress: engineer?.RankProgress ?? 0
-        }
+        },
+        unlockRequirements: engineerWithLocation?.unlockRequirements ?? []
       }
     })
 
@@ -56,7 +57,8 @@ class Engineers {
             status: UNKNOWN_VALUE,
             rank: 0,
             rankProgress: 0
-          }
+          },
+          unlockRequirements: engineer?.unlockRequirements ?? []
         })
       }
     })

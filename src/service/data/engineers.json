@@ -6,7 +6,12 @@
     "name": "Didi Vatermann",
     "description": "Shields and shield boosters",
     "systemName": "Leesti",
-    "systemPosition": [72.75,48.75,68.25]
+    "systemPosition": [72.75,48.75,68.25],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Selene Jean." },
+      { "stage": "invite", "description": "Reach the rank of Merchant or higher." },
+      { "stage": "unlock", "description": "Provide 50T of Lavian Brandy — a rare commodity purchased at Lave Station in Lave." }
+    ]
   },
   {
     "id": "300010",
@@ -15,7 +20,12 @@
     "name": "Bill Turner",
     "description": "Plasma Accelerators and utilities",
     "systemName": "Alioth",
-    "systemPosition": [-33.65625,72.46875,-20.65625]
+    "systemPosition": [-33.65625,72.46875,-20.65625],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Selene Jean." },
+      { "stage": "invite", "description": "Reach friendly reputation with Alliance and allied with Alioth Independents for the Alioth system permit." },
+      { "stage": "unlock", "description": "Provide 50T of Bromellite." }
+    ]
   },
   {
     "id": "300030",
@@ -24,7 +34,12 @@
     "name": "Broo Tarquin",
     "description": "Laser weapons",
     "systemName": "Muang",
-    "systemPosition": [17.03125,-172.78125,-3.46875]
+    "systemPosition": [17.03125,-172.78125,-3.46875],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Hera Tani." },
+      { "stage": "invite", "description": "When you reach Competent or higher combat rank." },
+      { "stage": "unlock", "description": "Provide 50T of Fujin Tea — obtain this from Futen Spaceport at Fujin." }
+    ]
   },
   {
     "id": "300040",
@@ -33,7 +48,12 @@
     "name": "The Sarge",
     "description": "Cannons and limpets",
     "systemName": "Beta-3 Tucani",
-    "systemPosition": [32.25,-55.1875,23.875]
+    "systemPosition": [32.25,-55.1875,23.875],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Juri Ishmaak." },
+      { "stage": "invite", "description": "Gain rank Midshipman or higher with the Federal Navy." },
+      { "stage": "unlock", "description": "Provide 50 units of Aberrant Shield Pattern Analysis." }
+    ]
   },
   {
     "id": "300050",
@@ -42,7 +62,12 @@
     "name": "Zacariah Nemo",
     "description": "Projectile weapons",
     "systemName": "Yoru",
-    "systemPosition": [97.875,-86.90625,64.125]
+    "systemPosition": [97.875,-86.90625,64.125],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Elvira Martuuk." },
+      { "stage": "invite", "description": "By invitation from the Party of Yoru — take missions for the Party of Yoru (Yoru system) until friendly status, then complete the special invitation mission." },
+      { "stage": "unlock", "description": "Provide 25T of Xihe Biomorphic Companions — obtain these at Zhen Dock station in Xihe." }
+    ]
   },
   {
     "id": "300080",
@@ -51,7 +76,12 @@
     "name": "Liz Ryder",
     "description": "Explosive weapons",
     "systemName": "Eurybia",
-    "systemPosition": [ 51.40625,-54.40625,-30.5]
+    "systemPosition": [ 51.40625,-54.40625,-30.5],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Revealed by default." },
+      { "stage": "invite", "description": "Take missions for or trade with Eurybia Blue Mafia in the Eurybia system until you reach a Cordial state with the faction." },
+      { "stage": "unlock", "description": "Provide 200T of Landmines, which can only be bought at planetary bases." }
+    ]
   },
   {
     "id": "300090",
@@ -60,7 +90,12 @@
     "name": "Hera Tani",
     "description": "Power Plants and Power Distributors",
     "systemName": "Kuwemaki",
-    "systemPosition": [134.65625,-226.90625,-7.8125]
+    "systemPosition": [134.65625,-226.90625,-7.8125],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Liz Ryder." },
+      { "stage": "invite", "description": "Reach an Imperial Navy rank of Outsider or higher." },
+      { "stage": "unlock", "description": "Provide 50T of Kamitra Cigars — obtain these at Hammel Terminal in Kamitra." }
+    ]
   },
   {
     "id": "300100",
@@ -69,7 +104,12 @@
     "name": "Felicity Farseer",
     "description": "Frame Shift Drives, thrusters, scanners and sensors",
     "systemName": "Deciat",
-    "systemPosition": [122.625,-0.8125,-47.28125]
+    "systemPosition": [122.625,-0.8125,-47.28125],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Revealed by default." },
+      { "stage": "invite", "description": "Reach the rank of Scout in Exploration." },
+      { "stage": "unlock", "description": "Provide 1T of Meta-Alloys — obtain from Darnielle's Progress planetary base in Maia or Thargoid barnacle sites." }
+    ]
   },
   {
     "id": "300110",
@@ -78,7 +118,12 @@
     "name": "Ram Tah",
     "description": "Limpet controllers and utilities",
     "systemName": "Meene",
-    "systemPosition": [118.78125,-56.4375,-97.1875]
+    "systemPosition": [118.78125,-56.4375,-97.1875],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Lei Cheung." },
+      { "stage": "invite", "description": "Gain exploration rank Surveyor or higher." },
+      { "stage": "unlock", "description": "Provide 50 units of Classified Scan Databanks." }
+    ]
   },
   {
     "id": "300120",
@@ -87,7 +132,12 @@
     "name": "Lei Cheung",
     "description": "Shields and sensors",
     "systemName": "Laksak",
-    "systemPosition": [-21.53125,-6.3125,116.03125]
+    "systemPosition": [-21.53125,-6.3125,116.03125],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with The Dweller." },
+      { "stage": "invite", "description": "When you have bought or sold goods at fifty different stations." },
+      { "stage": "unlock", "description": "Provide 200T of gold, which can be bought or mined." }
+    ]
   },
   {
     "id": "300130",
@@ -96,7 +146,12 @@
     "name": "Petra Olmanova",
     "description": "Weapons and utilities",
     "systemName": "Asura",
-    "systemPosition": [-9550.28125,-916.65625,19816.1875]
+    "systemPosition": [-9550.28125,-916.65625,19816.1875],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% with Tod McQuinn." },
+      { "stage": "invite", "description": "Gain combat rank Expert or higher." },
+      { "stage": "unlock", "description": "Provide 200 units of Progenitor Cells." }
+    ]
   },
   {
     "id": "300140",
@@ -105,7 +160,12 @@
     "name": "Colonel Bris Dekker",
     "description": "Frame Shift Drives",
     "systemName": "Sol",
-    "systemPosition": [0,0,0]
+    "systemPosition": [0,0,0],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Juri Ishmaak." },
+      { "stage": "invite", "description": "Reach friendly reputation with the Federation." },
+      { "stage": "unlock", "description": "Provide 1M Credits worth of Combat Bonds." }
+    ]
   },
   {
     "id": "300150",
@@ -114,7 +174,12 @@
     "name": "Marsha Hicks",
     "description": "Projectile weapons and limpet controllers",
     "systemName": "Tir",
-    "systemPosition": [ -9532.9375,-923.4375,19799.125]
+    "systemPosition": [ -9532.9375,-923.4375,19799.125],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with The Dweller." },
+      { "stage": "invite", "description": "Gain exploration rank Surveyor or higher." },
+      { "stage": "unlock", "description": "Mine 10T of Osmium." }
+    ]
   },
   {
     "id": "300160",
@@ -123,7 +188,12 @@
     "name": "Elvira Martuuk",
     "description": "Frame Shift Drives, thrusters and shields",
     "systemName": "Khun",
-    "systemPosition": [-171.59375,19.96875,-56.96875]
+    "systemPosition": [-171.59375,19.96875,-56.96875],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Revealed by default." },
+      { "stage": "invite", "description": "Travel at least 300 Ly away from your start system." },
+      { "stage": "unlock", "description": "Provide 3T of Soontill Relics — obtain at Cheranovsky City station in Ngurii." }
+    ]
   },
   {
     "id": "300180",
@@ -132,7 +202,12 @@
     "name": "The Dweller",
     "description": "Thermal weapons and Power Distributors",
     "systemName": "Wyrd",
-    "systemPosition": [-11.625,31.53125,-3.9375]
+    "systemPosition": [-11.625,31.53125,-3.9375],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Revealed by default." },
+      { "stage": "invite", "description": "You must do business at at least five black markets before he will see you." },
+      { "stage": "unlock", "description": "500K Credits donation." }
+    ]
   },
   {
     "id": "300200",
@@ -141,7 +216,12 @@
     "name": "Marco Qwent",
     "description": "Power Plants and Power Distributors",
     "systemName": "Sirius",
-    "systemPosition": [6.25,-1.28125,-5.75]
+    "systemPosition": [6.25,-1.28125,-5.75],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% with Elvira Martuuk." },
+      { "stage": "invite", "description": "By invitation from the Sirius Corporation — take missions for Sirius Corporation (Sirius system) until friendly status, then complete the special invitation mission." },
+      { "stage": "unlock", "description": "Provide 25T of Modular Terminals — obtain from missions." }
+    ]
   },
   {
     "id": "300210",
@@ -150,7 +230,12 @@
     "name": "Selene Jean",
     "description": "Hull reinforcements and armour",
     "systemName": "Kuk",
-    "systemPosition": [-21.28125,69.09375,-16.3125]
+    "systemPosition": [-21.28125,69.09375,-16.3125],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% with Tod McQuinn." },
+      { "stage": "invite", "description": "When you have mined 500T or more." },
+      { "stage": "unlock", "description": "Provide 10T of Painite — this can only be obtained from mining." }
+    ]
   },
   {
     "id": "300220",
@@ -159,7 +244,12 @@
     "name": "Professor Palin",
     "description": "Frame Shift Drives and thrusters",
     "systemName": "Arque",
-    "systemPosition": [66.5,38.0625,61.125]
+    "systemPosition": [66.5,38.0625,61.125],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 at 33% reputation with Marco Qwent." },
+      { "stage": "invite", "description": "When you have visited a system at least 5,000 Ly from your original start system." },
+      { "stage": "unlock", "description": "Provide 25 units of Sensor Fragments — found at crashed Thargoid ships. Shoot the Thargoid Sensors so they shatter, then collect the fragments (3 per shard)." }
+    ]
   },
   {
     "id": "300230",
@@ -168,7 +258,12 @@
     "name": "Lori Jameson",
     "description": "Scanners and utilities",
     "systemName": "Shinrarta Dezhra",
-    "systemPosition": [55.71875,17.59375,27.15625]
+    "systemPosition": [55.71875,17.59375,27.15625],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Marco Qwent." },
+      { "stage": "invite", "description": "Gain combat rank Dangerous or higher." },
+      { "stage": "unlock", "description": "Provide 25T of Kongga Ale." }
+    ]
   },
   {
     "id": "300250",
@@ -177,7 +272,12 @@
     "name": "Juri Ishmaak",
     "description": "Explosive weapons",
     "systemName": "Giryak",
-    "systemPosition": [14.6875,27.65625,108.65625]
+    "systemPosition": [14.6875,27.65625,108.65625],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Felicity Farseer." },
+      { "stage": "invite", "description": "When you have earned more than fifty combat bonds." },
+      { "stage": "unlock", "description": "Provide 1M Credits worth of combat bonds." }
+    ]
   },
   {
     "id": "300260",
@@ -186,7 +286,12 @@
     "name": "Tod 'The Blaster' McQuinn",
     "description": "Kinetic weapons",
     "systemName": "Wolf 397",
-    "systemPosition": [14.6875,27.65625,108.65625]
+    "systemPosition": [14.6875,27.65625,108.65625],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Revealed by default." },
+      { "stage": "invite", "description": "Hand in fifteen or more bounties." },
+      { "stage": "unlock", "description": "Bring him 100K Credits worth of bounty vouchers." }
+    ]
   },
   {
     "id": "300270",
@@ -195,7 +300,12 @@
     "name": "Tiana Fortune",
     "description": "Scanners, sensors and utilities",
     "systemName": "Achenar",
-    "systemPosition": [67.5,-119.46875,24.84375]
+    "systemPosition": [67.5,-119.46875,24.84375],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Hera Tani." },
+      { "stage": "invite", "description": "Reach friendly reputation with the Empire." },
+      { "stage": "unlock", "description": "Provide 50 units of Decoded Emission Data." }
+    ]
   },
   {
     "id": "300280",
@@ -204,7 +314,12 @@
     "name": "Mel Brandon",
     "description": "Laser weapons, shields, Frame Shift Drives and thrusters",
     "systemName": "Luchtaine",
-    "systemPosition": [ -9523.3125,-914.46875,19825.90625]
+    "systemPosition": [ -9523.3125,-914.46875,19825.90625],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Elvira Martuuk." },
+      { "stage": "invite", "description": "By invitation from the Colonia Council — take missions for the Colonia Council (Colonia system) until friendly status, then complete the special invitation mission." },
+      { "stage": "unlock", "description": "Provide 100,000 credits worth of bounty vouchers." }
+    ]
   },
   {
     "id": "300290",
@@ -213,7 +328,12 @@
     "name": "Etienne Dorn",
     "description": "Plasma Accelerators, Rail Guns, Scanners and core modules",
     "systemName": "Los",
-    "systemPosition": [-9509.34375,-886.3125,19820.125]
+    "systemPosition": [-9509.34375,-886.3125,19820.125],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Liz Ryder." },
+      { "stage": "invite", "description": "Gain trade rank Dealer or higher." },
+      { "stage": "unlock", "description": "Provide 25 units of Occupied Escape Pods." }
+    ]
   },
   {
     "id": "300300",
@@ -222,7 +342,12 @@
     "name": "Chloe Sedesi",
     "description": "Frame Shift Drives and thrusters",
     "systemName": "Shenve",
-    "systemPosition": [ 351.96875,-373.46875,-711.09375]
+    "systemPosition": [ 351.96875,-373.46875,-711.09375],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Reach level 3 and 33% reputation with Marco Qwent." },
+      { "stage": "invite", "description": "When you have visited a system at least 5,000 Ly from your original start system." },
+      { "stage": "unlock", "description": "Provide 25 units of Sensor Fragments — found at crashed Thargoid ships. Shoot the Thargoid Sensors so they shatter, then collect the fragments (3 per shard)." }
+    ]
   },
   {
     "id": "400001",
@@ -231,7 +356,10 @@
     "name": "Jude Navarro",
     "description": "Suits and handheld weapons",
     "systemName": "Aurai",
-    "systemPosition": [0.9375,-47.8125,46.28125]
+    "systemPosition": [0.9375,-47.8125,46.28125],
+    "unlockRequirements": [
+      { "stage": "unlock", "description": "Complete 10 Restore or Reactivation On Foot missions." }
+    ]
   },
   {
     "id": "400002",
@@ -240,7 +368,10 @@
     "name": "Domino Green",
     "description": "Suits and handheld weapons",
     "systemName": "Orishis",
-    "systemPosition": [-31,93.96875,-3.5625]
+    "systemPosition": [-31,93.96875,-3.5625],
+    "unlockRequirements": [
+      { "stage": "unlock", "description": "Travel 100 light-years in Apex Interstellar Transport shuttles." }
+    ]
   },
   {
     "id": "400003",
@@ -249,7 +380,10 @@
     "name": "Hero Ferrari",
     "description": "Suits and handheld weapons",
     "systemName": "Siris",
-    "systemPosition": [131.0625,-73.59375,-11.25]
+    "systemPosition": [131.0625,-73.59375,-11.25],
+    "unlockRequirements": [
+      { "stage": "unlock", "description": "Complete 10 low threat Conflict Zones." }
+    ]
   },
   {
     "id": "400004",
@@ -258,7 +392,11 @@
     "name": "Kit Fowler",
     "description": "Suits and handheld weapons",
     "systemName": "Capoya",
-    "systemPosition": [-60.65625,82.4375,-45.0625]
+    "systemPosition": [-60.65625,82.4375,-45.0625],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Provide Domino Green with 5 units of Push to learn about Kit Fowler." },
+      { "stage": "unlock", "description": "Sell 5 Opinion Polls to Bartenders." }
+    ]
   },
   {
     "id": "400005",
@@ -267,7 +405,11 @@
     "name": "Wellington Beck",
     "description": "Suits and handheld weapons",
     "systemName": "Jolapa",
-    "systemPosition": [100.1875,-41.34375,-78]
+    "systemPosition": [100.1875,-41.34375,-78],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Provide Hero Ferrari with 5 units of Settlement Defence Plans to learn about Wellington Beck." },
+      { "stage": "unlock", "description": "Sell 15 total units of Classic Entertainment, Multimedia Entertainment, and/or Cat Media to Bartenders." }
+    ]
   },
   {
     "id": "400006",
@@ -276,7 +418,11 @@
     "name": "Terra Velasquez",
     "description": "Suits and handheld weapons",
     "systemName": "Shou Xing",
-    "systemPosition": [-16.28125,-44.53125,94.375]
+    "systemPosition": [-16.28125,-44.53125,94.375],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Provide Jude Navarro with 5 units of Genetic Repair Meds to learn about Terra Velasquez." },
+      { "stage": "unlock", "description": "Complete 6 Covert Heist and Covert Theft On Foot missions." }
+    ]
   },
   {
     "id": "400007",
@@ -285,7 +431,11 @@
     "name": "Uma Laszlo",
     "description": "Suits and handheld weapons",
     "systemName": "Xuane",
-    "systemPosition": [93.875,-9.25,-32.53125]
+    "systemPosition": [93.875,-9.25,-32.53125],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Provide Wellington Beck with 5 units of InSight Entertainment Suites to learn about Uma Laszlo." },
+      { "stage": "unlock", "description": "Reach Unfriendly reputation or lower with Sirius Corporation." }
+    ]
   },
   {
     "id": "400008",
@@ -294,7 +444,11 @@
     "name": "Oden Geiger",
     "description": "Suits and handheld weapons",
     "systemName": "Candiaei",
-    "systemPosition": [-113.5,-4.9375,66.84375]
+    "systemPosition": [-113.5,-4.9375,66.84375],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Provide Terra Velasquez with 15 units of Financial Projections to learn about Oden Geiger." },
+      { "stage": "unlock", "description": "Sell 20 total units of Biological Sample, Employee Genetic Data, and/or Genetic Research to Bartenders." }
+    ]
   },
   {
     "id": "400009",
@@ -303,7 +457,11 @@
     "name": "Yarden Bond",
     "description": "Suits and handheld weapons",
     "systemName": "Bayan",
-    "systemPosition": [ -19.96875,117.625,-90.46875]
+    "systemPosition": [ -19.96875,117.625,-90.46875],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Provide Kit Fowler with 5 units of Surveillance Equipment to learn about Yarden Bond." },
+      { "stage": "unlock", "description": "Sell 5 Smear Campaign Plans to Bartenders." }
+    ]
   },
   {
     "id": "400010",
@@ -312,7 +470,10 @@
     "name": "Baltanos",
     "description": "Suits and handheld weapons",
     "systemName": "Deriso",
-    "systemPosition": [-9520.3125,-909.5,19808.75]
+    "systemPosition": [-9520.3125,-909.5,19808.75],
+    "unlockRequirements": [
+      { "stage": "unlock", "description": "Reach Friendly reputation with the Colonia Council." }
+    ]
   },
   {
     "id": "400011",
@@ -321,7 +482,10 @@
     "name": "Eleanor Bresa",
     "description": "Suits and handheld weapons",
     "systemName": "Desy",
-    "systemPosition": [-9534.21875,-912.21875,19792.375]
+    "systemPosition": [-9534.21875,-912.21875,19792.375],
+    "unlockRequirements": [
+      { "stage": "unlock", "description": "Dock and disembark at 5 settlements in the Colonia system." }
+    ]
   },
   {
     "id": "400012",
@@ -330,7 +494,10 @@
     "name": "Rosa Dayette",
     "description": "Suits and handheld weapons",
     "systemName": "Kojeara",
-    "systemPosition": [-9513.09375,-908.84375,19814.28125]
+    "systemPosition": [-9513.09375,-908.84375,19814.28125],
+    "unlockRequirements": [
+      { "stage": "unlock", "description": "Sell a total of 10 Culinary Recipes or Cocktail Recipes to stations in Colonia." }
+    ]
   },
   {
     "id": "400013",
@@ -339,6 +506,10 @@
     "name": "Yi Shen",
     "description": "Suits and handheld weapons",
     "systemName": "Einheriar",
-    "systemPosition": [-9557.8125,-880.1875,19801.5625]
+    "systemPosition": [-9557.8125,-880.1875,19801.5625],
+    "unlockRequirements": [
+      { "stage": "learn", "description": "Provide Baltanos with 10 Faction Associates, Rosa Dayette with 10 Manufacturing Instructions, or Eleanor Bresa with 10 Digital Designs to learn about Yi Shen." },
+      { "stage": "unlock", "description": "Complete all referral tasks: Provide Baltanos with 10 Faction Associates, Rosa Dayette with 10 Manufacturing Instructions, and Eleanor Bresa with 10 Digital Designs." }
+    ]
   }
 ]

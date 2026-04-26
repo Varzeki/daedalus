@@ -1,0 +1,571 @@
+{
+  "_comment": "Per-material sourcing hints. Used by the Collection Guide (descriptions) and Smart Route (hotspot coords for distance calc).",
+  "_schema": {
+    "sources": "Human-readable sourcing descriptions shown in the Collection Guide",
+    "methods": "Collection method keys matching §4.0.1 route settings toggles: srv_surface | signal_source | mission_reward | combat_drop | manufactured_source | guardian_site | data_source | on_foot",
+    "hotspots": "Array of known-good source locations with 3D coords for Smart Route distance calculations",
+    "cannotTrade": "true if this material cannot be obtained via a material trader (e.g. Guardian/Thargoid materials)"
+  },
+
+  "raw": {
+    "carbon": {
+      "sources": ["SRV surface mining — rocky/metallic bodies; very common"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "HIP 36601", "position": [-294.28125, -74.71875, -350.625], "instructions": "Rocky bodies — surface outcrops, very abundant" }
+      ]
+    },
+    "phosphorus": {
+      "sources": ["SRV surface mining — rocky/metallic bodies; very common"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "HIP 36601", "position": [-294.28125, -74.71875, -350.625], "instructions": "Rocky bodies — surface outcrops" }
+      ]
+    },
+    "sulphur": {
+      "sources": ["SRV surface mining — volcanic bodies; very common"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Arque", "position": [66.5, 38.0625, 61.125], "instructions": "High-metal content worlds — geological features near acid pools" }
+      ]
+    },
+    "iron": {
+      "sources": ["SRV surface mining — metallic/high-metal content bodies"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "HIP 18843", "position": [-9.9375, -170.625, -8.625], "instructions": "High-metal content worlds — metallic outcrops near large craters" }
+      ]
+    },
+    "nickel": {
+      "sources": ["SRV surface mining — metallic/high-metal content bodies; common"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "HIP 18843", "position": [-9.9375, -170.625, -8.625], "instructions": "High-metal content worlds — surface outcrops" }
+      ]
+    },
+    "chromium": {
+      "sources": ["SRV surface mining — metallic bodies"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Eravate", "position": [76.59375, -13.59375, 19.375], "instructions": "Metallic bodies — small surface outcrops" }
+      ]
+    },
+    "zinc": {
+      "sources": ["SRV surface mining — metallic/high-metal bodies"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Eravate", "position": [76.59375, -13.59375, 19.375], "instructions": "Metallic bodies — surface outcrops" }
+      ]
+    },
+    "manganese": {
+      "sources": ["SRV surface mining — metallic bodies"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "49 Arietis", "position": [122.375, -38.03125, 48.78125], "instructions": "Metallic bodies — surface outcrops near dark banding" }
+      ]
+    },
+    "germanium": {
+      "sources": ["SRV surface mining — rocky/icy bodies"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Maia", "position": [-81.78125, -149.4375, -343.375], "instructions": "Icy bodies — surface patches; also found near geological sites" }
+      ]
+    },
+    "vanadium": {
+      "sources": ["SRV surface mining — rocky/metallic bodies"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "HIP 18843", "position": [-9.9375, -170.625, -8.625], "instructions": "Metallic bodies — surface outcrops" }
+      ]
+    },
+    "arsenic": {
+      "sources": ["SRV surface mining — rocky bodies with geological activity"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Arque", "position": [66.5, 38.0625, 61.125], "instructions": "Rocky bodies near hot springs — geological fumaroles" }
+      ]
+    },
+    "selenium": {
+      "sources": ["SRV surface mining — rocky bodies near geological sites"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Arque", "position": [66.5, 38.0625, 61.125], "instructions": "Rocky bodies — geological fumaroles and vents" }
+      ]
+    },
+    "niobium": {
+      "sources": ["SRV surface mining — metallic bodies"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Robigo", "position": [55.46875, -2.09375, 7.9375], "instructions": "Metallic bodies — small outcrops" }
+      ]
+    },
+    "molybdenum": {
+      "sources": ["SRV surface mining — metallic bodies"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Robigo", "position": [55.46875, -2.09375, 7.9375], "instructions": "Metallic bodies — surface outcrops" }
+      ]
+    },
+    "cadmium": {
+      "sources": ["SRV surface mining — metallic/icy bodies"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Maia", "position": [-81.78125, -149.4375, -343.375], "instructions": "Icy bodies — surface outcrops" }
+      ]
+    },
+    "tin": {
+      "sources": ["SRV surface mining — metallic/icy bodies"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Maia", "position": [-81.78125, -149.4375, -343.375], "instructions": "Icy bodies — surface outcrops" }
+      ]
+    },
+    "tungsten": {
+      "sources": ["SRV surface mining — metallic bodies; uncommon"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "HIP 18843", "position": [-9.9375, -170.625, -8.625], "instructions": "Metallic bodies — surface outcrops near darker banding" }
+      ]
+    },
+    "mercury": {
+      "sources": ["SRV surface mining — metallic bodies"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "49 Arietis", "position": [122.375, -38.03125, 48.78125], "instructions": "Metallic bodies — surface outcrops near volcanic activity markers" }
+      ]
+    },
+    "technetium": {
+      "sources": ["SRV surface mining — metallic bodies; rare"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Delphi", "position": [-179.09375, -56.375, -357.5625], "instructions": "Metallic bodies — surface outcrops; found near crystalline geological features" }
+      ]
+    },
+    "tellurium": {
+      "sources": ["SRV surface mining — icy/rocky bodies near geological sites"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Arque 4 E", "position": [66.5, 38.0625, 61.125], "instructions": "Rocky bodies — sulphur-rich geological sites" }
+      ]
+    },
+    "ruthenium": {
+      "sources": ["SRV surface mining — metallic bodies; rare"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Delphi", "position": [-179.09375, -56.375, -357.5625], "instructions": "Metallic bodies — surface outcrops; less common than common raws" }
+      ]
+    },
+    "yttrium": {
+      "sources": ["SRV surface mining — metallic bodies; rare"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "Delphi", "position": [-179.09375, -56.375, -357.5625], "instructions": "Metallic bodies — surface outcrops; found near crystalline geological features" }
+      ]
+    },
+    "polonium": {
+      "sources": ["SRV surface mining — metallic bodies; very rare"],
+      "methods": ["srv_surface"],
+      "hotspots": [
+        { "system": "HIP 36601", "position": [-294.28125, -74.71875, -350.625], "instructions": "Rocky worlds with sulphur volcanism — search near geological sites (fumaroles/vents)" }
+      ]
+    }
+  },
+
+  "encoded": {
+    "scrambledemissiondata": {
+      "sources": ["Scanning ships in signal sources — Encoded Emissions signals", "Scanning wakes"],
+      "methods": ["signal_source"],
+      "hotspots": [
+        { "system": "Any populated system", "position": null, "instructions": "Search for 'Encoded Emissions' signals on the navigation panel. Scan ships with a data link scanner." }
+      ]
+    },
+    "unexpectedemissiondata": {
+      "sources": ["Scanning ships in signal sources — Encoded Emissions signals"],
+      "methods": ["signal_source"],
+      "hotspots": [
+        { "system": "Any populated system", "position": null, "instructions": "Search for 'Encoded Emissions' signal sources. Scan Type-7, Type-9 or similar large freighters." }
+      ]
+    },
+    "emissiondata": {
+      "sources": ["Scanning ships in Encoded Emission signal sources"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "decodedemissiondata": {
+      "sources": ["Scanning ships in Encoded Emission signal sources; rare drop"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "legacyfirmware": {
+      "sources": ["Scanning security ships and installations"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "consumerfirmware": {
+      "sources": ["Scanning ships — common encoded material"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "industrialfirmware": {
+      "sources": ["Scanning ships — industrial vessels"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "securityfirmware": {
+      "sources": ["Scanning security ships and turrets"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "embeddedfirmware": {
+      "sources": ["Scanning military/security ships — rare drop"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "bulkscandata": {
+      "sources": ["Scanning objects (navigational beacons, USS)"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "scanarchives": {
+      "sources": ["Scanning objects at signal sources"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "scandatabanks": {
+      "sources": ["Scanning objects at signal sources"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "classifiedscandata": {
+      "sources": ["Scanning objects at Encoded Emission or Degraded Emission sources"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "classifiedscanreport": {
+      "sources": ["Scanning mission targets, Encoded Emission signal sources"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "encryptedfiles": {
+      "sources": ["Scanning ships and installations"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "encryptioncodes": {
+      "sources": ["Scanning ships at signal sources"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "symmetrickeys": {
+      "sources": ["Scanning ships at Encoded Emission sources"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "encryptionarchives": {
+      "sources": ["Scanning ships at high-level signal sources — uncommon"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "adaptiveencryptors": {
+      "sources": ["Scanning ships at high-level signal sources — rare"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "disruptedwakeechoes": {
+      "sources": ["Scanning low-energy ship wakes"],
+      "methods": ["signal_source"],
+      "hotspots": [
+        { "system": "Any populated system", "position": null, "instructions": "Use an FSD Wake Scanner on Supercruise wakes left by ships exiting supercruise (appear as orange wake icons on the scanner)." }
+      ]
+    },
+    "fsdtelemetry": {
+      "sources": ["Scanning ship wakes with FSD Wake Scanner"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "wakesolutions": {
+      "sources": ["Scanning ship wakes — uncommon"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "hyperspacetrajectories": {
+      "sources": ["Scanning high-energy ship wakes"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "dataminedwake": {
+      "sources": ["Scanning high-energy ship wakes — rare"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "shieldcyclerecordings": {
+      "sources": ["Scanning ships at signal sources"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "shieldsoakanalysis": {
+      "sources": ["Scanning ships at signal sources"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "shielddensityreports": {
+      "sources": ["Scanning ships at signal sources — uncommon"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "shieldpatternanalysis": {
+      "sources": ["Scanning ships at signal sources — uncommon"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "aberrantshieldpatternanalysis": {
+      "sources": ["Scanning ships at signal sources — rare"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "ancientbiologicaldata": {
+      "sources": ["Scanning Guardian beacons/structures"],
+      "methods": ["guardian_site"],
+      "hotspots": [
+        { "system": "Synuefe EN-H d11-96", "position": [-189.125, -286.5, 58.25], "instructions": "Guardian Structure Alpha site — scan ancient obelisks with a composition scanner" }
+      ],
+      "cannotTrade": true
+    },
+    "ancientculturaldata": {
+      "sources": ["Scanning Guardian obelisks at Guardian structures"],
+      "methods": ["guardian_site"],
+      "hotspots": [
+        { "system": "Synuefe EN-H d11-96", "position": [-189.125, -286.5, 58.25], "instructions": "Guardian Structure Alpha site — scan ancient obelisks" }
+      ],
+      "cannotTrade": true
+    },
+    "ancienthistoricaldata": {
+      "sources": ["Scanning Guardian obelisks at Guardian structures"],
+      "methods": ["guardian_site"],
+      "hotspots": [
+        { "system": "Synuefe EN-H d11-96", "position": [-189.125, -286.5, 58.25], "instructions": "Guardian Structure Alpha site — scan ancient obelisks" }
+      ],
+      "cannotTrade": true
+    },
+    "ancientlanguagedata": {
+      "sources": ["Scanning Guardian obelisks at Guardian structures"],
+      "methods": ["guardian_site"],
+      "hotspots": [
+        { "system": "Synuefe EN-H d11-96", "position": [-189.125, -286.5, 58.25], "instructions": "Guardian Structure Alpha site — scan ancient obelisks" }
+      ],
+      "cannotTrade": true
+    },
+    "ancienttechnologicaldata": {
+      "sources": ["Scanning Guardian obelisks at Guardian structures"],
+      "methods": ["guardian_site"],
+      "hotspots": [
+        { "system": "Synuefe EN-H d11-96", "position": [-189.125, -286.5, 58.25], "instructions": "Guardian Structure Alpha site — scan ancient obelisks" }
+      ],
+      "cannotTrade": true
+    }
+  },
+
+  "manufactured": {
+    "chemicalstorageunits": {
+      "sources": ["Salvage from signal sources — Degraded Emissions", "Combat drops from ships"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "chemicalprocessors": {
+      "sources": ["Salvage from signal sources", "Combat drops from ships"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "chemicaldistillery": {
+      "sources": ["Salvage from Encoded Emission signal sources", "Combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "chemicalmanipulators": {
+      "sources": ["Salvage from signal sources — uncommon", "Rare combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "pharmaceuticalisolators": {
+      "sources": ["Salvage from signal sources — rare", "High-level combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "temperedalloys": {
+      "sources": ["Salvage from signal sources", "Combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "heatconductionwiring": {
+      "sources": ["Salvage from signal sources", "Combat drops from ships"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "heatdispersionplate": {
+      "sources": ["Salvage from signal sources", "Combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "heatexchangers": {
+      "sources": ["Salvage from signal sources — uncommon", "Combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "heatvanes": {
+      "sources": ["Salvage from signal sources — rare", "Rare combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "basicconductors": {
+      "sources": ["Salvage from signal sources", "Combat drops from ships"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "conductivecomponents": {
+      "sources": ["Salvage from signal sources", "Combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "conductiveceramics": {
+      "sources": ["Salvage from signal sources — uncommon", "Combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "conductivepolymers": {
+      "sources": ["Salvage from signal sources — rare", "Combat drops from military ships"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "biotechconductors": {
+      "sources": ["Salvage from signal sources — very rare", "High-level combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "mechanicalscrap": {
+      "sources": ["Salvage from signal sources — Degraded Emissions"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "mechanicalequipment": {
+      "sources": ["Salvage from signal sources"],
+      "methods": ["signal_source"],
+      "hotspots": []
+    },
+    "mechanicalcomponents": {
+      "sources": ["Salvage from signal sources", "Combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "configurablecomponents": {
+      "sources": ["Salvage from signal sources — uncommon", "Combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "improvisedcomponents": {
+      "sources": ["Salvage from signal sources — rare", "Rare combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "gridresistors": {
+      "sources": ["Salvage from signal sources", "Combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "hybridcapacitors": {
+      "sources": ["Salvage from signal sources", "Combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "electrochemicalarrays": {
+      "sources": ["Salvage from signal sources — uncommon", "Combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "polymercapacitors": {
+      "sources": ["Salvage from signal sources — rare", "Combat drops from advanced ships"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "militarygradealloys": {
+      "sources": ["Combat drops from military/high-rank ships", "Signal sources"],
+      "methods": ["combat_drop", "signal_source"],
+      "hotspots": []
+    },
+    "militarysupercapacitors": {
+      "sources": ["Combat drops from military ships — rare"],
+      "methods": ["combat_drop"],
+      "hotspots": []
+    },
+    "focuscrystals": {
+      "sources": ["Salvage from signal sources — uncommon", "Combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "refinedfocuscrystals": {
+      "sources": ["Salvage from Encoded Emission sources — rare", "Rare combat drops"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "exquisitefocuscrystals": {
+      "sources": ["Salvage from high-level signal sources — very rare"],
+      "methods": ["signal_source", "combat_drop"],
+      "hotspots": []
+    },
+    "fedproprietarycomposites": {
+      "sources": ["Combat drops from Federal ships and agents — uncommon"],
+      "methods": ["combat_drop"],
+      "hotspots": [
+        { "system": "Mapat", "position": [116.03125, -57.3125, 14.65625], "instructions": "Hunt Federal ships in conflict zones or at nav beacons in Federal space" }
+      ]
+    },
+    "fedcorecomposites": {
+      "sources": ["Combat drops from Federal ships — rare"],
+      "methods": ["combat_drop"],
+      "hotspots": []
+    },
+    "compoundshielding": {
+      "sources": ["Combat drops from military ships — uncommon"],
+      "methods": ["combat_drop"],
+      "hotspots": []
+    },
+    "imperialshielding": {
+      "sources": ["Combat drops from Imperial ships and agents — uncommon"],
+      "methods": ["combat_drop"],
+      "hotspots": [
+        { "system": "Achenar", "position": [67.5, -119.46875, 24.84375], "instructions": "Nav beacon or conflict zone in Imperial space — hunt Imperial ships" }
+      ]
+    },
+    "guardian_powercell": {
+      "sources": ["Guardian Structure sites — collect from active pylons"],
+      "methods": ["guardian_site"],
+      "hotspots": [
+        { "system": "Synuefe EN-H d11-96", "position": [-189.125, -286.5, 58.25], "instructions": "Guardian Structure Alpha site — collect power cells dropped by active pylons" }
+      ],
+      "cannotTrade": true
+    },
+    "guardian_powerconduit": {
+      "sources": ["Guardian Structure sites — collect from wreckage panels"],
+      "methods": ["guardian_site"],
+      "hotspots": [
+        { "system": "Synuefe EN-H d11-96", "position": [-189.125, -286.5, 58.25], "instructions": "Guardian Structure site — destroy wreckage panels with SRV weaponry" }
+      ],
+      "cannotTrade": true
+    },
+    "guardian_sentinel_wreckagecomponents": {
+      "sources": ["Guardian Structure ruins — destroy sentinels"],
+      "methods": ["guardian_site"],
+      "hotspots": [
+        { "system": "Synuefe EN-H d11-96", "position": [-189.125, -286.5, 58.25], "instructions": "Guardian Structure Alpha site — destroy sentinels using SRV; collect dropped components" }
+      ],
+      "cannotTrade": true
+    },
+    "guardian_techcomponent": {
+      "sources": ["Guardian Structure sites — collect from active obelisk panels"],
+      "methods": ["guardian_site"],
+      "hotspots": [
+        { "system": "Synuefe EN-H d11-96", "position": [-189.125, -286.5, 58.25], "instructions": "Guardian Structure Alpha site — interact with obelisk panels after power is restored" }
+      ],
+      "cannotTrade": true
+    }
+  }
+}

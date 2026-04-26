@@ -6,6 +6,35 @@ Forked from: [ICARUS Terminal](https://github.com/iaincollins/icarus) v0.22.0
 
 ---
 
+## v2.0.0 — Engineering & Materials Overhaul (in progress)
+
+### New Features
+
+#### Engineering Wishlist & Material Planner
+- Per-ship wishlist (keyed by `Loadout.ShipID`) for engineering blueprints, synthesis recipes, and tech broker unlocks
+- Aggregate material shortfall calculation across all wishlist items
+- Multi-source trade suggestion algorithm (`calculateCombinedTrades`) combining partial sources to satisfy shortfalls
+- Smart Route generator: optimal multi-stop collection, trade, and engineer unlock route with TSP/2-opt optimisation
+- Engineer Unlock Chain: automatically resolves prerequisites for Horizons and Odyssey engineers; auto-completes activity stops via `EngineerProgress` journal events
+- Ship Fitting Checks: validates landing pad compatibility and flags missing modules before routing to an engineer
+
+#### Data Additions
+- `unlockRequirements` added to all 38 engineers in `engineers.json` (25 Horizons with learn/invite/unlock stages; 13 Odyssey with 1–2 stages, no invite)
+- New `material-sources.json`: per-material sourcing hints with 3D coordinates for Smart Route distance calculations
+- New `material-traders.json`: material trader locations with background 24 h refresh from Spansh stations API
+
+#### New Pages
+- **Material Planner** — four sub-tabs: Smart Route, Trader Planner, Engineer Route, Collection Guide
+- **Synthesis** — synthesis recipe viewer and wishlist integration
+- **Tech Broker** — tech broker unlock viewer and wishlist integration
+
+### Data
+- `src/service/data/engineers.json` — `unlockRequirements` array added to all 38 engineers
+- `src/service/data/material-sources.json` — new file, per-material sourcing hints and hotspot coordinates
+- `src/service/data/material-traders.json` — new file, material trader locations
+
+---
+
 ## Fork Changes (based on v0.22.0)
 
 ### New Features
