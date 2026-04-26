@@ -46,9 +46,20 @@ function getAllUnlockSteps (engineer, prerequisites) {
 
 const CARD_GRID_STYLE = {
   display: 'grid',
-  gridTemplateColumns: 'repeat(auto-fill, minmax(170px, 1fr))',
+  gridTemplateColumns: 'repeat(auto-fill, minmax(max(200px, calc(100% / 6 - 1rem)), 1fr))',
   gap: '1rem',
+  marginTop: '.75rem',
   marginBottom: '1.5rem'
+}
+
+const COLONIA_GOLD = '#e6a817'
+
+// Petra Olmanova, Marsha Hicks, Mel Brandon, Etienne Dorn (Horizons)
+// Baltanos, Eleanor Bresa, Rosa Dayette, Yi Shen (Odyssey)
+const COLONIA_ENGINEER_IDS = new Set(['300130', '300150', '300280', '300290', '400010', '400011', '400012', '400013'])
+
+function isColoniaEngineer (engineer) {
+  return COLONIA_ENGINEER_IDS.has(String(engineer.id))
 }
 
 function EngineerCard ({ engineer, currentSystem, prerequisites, onAddToWishlist, onRemoveFromWishlist, wishedIds }) {
@@ -60,6 +71,7 @@ function EngineerCard ({ engineer, currentSystem, prerequisites, onAddToWishlist
     ? distance(currentSystem.position, engineer.system.position).toLocaleString(undefined, { maximumFractionDigits: 0 })
     : null
   const isWished = wishedIds.has(String(engineer.id))
+  const isColonia = isColoniaEngineer(engineer)
 
   const statusColor = isUnlocked
     ? 'var(--color-success)'
@@ -70,7 +82,8 @@ function EngineerCard ({ engineer, currentSystem, prerequisites, onAddToWishlist
 
   return (
     <div style={{
-      border: `1px solid ${isUnlocked ? 'var(--color-success)' : isLocked ? 'rgba(255,255,255,.15)' : 'var(--color-primary)'}`,
+      border: `${isColonia ? '3px' : '1px'} solid ${isColonia ? COLONIA_GOLD : isUnlocked ? 'var(--color-success)' : isLocked ? 'rgba(255,255,255,.15)' : 'var(--color-primary)'}`,
+      boxShadow: isColonia ? `0 0 14px 3px ${COLONIA_GOLD}88, inset 0 0 8px 0 ${COLONIA_GOLD}22` : undefined,
       borderRadius: '4px',
       overflow: 'hidden',
       opacity: isLocked ? 0.45 : 1,
@@ -95,13 +108,16 @@ function EngineerCard ({ engineer, currentSystem, prerequisites, onAddToWishlist
           padding: '.2rem .4rem',
           display: 'flex', justifyContent: 'space-between', alignItems: 'baseline', gap: '.25rem'
         }}>
-          <span style={{ color: statusColor, fontSize: '.8em', fontWeight: 700, textTransform: 'uppercase' }}>{statusLabel}</span>
-          {dist && <span className='text-muted' style={{ fontSize: '.75em' }}>{dist} Ly</span>}
+          <span style={{ color: statusColor, fontSize: '1em', fontWeight: 700, textTransform: 'uppercase' }}>{statusLabel}</span>
+          <span style={{ display: 'flex', alignItems: 'baseline', gap: '.35rem' }}>
+            {isColonia && <span style={{ color: COLONIA_GOLD, fontSize: '.85em', fontWeight: 700 }}>Colonia</span>}
+            {dist && <span className='text-muted' style={{ fontSize: '.9em' }}>{dist} Ly</span>}
+          </span>
         </div>
       </div>
 
       <div style={{ padding: '.5rem .6rem', flex: 1, display: 'flex', flexDirection: 'column', gap: '.3rem' }}>
-        <h4 className={isUnlocked ? 'text-info' : 'text-info text-muted'} style={{ margin: 0, fontSize: '.9em', lineHeight: 1.2 }}>
+        <h4 className={isUnlocked ? 'text-info' : 'text-info text-muted'} style={{ margin: 0, fontSize: '1.1em', lineHeight: 1.2 }}>
           <CopyOnClick>{engineer.name}</CopyOnClick>
         </h4>
 
@@ -113,7 +129,7 @@ function EngineerCard ({ engineer, currentSystem, prerequisites, onAddToWishlist
           </div>}
 
         {!isUnlocked && steps.length > 0 &&
-          <ol style={{ margin: 0, padding: '0 0 0 1.1em', fontSize: '.8em' }}>
+          <ol style={{ margin: 0, padding: '0 0 0 1.1em', fontSize: '1em' }}>
             {steps.map(step => (
               <li
                 key={step.key}
@@ -125,7 +141,7 @@ function EngineerCard ({ engineer, currentSystem, prerequisites, onAddToWishlist
             ))}
           </ol>}
 
-        <div className='text-muted' style={{ fontSize: '.8em', marginTop: 'auto', paddingTop: '.25rem' }}>
+        <div className='text-muted' style={{ fontSize: '1em', marginTop: 'auto', paddingTop: '.25rem' }}>
           <CopyOnClick>{engineer.system.name}</CopyOnClick>
         </div>
 
@@ -136,7 +152,7 @@ function EngineerCard ({ engineer, currentSystem, prerequisites, onAddToWishlist
               width: '100%',
               marginTop: '.25rem',
               padding: '.3rem .5rem',
-              fontSize: '.8em',
+              fontSize: '1em',
               color: isWished ? 'var(--color-success)' : undefined
             }}
             disabled={!onAddToWishlist}
