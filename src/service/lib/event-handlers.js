@@ -26,6 +26,7 @@ const Keybinds = require('./event-handlers/keybinds')
 const Video = require('./event-handlers/video')
 const Galnet = require('./event-handlers/galnet')
 const Media = require('./event-handlers/media')
+const Engineering = require('./event-handlers/engineering')
 const covasPlayer = require('./covas-player')
 
 class EventHandlers {
@@ -52,6 +53,7 @@ class EventHandlers {
     this.video = this._register(new Video())
     this.galnet = this._register(new Galnet())
     this.media = this._register(new Media())
+    this.engineering = this._register(new Engineering())
     this.textToSpeech = new TextToSpeech({ eliteLog, eliteJson, cmdrStatus: this.cmdrStatus, shipStatus: this.shipStatus })
   }
 

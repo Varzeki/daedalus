@@ -1,0 +1,93 @@
+{
+  "_comment": "Curated stations for engineer unlock commodities. Used by the Smart Route to insert commodity_purchase stops. Keys are commodity symbols matching engineer-prerequisites.json unlock entries.",
+
+  "metaalloys": {
+    "system": "Maia",
+    "position": [-81.625, -149.375, -343.25],
+    "station": "Darnielle's Progress",
+    "distanceToArrival": 208,
+    "padSize": "M"
+  },
+  "soontillrelics": {
+    "system": "Ngurii",
+    "position": [19.34375, 32.1875, -18.34375],
+    "station": "Cheranovsky City",
+    "distanceToArrival": 2205,
+    "padSize": "L"
+  },
+  "lavianbrandy": {
+    "system": "Lave",
+    "position": [74.84375, -0.1875, -20.09375],
+    "station": "Lave Station",
+    "distanceToArrival": 300,
+    "padSize": "L"
+  },
+  "bromellite": {
+    "system": "HIP 21480",
+    "position": [-88.03125, -99.5625, -29.34375],
+    "station": "Harrison's Claim",
+    "distanceToArrival": 2040,
+    "padSize": "M",
+    "_note": "Bromellite is mined from icy rings; also available at some refinery economy markets."
+  },
+  "fujintea": {
+    "system": "Fujin",
+    "position": [27.625, 29.25, 113.0625],
+    "station": "Futen Spaceport",
+    "distanceToArrival": 370,
+    "padSize": "L"
+  },
+  "kamitracigars": {
+    "system": "Kamitra",
+    "position": [13.71875, -95.3125, 65.65625],
+    "station": "Hammel Terminal",
+    "distanceToArrival": 538,
+    "padSize": "L"
+  },
+  "xihebiomorphiccompanions": {
+    "system": "Xihe",
+    "position": [21.09375, 22.40625, -32.3125],
+    "station": "Zhen Dock",
+    "distanceToArrival": 400,
+    "padSize": "L"
+  },
+  "konggaale": {
+    "system": "Kongga",
+    "position": [-81.65625, -24.5, 28.28125],
+    "station": "Soles Repair Hub",
+    "distanceToArrival": 1200,
+    "padSize": "M"
+  },
+  "landmines": {
+    "system": "Luyten's Star",
+    "position": [-12.4375, -1.46875, 10.9375],
+    "station": "Ashby City",
+    "distanceToArrival": 36,
+    "padSize": "L",
+    "_note": "Landmines are sold at various planetary base black markets. Ashby City has a legal market. Check local commodity listings."
+  },
+  "gold": {
+    "system": "Ceos",
+    "position": [56.1875, -20.90625, 73.9375],
+    "station": "Harvestport",
+    "distanceToArrival": 190,
+    "padSize": "L",
+    "_note": "Gold is available at many extraction and refinery economies. Ceos or Sothis are popular trade hubs."
+  },
+  "painite": {
+    "_miningOnly": true,
+    "_note": "Painite can only be obtained by mining. Found in metallic ring hotspots. Cannot be purchased at a market."
+  },
+  "osmium": {
+    "_miningOnly": true,
+    "_note": "Osmium is a mining commodity found in metallic/rocky rings. Cannot be purchased at a standard market."
+  },
+  "modularterminals": {
+    "system": "Laksak",
+    "position": [-21.53125, -6.3125, 116.03125],
+    "station": "Joliot-Curie Enterprise",
+    "distanceToArrival": 800,
+    "padSize": "L",
+    "_note": "Modular Terminals are primarily obtained via missions, but can be found at some high-tech industrial markets."
+  }
+}

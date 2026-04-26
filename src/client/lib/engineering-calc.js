@@ -356,3 +356,344 @@ export function computeItemShortfall (item, blueprints, materials) {
   }
   return shortCount
 }
+
+// ---------------------------------------------------------------------------
+// Route planning utilities (Phase 4 — Smart Route)
+// ---------------------------------------------------------------------------
+
+/**
+ * 3D Euclidean distance between two [x,y,z] positions (Ly).
+ */
+export function calculateDistance (posA, posB) {
+  if (!posA || !posB) return Infinity
+  try {
+    const dx = posA[0] - posB[0]
+    const dy = posA[1] - posB[1]
+    const dz = posA[2] - posB[2]
+    return Math.sqrt(dx * dx + dy * dy + dz * dz)
+  } catch (_) {
+    return Infinity
+  }
+}
+
+/**
+ * Find the nearest material trader of the given type to the current position.
+ *
+ * @param {Array}  traders        — material-traders.json `traders` array
+ * @param {string} type           — "Raw" | "Encoded" | "Manufactured"
+ * @param {Array}  currentPos     — [x, y, z]
+ * @returns {{ name, coords, station, distance }|null}
+ */
+export function findNearestTrader (traders, type, currentPos) {
+  if (!traders?.length || !currentPos) return null
+
+  let best = null
+  let bestDist = Infinity
+
+  for (const trader of traders) {
+    if ((trader.station?.type ?? '').toLowerCase() !== type.toLowerCase()) continue
+    const pos = trader.coords ? [trader.coords.x, trader.coords.y, trader.coords.z] : null
+    const dist = calculateDistance(pos, currentPos)
+    if (dist < bestDist) {
+      bestDist = dist
+      best = { ...trader, distance: parseFloat(dist.toFixed(1)) }
+    }
+  }
+  return best
+}
+
+/**
+ * Nearest-neighbour TSP heuristic.
+ *
+ * Takes an array of stops (each with a `position` field) and returns them
+ * in the order produced by the nearest-neighbour heuristic starting from
+ * `startPosition`. Stops without a position are appended at the end in
+ * original order.
+ *
+ * @param {Array} stops          — array of RouteStop objects
+ * @param {Array} startPosition  — [x, y, z] of starting point
+ * @returns {Array} reordered stops
+ */
+export function nearestNeighbourSort (stops, startPosition) {
+  const located = stops.filter(s => s.system?.position)
+  const unlocated = stops.filter(s => !s.system?.position)
+
+  const result = []
+  const remaining = [...located]
+  let current = startPosition
+
+  while (remaining.length > 0) {
+    let bestIdx = 0
+    let bestDist = Infinity
+    for (let i = 0; i < remaining.length; i++) {
+      const dist = calculateDistance(current, remaining[i].system.position)
+      if (dist < bestDist) {
+        bestDist = dist
+        bestIdx = i
+      }
+    }
+    const next = remaining.splice(bestIdx, 1)[0]
+    result.push({ ...next, distanceFromPrev: parseFloat(bestDist.toFixed(1)) })
+    current = next.system.position
+  }
+
+  return [...result, ...unlocated]
+}
+
+/**
+ * 2-opt TSP improvement pass.
+ *
+ * Runs a single pass of 2-opt swaps over the sorted stops array and returns
+ * the improved order if any swap reduces total distance. Skips stops that
+ * have `mustPrecede` constraints (unlock steps that must come before a
+ * specific other stop).
+ *
+ * @param {Array} stops         — ordered RouteStop array (each with system.position)
+ * @param {Array} startPosition — [x, y, z] starting point
+ * @returns {Array} stops with improved order and updated distanceFromPrev values
+ */
+export function twoOptImprove (stops, startPosition) {
+  // Only work with the stops that have a position (skip activity stops etc.)
+  if (stops.length < 4) return stops
+
+  // Build a flat list of candidate stops with positions
+  const withPos = stops.map((s, i) => ({ ...s, _origIdx: i, _hasPos: Boolean(s.system?.position) }))
+
+  let improved = true
+  let route = [...withPos]
+
+  while (improved) {
+    improved = false
+    for (let i = 1; i < route.length - 1; i++) {
+      for (let j = i + 1; j < route.length; j++) {
+        if (!route[i]._hasPos || !route[j]._hasPos) continue
+        // Skip if constrained by mustPrecede
+        if (route[i].mustPrecede || route[j].mustPrecede) continue
+
+        const prevI = i === 0 ? startPosition : route[i - 1].system?.position
+        const prevJ = route[j - 1].system?.position
+
+        if (!prevI || !prevJ || !route[i].system?.position || !route[j].system?.position) continue
+
+        const before = calculateDistance(prevI, route[i].system.position) +
+                       calculateDistance(prevJ, route[j].system.position)
+        const after = calculateDistance(prevI, route[j].system.position) +
+                      calculateDistance(prevJ, route[i].system.position)
+
+        if (after < before - 0.1) {
+          // Reverse the segment [i..j]
+          const segment = route.slice(i, j + 1).reverse()
+          route = [...route.slice(0, i), ...segment, ...route.slice(j + 1)]
+          improved = true
+        }
+      }
+    }
+  }
+
+  // Recompute distanceFromPrev
+  return route.map((stop, idx) => {
+    if (idx === 0) return { ...stop, distanceFromPrev: parseFloat(calculateDistance(startPosition, stop.system?.position ?? null).toFixed(1)) }
+    const prev = route[idx - 1]
+    return { ...stop, distanceFromPrev: parseFloat(calculateDistance(prev.system?.position, stop.system?.position).toFixed(1)) }
+  })
+}
+
+/**
+ * Group shortfall materials into collection stops by their best source system.
+ * Materials without a known source entry, or whose method is not enabled, are
+ * grouped into a single "unknown source" stop.
+ *
+ * @param {Array}  shortfalls     — materials with shortfall > 0 (from allocateTradeSuggestions)
+ * @param {Object} sources        — flat getMaterialSources() result keyed by symbol
+ * @param {Set}    enabledMethods — set of enabled collection method keys
+ * @returns {Array} collection RouteStop objects
+ */
+export function groupCollectionsBySystem (shortfalls, sources, enabledMethods) {
+  const systemMap = new Map()  // system name → stop
+
+  for (const sfEntry of shortfalls) {
+    const stillNeeded = sfEntry.stillNeeded ?? sfEntry.shortfall
+    if (stillNeeded <= 0) continue
+
+    const source = sources?.[sfEntry.symbol.toLowerCase()]
+    const enabledHotspot = source?.hotspots?.length > 0 &&
+      source.methods?.some(m => enabledMethods.has(m))
+      ? source.hotspots[0]
+      : null
+
+    if (enabledHotspot) {
+      const key = enabledHotspot.system
+      if (!systemMap.has(key)) {
+        systemMap.set(key, {
+          type: 'collection',
+          system: { name: enabledHotspot.system, position: enabledHotspot.position },
+          materials: []
+        })
+      }
+      systemMap.get(key).materials.push({
+        symbol: sfEntry.symbol,
+        name: sfEntry.name,
+        type: sfEntry.type,
+        grade: sfEntry.grade,
+        amountToCollect: stillNeeded,
+        method: source.methods?.[0] ?? 'unknown',
+        instructions: enabledHotspot.instructions ?? ''
+      })
+    } else {
+      // No enabled source — add to the "unknown" bucket for this material
+      const genericKey = `__unknown__${(sfEntry.type ?? '').toLowerCase()}`
+      if (!systemMap.has(genericKey)) {
+        systemMap.set(genericKey, {
+          type: 'collection',
+          system: { name: 'Unknown Location', position: null },
+          materials: [],
+          noSource: true
+        })
+      }
+      systemMap.get(genericKey).materials.push({
+        symbol: sfEntry.symbol,
+        name: sfEntry.name,
+        type: sfEntry.type,
+        grade: sfEntry.grade,
+        amountToCollect: stillNeeded,
+        method: 'unknown',
+        instructions: source?.sources?.[0] ?? genericCollectionHint(sfEntry.type)
+      })
+    }
+  }
+
+  return Array.from(systemMap.values())
+}
+
+function genericCollectionHint (type) {
+  const t = (type ?? '').toLowerCase()
+  if (t === 'raw') return 'Mine on planetary surfaces with SRV'
+  if (t === 'encoded') return 'Scan ships, data ports, and signal sources'
+  if (t === 'manufactured') return 'Combat bounties, mission rewards, ship salvage'
+  return 'Collect from in-game sources'
+}
+
+/**
+ * Determine which engineers from `engineers` (getEngineers() result) are
+ * required to apply the wishlist blueprints, and return them sorted by
+ * distance from `currentPos` using nearest-neighbour ordering.
+ *
+ * @param {Array}  wishlist    — wishlist items
+ * @param {Array}  blueprints  — getBlueprints() result
+ * @param {Array}  engineers   — getEngineers() result
+ * @param {Array}  currentPos  — [x, y, z]
+ * @returns {Array} engineer RouteStop objects, ordered nearest-first
+ */
+export function buildEngineerRoute (wishlist, blueprints, engineers, currentPos) {
+  // Find which engineers are needed for the wishlist
+  const requiredBlueprintsByEngineer = {}  // engineerId → [{ symbol, name, grade, moduleName }]
+
+  for (const item of wishlist) {
+    if (item.type !== 'engineering') continue
+    const bp = blueprints.find(b => b.symbol.toLowerCase() === item.blueprintSymbol.toLowerCase())
+    if (!bp) continue
+
+    for (const [engineerName, engineerInfo] of Object.entries(bp.engineers ?? {})) {
+      // Match engineer by name
+      const eng = engineers.find(e => e.name === engineerName)
+      if (!eng) continue
+      if (!requiredBlueprintsByEngineer[eng.id]) requiredBlueprintsByEngineer[eng.id] = []
+      requiredBlueprintsByEngineer[eng.id].push({
+        symbol: bp.symbol,
+        name: bp.name,
+        grade: item.grade,
+        moduleName: Array.isArray(bp.appliedToModules?.[0]) ? bp.appliedToModules[0] : bp.appliedToModules?.[0] ?? ''
+      })
+    }
+  }
+
+  if (Object.keys(requiredBlueprintsByEngineer).length === 0) return []
+
+  // Build stop objects for required engineers
+  const stops = Object.entries(requiredBlueprintsByEngineer).map(([engId, bps]) => {
+    const eng = engineers.find(e => String(e.id) === String(engId))
+    if (!eng) return null
+    return {
+      type: 'engineer',
+      engineerId: eng.id,
+      engineerName: eng.name,
+      system: { name: eng.system.name, position: eng.system.position },
+      unlockStatus: eng.progress.status,
+      rank: eng.progress.rank,
+      rankProgress: eng.progress.rankProgress,
+      blueprints: bps
+    }
+  }).filter(Boolean)
+
+  // Nearest-neighbour sort
+  return nearestNeighbourSort(stops, currentPos)
+}
+
+/**
+ * Generate the full Smart Route from wishlist shortfalls, sources, and trades.
+ *
+ * Returns a sorted array of RouteStop objects ready for timeline rendering.
+ *
+ * @param {Array}  allocatedShortfalls — result of allocateTradeSuggestions()
+ * @param {Array}  engineers           — getEngineers() result
+ * @param {Array}  wishlist            — wishlist items
+ * @param {Array}  blueprints          — getBlueprints() result
+ * @param {Object} materialSources     — getMaterialSources() result (flat)
+ * @param {Object} materialTraders     — getMaterialTraders() result
+ * @param {Array}  currentPos          — [x, y, z]
+ * @param {Set}    enabledMethods      — set of enabled collection method keys
+ * @returns {Array} ordered RouteStop array
+ */
+export function generateSmartRoute ({
+  allocatedShortfalls,
+  engineers,
+  wishlist,
+  blueprints,
+  materialSources,
+  materialTraders,
+  currentPos,
+  enabledMethods
+}) {
+  const stops = []
+
+  // ── Trade stops ──────────────────────────────────────────────────────────
+  const tradesByType = { Raw: [], Encoded: [], Manufactured: [] }
+  for (const sfEntry of allocatedShortfalls) {
+    if (!sfEntry.trades?.length) continue
+    const t = (sfEntry.type ?? '').toLowerCase()
+    const key = t === 'raw' ? 'Raw' : t === 'encoded' ? 'Encoded' : t === 'manufactured' ? 'Manufactured' : null
+    if (!key) continue
+    for (const trade of sfEntry.trades) {
+      tradesByType[key].push({
+        give: { ...trade.from, amount: trade.give },
+        receive: { symbol: sfEntry.symbol, name: sfEntry.name, grade: sfEntry.grade, amount: trade.receive }
+      })
+    }
+  }
+
+  const traders = materialTraders?.traders ?? []
+  for (const [type, trades] of Object.entries(tradesByType)) {
+    if (!trades.length) continue
+    const nearest = findNearestTrader(traders, type, currentPos)
+    if (!nearest) continue
+    stops.push({
+      type: 'trade',
+      system: { name: nearest.name, position: [nearest.coords.x, nearest.coords.y, nearest.coords.z] },
+      station: { name: nearest.station.name, distanceToArrival: nearest.station.distanceToArrival },
+      traderType: type,
+      trades
+    })
+  }
+
+  // ── Collection stops ─────────────────────────────────────────────────────
+  const collectionStops = groupCollectionsBySystem(allocatedShortfalls, materialSources, enabledMethods)
+  stops.push(...collectionStops)
+
+  // ── Engineer stops ────────────────────────────────────────────────────────
+  const engineerStops = buildEngineerRoute(wishlist, blueprints, engineers, currentPos)
+  stops.push(...engineerStops)
+
+  // ── Sort (nearest-neighbour then 2-opt) ──────────────────────────────────
+  const sorted = nearestNeighbourSort(stops, currentPos)
+  return twoOptImprove(sorted, currentPos)
+}

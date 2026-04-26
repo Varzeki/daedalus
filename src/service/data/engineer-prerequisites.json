@@ -1,0 +1,215 @@
+{
+  "_comment": "Structured unlock prerequisites for all Horizons and Odyssey engineers. Used by the Smart Route engineer unlock chain resolver.",
+  "_schema": {
+    "learn": "Gating condition before engineer appears — rank_referral (Horizons G3) or odyssey_referral (Odyssey bartender item provision). Omit if always known.",
+    "invite": "Invite-stage activity gate (Horizons only). type is always 'activity'. Omit for Odyssey engineers.",
+    "unlock": "Final unlock action: type is 'commodity' | 'material' | 'credits' | 'activity'.",
+    "learn.requiresEngineer": "Engineer numeric ID string that must be G3 (Horizons) or visited (Odyssey) first."
+  },
+
+  "300000": {
+    "name": "Didi Vatermann",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300210", "description": "Reach Grade 3 with Selene Jean" },
+    "invite": { "type": "activity", "activityKey": "trade_rank_merchant", "description": "Reach the rank of Merchant or higher in the Trade ranking" },
+    "unlock": { "type": "commodity", "symbol": "lavianbrandy", "name": "Lavian Brandy", "amount": 50 }
+  },
+  "300010": {
+    "name": "Bill Turner",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300210", "description": "Reach Grade 3 with Selene Jean" },
+    "invite": { "type": "activity", "activityKey": "alliance_permit", "description": "Reach friendly reputation with the Alliance and obtain the Alioth system permit" },
+    "unlock": { "type": "commodity", "symbol": "bromellite", "name": "Bromellite", "amount": 50 }
+  },
+  "300030": {
+    "name": "Broo Tarquin",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300090", "description": "Reach Grade 3 with Hera Tani" },
+    "invite": { "type": "activity", "activityKey": "combat_rank_competent", "description": "Reach the rank of Competent or higher in the Combat ranking" },
+    "unlock": { "type": "commodity", "symbol": "fujintea", "name": "Fujin Tea", "amount": 50 }
+  },
+  "300040": {
+    "name": "The Sarge",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300250", "description": "Reach Grade 3 with Juri Ishmaak" },
+    "invite": { "type": "activity", "activityKey": "federal_rank_midshipman", "description": "Gain rank of Midshipman or higher with the Federal Navy" },
+    "unlock": { "type": "material", "symbol": "aberrantshieldpatternanalysis", "name": "Aberrant Shield Pattern Analysis", "amount": 50 }
+  },
+  "300050": {
+    "name": "Zacariah Nemo",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300160", "description": "Reach Grade 3 with Elvira Martuuk" },
+    "invite": { "type": "activity", "activityKey": "party_of_yoru_invite", "description": "Receive invitation from the Party of Yoru — take missions for them in the Yoru system until Friendly, then complete the special mission" },
+    "unlock": { "type": "commodity", "symbol": "xihebiomorphiccompanions", "name": "Xihe Biomorphic Companions", "amount": 25 }
+  },
+  "300080": {
+    "name": "Liz Ryder",
+    "invite": { "type": "activity", "activityKey": "eurybia_blue_mafia_cordial", "description": "Reach Cordial reputation with the Eurybia Blue Mafia faction in Eurybia" },
+    "unlock": { "type": "commodity", "symbol": "landmines", "name": "Landmines", "amount": 200 }
+  },
+  "300090": {
+    "name": "Hera Tani",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300080", "description": "Reach Grade 3 with Liz Ryder" },
+    "invite": { "type": "activity", "activityKey": "imperial_rank_outsider", "description": "Reach Imperial Navy rank of Outsider or higher" },
+    "unlock": { "type": "commodity", "symbol": "kamitracigars", "name": "Kamitra Cigars", "amount": 50 }
+  },
+  "300100": {
+    "name": "Felicity Farseer",
+    "invite": { "type": "activity", "activityKey": "exploration_rank_scout", "description": "Reach the rank of Scout in Exploration" },
+    "unlock": { "type": "commodity", "symbol": "metaalloys", "name": "Meta-Alloys", "amount": 1 }
+  },
+  "300110": {
+    "name": "Ram Tah",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300120", "description": "Reach Grade 3 with Lei Cheung" },
+    "invite": { "type": "activity", "activityKey": "exploration_rank_surveyor", "description": "Gain exploration rank of Surveyor or higher" },
+    "unlock": { "type": "material", "symbol": "classifiedscandatabanks", "name": "Classified Scan Databanks", "amount": 50 }
+  },
+  "300120": {
+    "name": "Lei Cheung",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300180", "description": "Reach Grade 3 with The Dweller" },
+    "invite": { "type": "activity", "activityKey": "trade_50_stations", "description": "Buy or sell goods at 50 different stations" },
+    "unlock": { "type": "commodity", "symbol": "gold", "name": "Gold", "amount": 200 }
+  },
+  "300130": {
+    "name": "Petra Olmanova",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300260", "description": "Reach Grade 3 with Tod McQuinn" },
+    "invite": { "type": "activity", "activityKey": "combat_rank_expert", "description": "Reach the rank of Expert or higher in the Combat ranking" },
+    "unlock": { "type": "material", "symbol": "progenitorcells", "name": "Progenitor Cells", "amount": 200 }
+  },
+  "300140": {
+    "name": "Colonel Bris Dekker",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300250", "description": "Reach Grade 3 with Juri Ishmaak" },
+    "invite": { "type": "activity", "activityKey": "federation_friendly", "description": "Reach friendly reputation with the Federation" },
+    "unlock": { "type": "credits", "category": "combat_bonds", "name": "Combat Bonds", "amount": 1000000 }
+  },
+  "300150": {
+    "name": "Marsha Hicks",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300180", "description": "Reach Grade 3 with The Dweller" },
+    "invite": { "type": "activity", "activityKey": "exploration_rank_surveyor", "description": "Gain exploration rank of Surveyor or higher" },
+    "unlock": { "type": "activity", "activityKey": "mine_10t_osmium", "description": "Mine 10T of Osmium" }
+  },
+  "300160": {
+    "name": "Elvira Martuuk",
+    "invite": { "type": "activity", "activityKey": "travel_300ly", "description": "Travel at least 300 Ly away from your starting system" },
+    "unlock": { "type": "commodity", "symbol": "soontillrelics", "name": "Soontill Relics", "amount": 3 }
+  },
+  "300180": {
+    "name": "The Dweller",
+    "invite": { "type": "activity", "activityKey": "five_black_markets", "description": "Visit and trade at 5 different black markets" },
+    "unlock": { "type": "credits", "category": "donation", "name": "Credit Donation", "amount": 500000 }
+  },
+  "300200": {
+    "name": "Marco Qwent",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300160", "description": "Reach Grade 3 with Elvira Martuuk" },
+    "invite": { "type": "activity", "activityKey": "sirius_corp_invite", "description": "Receive invitation from the Sirius Corporation — take missions for Sirius Corporation in the Sirius system until Friendly, then complete the special permit mission" },
+    "unlock": { "type": "commodity", "symbol": "modularterminals", "name": "Modular Terminals", "amount": 25 }
+  },
+  "300210": {
+    "name": "Selene Jean",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300260", "description": "Reach Grade 3 with Tod McQuinn" },
+    "invite": { "type": "activity", "activityKey": "mine_500t", "description": "Mine a cumulative total of 500T of any ore" },
+    "unlock": { "type": "commodity", "symbol": "painite", "name": "Painite", "amount": 10 }
+  },
+  "300220": {
+    "name": "Professor Palin",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300200", "description": "Reach Grade 3 with Marco Qwent" },
+    "invite": { "type": "activity", "activityKey": "visit_5000ly_system", "description": "Visit a system at least 5,000 Ly from your starting system" },
+    "unlock": { "type": "material", "symbol": "sensorfragments", "name": "Sensor Fragments", "amount": 25 }
+  },
+  "300230": {
+    "name": "Lori Jameson",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300200", "description": "Reach Grade 3 with Marco Qwent" },
+    "invite": { "type": "activity", "activityKey": "combat_rank_dangerous", "description": "Reach the rank of Dangerous or higher in the Combat ranking" },
+    "unlock": { "type": "commodity", "symbol": "konggaale", "name": "Kongga Ale", "amount": 25 }
+  },
+  "300250": {
+    "name": "Juri Ishmaak",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300100", "description": "Reach Grade 3 with Felicity Farseer" },
+    "invite": { "type": "activity", "activityKey": "fifty_combat_bonds", "description": "Earn more than 50 combat bonds" },
+    "unlock": { "type": "credits", "category": "combat_bonds", "name": "Combat Bonds", "amount": 1000000 }
+  },
+  "300260": {
+    "name": "Tod 'The Blaster' McQuinn",
+    "invite": { "type": "activity", "activityKey": "fifteen_bounties", "description": "Hand in 15 or more bounties at a Contacts office" },
+    "unlock": { "type": "credits", "category": "bounty_vouchers", "name": "Bounty Vouchers", "amount": 100000 }
+  },
+  "300270": {
+    "name": "Tiana Fortune",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300090", "description": "Reach Grade 3 with Hera Tani" },
+    "invite": { "type": "activity", "activityKey": "empire_friendly", "description": "Reach friendly reputation with the Empire" },
+    "unlock": { "type": "material", "symbol": "decodedemissiondata", "name": "Decoded Emission Data", "amount": 50 }
+  },
+  "300280": {
+    "name": "Mel Brandon",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300160", "description": "Reach Grade 3 with Elvira Martuuk" },
+    "invite": { "type": "activity", "activityKey": "colonia_council_invite", "description": "Receive invitation from the Colonia Council — take missions in the Colonia system until Friendly, then complete the special mission" },
+    "unlock": { "type": "credits", "category": "bounty_vouchers", "name": "Bounty Vouchers", "amount": 100000 }
+  },
+  "300290": {
+    "name": "Etienne Dorn",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300080", "description": "Reach Grade 3 with Liz Ryder" },
+    "invite": { "type": "activity", "activityKey": "trade_rank_dealer", "description": "Reach the rank of Dealer or higher in the Trade ranking" },
+    "unlock": { "type": "activity", "activityKey": "collect_occupied_escape_pods", "description": "Provide 25 Occupied Escape Pods — found in Distress Call signal sources near stations" }
+  },
+  "300300": {
+    "name": "Chloe Sedesi",
+    "learn": { "type": "rank_referral", "requiresEngineer": "300200", "description": "Reach Grade 3 with Marco Qwent" },
+    "invite": { "type": "activity", "activityKey": "visit_5000ly_system", "description": "Visit a system at least 5,000 Ly from your starting system" },
+    "unlock": { "type": "material", "symbol": "sensorfragments", "name": "Sensor Fragments", "amount": 25 }
+  },
+
+  "400001": {
+    "name": "Jude Navarro",
+    "unlock": { "type": "activity", "activityKey": "odyssey_restore_missions_10", "description": "Complete 10 Restore or Reactivation on-foot missions" }
+  },
+  "400002": {
+    "name": "Domino Green",
+    "unlock": { "type": "activity", "activityKey": "apex_travel_100ly", "description": "Travel 100 light-years in Apex Interstellar Transport shuttles" }
+  },
+  "400003": {
+    "name": "Hero Ferrari",
+    "unlock": { "type": "activity", "activityKey": "low_threat_conflict_zones_10", "description": "Complete 10 low-threat Conflict Zone on-foot missions" }
+  },
+  "400004": {
+    "name": "Kit Fowler",
+    "learn": { "type": "odyssey_referral", "requiresEngineer": "400002", "item": "push", "itemName": "Push", "amount": 5, "description": "Provide Domino Green with 5 units of Push via a Bartender" },
+    "unlock": { "type": "activity", "activityKey": "sell_opinion_polls_5", "description": "Sell 5 Opinion Polls to Bartenders" }
+  },
+  "400005": {
+    "name": "Wellington Beck",
+    "learn": { "type": "odyssey_referral", "requiresEngineer": "400003", "item": "settlementdefenceplans", "itemName": "Settlement Defence Plans", "amount": 5, "description": "Provide Hero Ferrari with 5 units of Settlement Defence Plans via a Bartender" },
+    "unlock": { "type": "activity", "activityKey": "sell_entertainment_15", "description": "Sell 15 total units of Classic Entertainment, Multimedia Entertainment, and/or Cat Media to Bartenders" }
+  },
+  "400006": {
+    "name": "Terra Velasquez",
+    "learn": { "type": "odyssey_referral", "requiresEngineer": "400001", "item": "geneticrepairmeds", "itemName": "Genetic Repair Meds", "amount": 5, "description": "Provide Jude Navarro with 5 units of Genetic Repair Meds via a Bartender" },
+    "unlock": { "type": "activity", "activityKey": "covert_missions_6", "description": "Complete 6 Covert Heist or Covert Theft on-foot missions" }
+  },
+  "400007": {
+    "name": "Uma Laszlo",
+    "learn": { "type": "odyssey_referral", "requiresEngineer": "400005", "item": "insightentertainmentsuites", "itemName": "InSight Entertainment Suites", "amount": 5, "description": "Provide Wellington Beck with 5 units of InSight Entertainment Suites via a Bartender" },
+    "unlock": { "type": "activity", "activityKey": "unfriendly_sirius_corp", "description": "Reach Unfriendly or lower reputation with Sirius Corporation" }
+  },
+  "400008": {
+    "name": "Oden Geiger",
+    "learn": { "type": "odyssey_referral", "requiresEngineer": "400006", "item": "financialprojections", "itemName": "Financial Projections", "amount": 15, "description": "Provide Terra Velasquez with 15 units of Financial Projections via a Bartender" },
+    "unlock": { "type": "activity", "activityKey": "sell_biological_data_20", "description": "Sell 20 total units of Biological Sample, Employee Genetic Data, and/or Genetic Research to Bartenders" }
+  },
+  "400009": {
+    "name": "Yarden Bond",
+    "learn": { "type": "odyssey_referral", "requiresEngineer": "400004", "item": "surveillanceequipment", "itemName": "Surveillance Equipment", "amount": 5, "description": "Provide Kit Fowler with 5 units of Surveillance Equipment via a Bartender" },
+    "unlock": { "type": "activity", "activityKey": "sell_smear_plans_5", "description": "Sell 5 Smear Campaign Plans to Bartenders" }
+  },
+  "400010": {
+    "name": "Baltanos",
+    "unlock": { "type": "activity", "activityKey": "colonia_council_friendly", "description": "Reach Friendly reputation with the Colonia Council" }
+  },
+  "400011": {
+    "name": "Eleanor Bresa",
+    "unlock": { "type": "activity", "activityKey": "colonia_settlements_5", "description": "Dock and disembark at 5 settlements in the Colonia system" }
+  },
+  "400012": {
+    "name": "Rosa Dayette",
+    "unlock": { "type": "activity", "activityKey": "sell_colonia_recipes_10", "description": "Sell a total of 10 Culinary Recipes or Cocktail Recipes to stations in Colonia" }
+  },
+  "400013": {
+    "name": "Yi Shen",
+    "learn": { "type": "odyssey_referral_multi", "requiresAny": ["400010", "400011", "400012"], "description": "Provide Baltanos with 10 Faction Associates, Rosa Dayette with 10 Manufacturing Instructions, or Eleanor Bresa with 10 Digital Designs" },
+    "unlock": { "type": "activity", "activityKey": "yi_shen_all_three_referrals", "description": "Complete all three referral tasks: Provide Baltanos 10 Faction Associates, Rosa Dayette 10 Manufacturing Instructions, and Eleanor Bresa 10 Digital Designs" }
+  }
+}
