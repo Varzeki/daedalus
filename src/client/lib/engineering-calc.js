@@ -464,27 +464,34 @@ export function twoOptImprove (stops, startPosition) {
 
   while (improved) {
     improved = false
+    // Standard 2-opt: check whether reversing segment [i..j] reduces total distance.
+    // Removes edges (i-1→i) and (j→j+1); reconnects as (i-1→j) and (i→j+1).
+    outerLoop:
     for (let i = 1; i < route.length - 1; i++) {
       for (let j = i + 1; j < route.length; j++) {
         if (!route[i]._hasPos || !route[j]._hasPos) continue
         // Skip if constrained by mustPrecede
         if (route[i].mustPrecede || route[j].mustPrecede) continue
 
-        const prevI = i === 0 ? startPosition : route[i - 1].system?.position
-        const prevJ = route[j - 1].system?.position
+        const posIPrev = route[i - 1].system?.position
+        const posI = route[i].system.position
+        const posJ = route[j].system.position
+        const posJNext = j + 1 < route.length ? route[j + 1].system?.position : null
 
-        if (!prevI || !prevJ || !route[i].system?.position || !route[j].system?.position) continue
+        if (!posIPrev || !posI || !posJ) continue
 
-        const before = calculateDistance(prevI, route[i].system.position) +
-                       calculateDistance(prevJ, route[j].system.position)
-        const after = calculateDistance(prevI, route[j].system.position) +
-                      calculateDistance(prevJ, route[i].system.position)
+        // Compare cost of edges being removed vs edges being added after reversal
+        const before = calculateDistance(posIPrev, posI) +
+                       (posJNext ? calculateDistance(posJ, posJNext) : 0)
+        const after = calculateDistance(posIPrev, posJ) +
+                      (posJNext ? calculateDistance(posI, posJNext) : 0)
 
         if (after < before - 0.1) {
-          // Reverse the segment [i..j]
+          // Reverse the segment [i..j] and restart the pass from the beginning
           const segment = route.slice(i, j + 1).reverse()
           route = [...route.slice(0, i), ...segment, ...route.slice(j + 1)]
           improved = true
+          break outerLoop
         }
       }
     }
