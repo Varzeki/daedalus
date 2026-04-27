@@ -11,6 +11,7 @@
  *   onChange    {Function}  — (newGoal) => void  — null goal clears the slot
  */
 import { useMemo } from 'react'
+import { getModuleExperimentals } from '../../../../service/data/engineering-experimentals.js'
 
 // ── Grade summary helper ──────────────────────────────────────────────────────
 
@@ -34,6 +35,11 @@ export default function ModuleEngineeringCard ({ module, blueprints, goal, onCha
   const selectedBp = useMemo(
     () => goal?.blueprintSymbol ? blueprints.find(bp => bp.symbol === goal.blueprintSymbol) ?? null : null,
     [goal?.blueprintSymbol, blueprints]
+  )
+
+  const experimentals = useMemo(
+    () => getModuleExperimentals(module.symbol),
+    [module.symbol]
   )
 
   const currentEng = module.engineering
@@ -168,20 +174,23 @@ export default function ModuleEngineeringCard ({ module, blueprints, goal, onCha
         )}
       </div>
 
-      {/* Experimental effect note — shows when blueprint is selected */}
-      {goal?.blueprintSymbol && (
+      {/* Experimental effect — shows when blueprint is selected and experimentals exist */}
+      {goal?.blueprintSymbol && experimentals.length > 0 && (
         <div>
           <label className='text-muted text-uppercase' style={{ display: 'block', fontSize: '.78rem', marginBottom: '.25rem' }}>
-            Experimental Effect (note)
+            Experimental Effect
           </label>
-          <input
-            type='text'
+          <select
             className='input'
             style={{ width: '100%', fontSize: '.9rem' }}
-            placeholder={currentEng?.experimentalEffect ? `Current: ${currentEng.experimentalEffect}` : 'e.g. Drag Drives…'}
             value={goal?.experimentalEffect ?? ''}
             onChange={handleExperimentalChange}
-          />
+          >
+            <option value=''>— None —</option>
+            {experimentals.map(e => (
+              <option key={e.key} value={e.name}>{e.name}</option>
+            ))}
+          </select>
         </div>
       )}
 
