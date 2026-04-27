@@ -102,35 +102,17 @@ jobs:
           path: ~/.pkg-cache
           key: pkg-node24-win-x64-v1
 
-      - name: Cache yt-dlp
-        id: cache-ytdlp
-        uses: actions/cache@v4
-        with:
-          path: resources/yt-dlp.exe
-          key: yt-dlp-latest-${{ hashFiles('resources/yt-dlp.exe') }}
-          restore-keys: yt-dlp-latest-
-
       - name: Download yt-dlp
-        if: steps.cache-ytdlp.outputs.cache-hit != 'true'
         shell: bash
         run: |
           curl -L -o resources/yt-dlp.exe https://github.com/yt-dlp/yt-dlp/releases/latest/download/yt-dlp.exe
           ls -la resources/yt-dlp.exe
 
-      - name: Cache ffmpeg
-        id: cache-ffmpeg
-        uses: actions/cache@v4
-        with:
-          path: resources/ffmpeg.exe
-          key: ffmpeg-${{ hashFiles('resources/ffmpeg-version.txt') }}
-
       - name: Download ffmpeg
-        if: steps.cache-ffmpeg.outputs.cache-hit != 'true'
         shell: bash
         run: |
-          FFMPEG_VERSION=$(cat resources/ffmpeg-version.txt | tr -d '[:space:]')
-          curl -L -o ffmpeg-release.7z "https://www.gyan.dev/ffmpeg/builds/packages/ffmpeg-${FFMPEG_VERSION}.7z"
-          7z e ffmpeg-release.7z -oresources "*/bin/ffmpeg.exe" -r -y
+          curl -L -o ffmpeg-release.zip https://www.gyan.dev/ffmpeg/builds/ffmpeg-release-essentials.zip
+          unzip -j ffmpeg-release.zip "*/bin/ffmpeg.exe" -d resources/
           ls -la resources/ffmpeg.exe
 
       - name: Get version from package.json
