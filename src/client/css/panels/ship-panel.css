@@ -364,6 +364,8 @@ table.table--flex-inline.table--interactive tbody tr.table__row--active td.ship-
 
 table.ship-panel__lights {
   top: 0;
+  width: 100%;
+  margin: auto;
 }
 
 @media only screen and (max-width: 799px) {
