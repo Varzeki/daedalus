@@ -348,8 +348,9 @@ class ShipStatus {
 
     const shipState = {
       timestamp: new Date().toISOString(),
+      shipId: Loadout?.ShipID != null ? String(Loadout.ShipID) : null,
       type: ship?.name ?? Loadout?.Ship ?? UNKNOWN_VALUE,
-      name: Loadout?.ShipName ?? UNKNOWN_VALUE,
+      name: (Loadout?.ShipName && Loadout.ShipName !== 'NULL') ? Loadout.ShipName : UNKNOWN_VALUE,
       ident: Loadout?.ShipIdent ?? UNKNOWN_VALUE,
       pips: {
         systems: onBoard ? Json?.Status?.Pips?.[0] ?? UNKNOWN_VALUE : UNKNOWN_VALUE,

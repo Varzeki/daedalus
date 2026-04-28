@@ -226,5 +226,11 @@
     "symbol": "Mamba",
     "name": "Mamba",
     "entitlement": "ELITE_HORIZONS_V_PLANETARY_LANDINGS"
+  },
+  {
+    "id": "128672138",
+    "symbol": "LakonMiner",
+    "name": "Type-11 Multipurpose",
+    "entitlement": ""
   }
 ]

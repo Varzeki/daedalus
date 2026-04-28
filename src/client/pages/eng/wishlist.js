@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback, useMemo } from 'react'
+import { useState, useEffect, useCallback, useMemo, useRef } from 'react'
 import animateTableEffect from 'lib/animate-table-effect'
 import { useSocket, sendEvent, eventListener } from 'lib/socket'
 import { EngineeringPanelNavItems } from 'lib/navigation-items'
@@ -41,17 +41,24 @@ function saveModuleGoals (shipId, goals) {
  * Return blueprints from `allBlueprints` applicable to the given ship module.
  *
  * Match if any entry in blueprint.modules is:
- *   (a) a case-insensitive substring of module.name  — e.g. "Thrusters" ⊆ "3A Thrusters"
+ *   (a) a whole-token match within module.name  — e.g. "Thrusters" matches "3A Thrusters"
+ *       Uses word-boundary regex so "Weapon" does NOT match "Weapon Colouring"
+ *       or the fallback FD symbol "hpt weaponscustomization ..."
  *   (b) a case-insensitive exact match of module.slot — e.g. "Armour" === "Armour"
  *       (handles cases like armour where moduleName is "Lightweight Alloys")
  */
+function tokenMatch (haystack, needle) {
+  const escaped = needle.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
+  return new RegExp('(?:^|\\s)' + escaped + '(?:\\s|$)').test(haystack)
+}
+
 function getApplicableBlueprints (module, allBlueprints) {
   const nameLower = (module.name ?? '').toLowerCase()
   const slotLower = (module.slot ?? '').toLowerCase()
   return allBlueprints.filter(bp =>
     (bp.modules ?? []).some(m => {
       const mLower = m.toLowerCase()
-      return nameLower.includes(mLower) || mLower === slotLower
+      return tokenMatch(nameLower, mLower) || mLower === slotLower
     })
   )
 }
@@ -188,10 +195,16 @@ export default function EngineeringWishlistPage () {
 
   useEffect(animateTableEffect)
 
+  const hasLoaded = useRef(false)
+
   // ── Initial data load ─────────────────────────────────────────────────────
+  // Run only once on first connect to avoid resetting state when the user
+  // tabs away (which can briefly cycle `connected` or `ready`).
   useEffect(() => {
+    if (hasLoaded.current) return
     ;(async () => {
       if (!connected) return
+      hasLoaded.current = true
       const [newBlueprints, newMaterials, newShipStatus] = await Promise.all([
         sendEvent('getBlueprints'),
         sendEvent('getMaterials'),
@@ -201,8 +214,10 @@ export default function EngineeringWishlistPage () {
       setMaterials(newMaterials ?? [])
       setShipStatus(newShipStatus ?? null)
 
-      const activeId = getActiveShipId()
+      // Prefer the persisted active ship ID; fall back to what getShipStatus returned
+      const activeId = getActiveShipId() ?? newShipStatus?.shipId
       if (activeId) {
+        if (!getActiveShipId() && newShipStatus?.shipId) setActiveShipId(activeId)
         setShipId(activeId)
         setModuleGoals(loadModuleGoals(activeId))
         // Only restore manually-added items (no moduleSlot)
